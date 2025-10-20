@@ -31,7 +31,7 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
   const formatDuration = (ms: number) => {
     if (ms === 0) return '-';
     const days = msToDays(ms);
-    return `${days}d`;
+    return days;
   };
 
   return (
@@ -102,7 +102,7 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
               {issues.map((issue) => (
                 <tr key={issue.key} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className={`w-3 h-3 rounded-full ${getStageColor(issue.currentStage)}`} />
+                    <div className={`w-3 h-3 rounded-full ${getStageColor(issue.currentStage)}`} title={issue.currentStage} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm font-medium text-blue-600">{issue.key}</span>
@@ -119,7 +119,7 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
                     <span className="text-sm text-gray-500">{issue.currentStatus}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{issue.daysOld}d</span>
+                    <span className="text-sm text-gray-900">{issue.daysOld}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{formatDuration(issue.leadTime)}</span>
