@@ -1,5 +1,8 @@
+// src/app/api/flow/issues/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
+import { processJiraIssues } from '@/lib/flow/processor';
 import { FLOW_METRICS_FILTER } from '@/lib/jira/filters';
 
 export async function GET(request: NextRequest) {
@@ -7,8 +10,6 @@ export async function GET(request: NextRequest) {
     // Extract query parameters
     const searchParams = request.nextUrl.searchParams;
     const jql = searchParams.get('jql') || FLOW_METRICS_FILTER.baseJql;
-    const fields = searchParams.get('fields') || 'summary';
-    const expand = searchParams.get('expand') || 'changelog';
 
     // Validate environment variables
     const jiraBaseUrl = process.env.JIRA_BASE_URL;
@@ -18,20 +19,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Missing Jira configuration. Check your environment variables: JIRA_BASE_URL, JIRA_PERSONAL_ACCESS_TOKEN'
+          error: 'Missing Jira configuration. Check your environment variables'
         },
         { status: 500 }
       );
     }
 
-    // Create Jira client instance
+    // Create Jira client
     const jiraClient = new JiraClient({
       baseUrl: jiraBaseUrl,
       bearerToken: jiraBearerToken
     });
 
-    // Test connection first (optional but helpful for debugging)
-
+    // Test connection
     const connectionOk = await jiraClient.testConnection();
     if (!connectionOk) {
       return NextResponse.json(
@@ -43,30 +43,64 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch issues from Jira
-    console.log(`Executing JQL: ${jql}`);
-    const jiraResponse = await jiraClient.searchIssues(jql, 50, fields, expand);
+    console.log(`Fetching flow issues with JQL: ${jql}`);
 
-    // Return successful response
+    // Fetch issues with changelog expanded
+    const fields = 'summary,issuetype,status,created,resolutiondate';
+    const expand = 'changelog';
+
+    const jiraResponse = await jiraClient.searchIssues(jql, 100, fields, expand);
+
+    console.log(`Fetched ${jiraResponse.issues.length} issues, processing...`);
+
+    // Process issues through flow processor
+    // The changelog is included in the issue object when expand=changelog is used
+    const processedIssues = processJiraIssues(
+      jiraResponse.issues.map(issue => ({
+        issue,
+        changelog: issue.fields.changelog
+      }))
+    );
+
+    console.log(`Processed ${processedIssues.length} issues with flow metrics`);
+
+    // Calculate summary statistics
+    const completedIssues = processedIssues.filter(i => i.currentStage === 'done');
+    const inProgressIssues = processedIssues.filter(i =>
+      i.currentStage === 'in-progress' ||
+      i.currentStage === 'deployment' ||
+      i.currentStage === 'testing'
+    );
+
+    const avgLeadTime = completedIssues.length > 0
+      ? completedIssues.reduce((sum, i) => sum + i.leadTime, 0) / completedIssues.length
+      : 0;
+
+    const avgCycleTime = completedIssues.length > 0
+      ? completedIssues.reduce((sum, i) => sum + i.cycleTime, 0) / completedIssues.length
+      : 0;
+
     return NextResponse.json({
       success: true,
       data: {
-        total: jiraResponse.total,
-        issues: jiraResponse.issues,
-        maxResults: jiraResponse.maxResults,
-        startAt: jiraResponse.startAt
+        issues: processedIssues,
+        summary: {
+          total: processedIssues.length,
+          completed: completedIssues.length,
+          inProgress: inProgressIssues.length,
+          avgLeadTimeDays: Math.round(avgLeadTime / (1000 * 60 * 60 * 24) * 10) / 10,
+          avgCycleTimeDays: Math.round(avgCycleTime / (1000 * 60 * 60 * 24) * 10) / 10,
+        }
       },
       metadata: {
         query: jql,
         timestamp: new Date().toISOString(),
-        totalIssues: jiraResponse.total
       }
     });
 
   } catch (error) {
-    console.error('Jira API error:', error);
+    console.error('Flow API error:', error);
 
-    // Handle specific Jira API errors
     if (error instanceof JiraApiError) {
       return NextResponse.json(
         {
@@ -81,12 +115,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Handle general errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
       {
         success: false,
-        error: `Failed to fetch Jira issues: ${errorMessage}`
+        error: `Failed to fetch flow issues: ${errorMessage}`
       },
       { status: 500 }
     );

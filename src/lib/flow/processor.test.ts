@@ -50,7 +50,7 @@ function createMockChangelog(transitions: Array<{
     startAt: 0,
     total: transitions.length,
     isLast: true,
-    values: transitions.map(({ timestamp, status }) => ({
+    histories: transitions.map(({ timestamp, status }) => ({
       id: Math.random().toString(),
       created: timestamp.toISOString(),
       author: {
@@ -137,8 +137,8 @@ describe('Flow Processor', () => {
 
       const changelog = createMockChangelog([
         { timestamp: new Date('2024-01-01T10:00:00'), status: 'Work in Progress' },
-        { timestamp: new Date('2024-01-02T10:00:00'), status: 'Code Review' },
-        { timestamp: new Date('2024-01-03T10:00:00'), status: 'In Test' },
+        { timestamp: new Date('2024-01-02T10:00:00'), status: 'Completed' },
+        { timestamp: new Date('2024-01-03T10:00:00'), status: 'To be Tested' },
         { timestamp: new Date('2024-01-05T10:00:00'), status: 'Done' }
       ]);
 
@@ -149,12 +149,12 @@ describe('Flow Processor', () => {
 
       // Find transitions
       const inProgressTransition = result.statusHistory.find(t => t.stage === 'in-progress');
-      const reviewTransition = result.statusHistory.find(t => t.stage === 'review');
+      const deploymentTransition = result.statusHistory.find(t => t.stage === 'deployment');
       const testingTransition = result.statusHistory.find(t => t.stage === 'testing');
       const doneTransition = result.statusHistory.find(t => t.stage === 'done');
 
       expect(inProgressTransition).toBeDefined();
-      expect(reviewTransition).toBeDefined();
+      expect(deploymentTransition).toBeDefined();
       expect(testingTransition).toBeDefined();
       expect(doneTransition).toBeDefined();
     });

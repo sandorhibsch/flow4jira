@@ -73,7 +73,7 @@ function buildStatusHistory(
   const created = new Date(issue.fields.created);
 
   // If no changelog, we only know current status
-  if (!changelog || !changelog.values || changelog.values.length === 0) {
+  if (!changelog || !changelog.histories || changelog.histories.length === 0) {
     const currentStage = getFlowStage(issue.fields.status.name);
     return [{
       stage: currentStage,
@@ -87,7 +87,7 @@ function buildStatusHistory(
   // Parse changelog entries looking for status changes
   const statusChanges: Array<{ timestamp: Date; status: string }> = [];
 
-  changelog.values.forEach(entry => {
+  changelog.histories.forEach(entry => {
     entry.items.forEach(item => {
       if (item.field === 'status') {
         statusChanges.push({

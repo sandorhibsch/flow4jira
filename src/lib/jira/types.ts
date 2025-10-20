@@ -26,6 +26,7 @@ export interface JiraIssue {
       };
     };
     resolutiondate: string;
+    changelog?: JiraChangelogResponse;
     // Add more fields as needed - Jira returns a LOT
   };
 }
@@ -70,7 +71,7 @@ export interface JiraChangelogResponse {
   startAt: number;
   total: number;
   isLast: boolean;
-  values: JiraChangelogEntry[];
+  histories: JiraChangelogEntry[];
 }
 
 // Flow-specific types derived from Jira data
