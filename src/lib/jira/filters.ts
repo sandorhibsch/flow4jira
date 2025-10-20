@@ -16,20 +16,26 @@ export const buildStatusChangedFilter = (projectKey: string, days: number = 30):
 // Status mapping for flow stages - customize this for your workflow
 export const FLOW_STATUS_MAPPING = {
   // Map Jira statuses to flow stages
-  'To Be Developed': 'backlog',
   'New': 'backlog',
+  'Inbox': 'backlog',
   'Backlog': 'backlog',
-  'Analyze in Progress': 'ready',
+  'Analyze in Progress': 'analyze',
+  'Specification': 'analyze',
+  'Planned for Release': 'ready',
+  'Specification Done': 'ready',
   'Work in Progress': 'in-progress',
-  'In Development': 'in-progress',
-  'Code Review': 'review',
-  'In Review': 'review',
+  'Implementation': 'in-progress',
+  'Completed': 'deployment',
+  'Implementation Done': 'deployment',
+  'Waiting for CITST': 'deployment',
   'To be Tested': 'testing',
-  'In Test': 'testing',
-  'QA': 'testing',
-  'Done': 'done',
+  'CITST': 'testing',
+  'To be Delivered': 'release',
+  'Solution to be Approved': 'release',
   'Closed': 'done',
-  'Accepted': 'done'
+  'Development Closed': 'done',
+  'Abandonded': 'done',
+  'Done': 'done'
 } as const;
 
 export type FlowStage = typeof FLOW_STATUS_MAPPING[keyof typeof FLOW_STATUS_MAPPING];
