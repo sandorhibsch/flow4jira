@@ -2,7 +2,7 @@
 // Hardcoded filters for now - we'll make this configurable later
 export const FLOW_METRICS_FILTER = {
   // Example JQL - adjust this to your specific workflow
-  baseJql: `(product="LNZ\ TSW" AND updated>=-30d`,
+  baseJql: `(project="PROJ" AND updated>=-30d`,
 } as const;
 
 export const buildUpdatedInLastDaysFilter = (projectKey: string, days: number = 30): string => {

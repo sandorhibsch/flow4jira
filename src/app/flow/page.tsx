@@ -71,7 +71,7 @@ export default function FlowDashboard() {
               type="text"
               value={jql}
               onChange={(e) => setJql(e.target.value)}
-              placeholder='e.g., product="LNZ TSW" AND updated>=-30d'
+              placeholder='e.g., project="PROJ" AND updated>=-30d'
               className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
