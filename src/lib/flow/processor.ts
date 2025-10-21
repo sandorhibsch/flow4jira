@@ -1,6 +1,6 @@
 // src/lib/flow/processor.ts
 
-import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/types';
+import { JiraIssue, JiraChangelogResponse, FlowIssueSummary } from '@/lib/jira/types';
 import { FLOW_STATUS_MAPPING, FlowStage, getFlowStage } from '@/lib/jira/filters';
 
 export interface FlowIssueTransition {
@@ -21,9 +21,9 @@ export interface ProcessedFlowIssue {
   currentStatus: string;
 
   // Calculated metrics
-  leadTime: number; // Total time from creation to done (ms)
-  cycleTime: number; // Time from first "in-progress" to done (ms)
-  daysOld: number; // How many days since creation
+  leadTimeDays: number; // Total time from creation to done (days)
+  cycleTimeDays: number; // Time from first "in-progress" to done (days)
+  ageDays: number; // How many days since creation
 }
 
 /**
@@ -43,7 +43,7 @@ export function processJiraIssue(
   // Calculate metrics
   const leadTime = calculateLeadTime(created, statusHistory);
   const cycleTime = calculateCycleTime(statusHistory);
-  const daysOld = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
+  const daysOld = calculateAge(created, currentStage);
 
   return {
     key: issue.key,
@@ -53,9 +53,9 @@ export function processJiraIssue(
     statusHistory,
     currentStage,
     currentStatus,
-    leadTime,
-    cycleTime,
-    daysOld
+    leadTimeDays: leadTime,
+    cycleTimeDays: cycleTime,
+    ageDays: daysOld
   };
 }
 
@@ -164,7 +164,8 @@ function calculateLeadTime(
 
   if (doneTransition && doneTransition.enteredAt) {
     // Lead time is from creation to when it entered "done"
-    return doneTransition.enteredAt.getTime() - created.getTime();
+    const leadTime = doneTransition.enteredAt.getTime() - created.getTime();
+    return msToDays(leadTime);
   }
 
   // Not yet done
@@ -186,11 +187,19 @@ function calculateCycleTime(statusHistory: FlowIssueTransition[]): number {
   const doneTransition = statusHistory.find(t => t.stage === 'done');
   if (doneTransition && doneTransition.enteredAt) {
     // Cycle time is from entering in-progress to entering done
-    return doneTransition.enteredAt.getTime() - firstInProgress.enteredAt.getTime();
+    const cycleTime = doneTransition.enteredAt.getTime() - firstInProgress.enteredAt.getTime();
+    return msToDays(cycleTime);
   }
 
   // Not yet done
   return 0;
+}
+
+/**
+ * Calculate age: time from created until now if issue is not done yet
+ */
+function calculateAge(created: Date, currentStage: FlowStage) {
+  return currentStage === 'done' ? 0 : msToDays(Date.now() - created.getTime());
 }
 
 /**
@@ -206,5 +215,32 @@ export function processJiraIssues(
  * Helper to convert milliseconds to days for readability
  */
 export function msToDays(ms: number): number {
-  return Math.round(ms / (1000 * 60 * 60 * 24) * 10) / 10; // 1 decimal place
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueSummary {
+  const total = issues.length;
+
+  const doneIssues = issues.filter(i => i.currentStage === 'done');
+  const inProgressIssues = issues.filter(i =>
+    i.currentStage === 'analyze' ||
+    i.currentStage === 'in-progress' ||
+    i.currentStage === 'deployment' ||
+    i.currentStage === 'testing'
+  );
+  const openIssues = issues.filter(i => i.currentStage != 'done')
+  const averageAge = openIssues.length > 0
+    ? openIssues.reduce((sum, i) => sum + i.ageDays, 0) / openIssues.length
+    : 0;
+
+  const workInProgress = inProgressIssues.length;
+  const averageCycletime = doneIssues.length > 0
+    ? doneIssues.reduce((sum, i) => sum + i.cycleTimeDays, 0) / doneIssues.length
+    : 0;
+  return {
+    total: total,
+    averageAge: averageAge,
+    workInProgress: workInProgress,
+    averageCycletime: averageCycletime
+  };
 }

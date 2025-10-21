@@ -1,7 +1,7 @@
 // src/lib/flow/processor.test.ts
 // Run with: npm test or npx jest
 
-import { processJiraIssue, msToDays } from './processor';
+import { processJiraIssue, msToDays, calculateSummary, ProcessedFlowIssue } from './processor';
 import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/types';
 
 /**
@@ -70,6 +70,73 @@ function createMockChangelog(transitions: Array<{
   };
 }
 
+/**
+ * Test helper: Create mock processed issue
+ */
+function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): ProcessedFlowIssue {
+  const baseIssue: ProcessedFlowIssue = {
+    key: "PROJ-123",
+    summary: "Take out the garbage",
+    issueType: "Story",
+    created: new Date('2024-01-01'),
+    statusHistory: [],
+    currentStage: 'backlog',
+    currentStatus: 'Backlog',
+    leadTimeDays: 0,
+    cycleTimeDays: 0,
+    ageDays: 5,
+  }
+
+  return { ...baseIssue, ...overrides };
+}
+
+/**
+ * Test helper: create multiple issues for analysis
+ */
+function createProcessedIssues(): ProcessedFlowIssue[] {
+  const issueOpen = createMockProcessedIssue({
+    ...createMockProcessedIssue(),
+    currentStage: 'backlog',
+    ageDays: 4
+  });
+
+  const issueInProgress = createMockProcessedIssue({
+    ...createMockProcessedIssue(),
+    currentStage: 'in-progress',
+    ageDays: 6
+  });
+
+  const issueInTesting = createMockProcessedIssue({
+    ...createMockProcessedIssue(),
+    currentStage: 'testing',
+    ageDays: 8
+  });
+
+  const issueDone1 = createMockProcessedIssue({
+    ...createMockProcessedIssue(),
+    currentStage: 'done',
+    cycleTimeDays: 6,
+    leadTimeDays: 8,
+    ageDays: 0
+  })
+
+  const issueDone2 = createMockProcessedIssue({
+    ...createMockProcessedIssue(),
+    currentStage: 'done',
+    cycleTimeDays: 8,
+    leadTimeDays: 10,
+    ageDays: 0
+  })
+
+  return [
+    issueOpen,
+    issueInProgress,
+    issueInTesting,
+    issueDone1,
+    issueDone2
+  ]
+}
+
 describe('Flow Processor', () => {
   describe('processJiraIssue - without changelog', () => {
     it('should handle issue with no changelog', () => {
@@ -98,20 +165,7 @@ describe('Flow Processor', () => {
       expect(result.created).toEqual(new Date('2024-01-01'));
     });
 
-    it('should calculate daysOld correctly', () => {
-      const createdDate = new Date();
-      createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
 
-      const issue = createMockIssue({
-        fields: {
-          ...createMockIssue().fields,
-          created: createdDate.toISOString()
-        }
-      });
-
-      const result = processJiraIssue(issue);
-      expect(result.daysOld).toBe(5);
-    });
   });
 
   describe('processJiraIssue - with changelog', () => {
@@ -159,6 +213,47 @@ describe('Flow Processor', () => {
       expect(doneTransition).toBeDefined();
     });
 
+    it('should calculate daysOld correctly when issue not done', () => {
+      const createdDate = new Date();
+      createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
+
+      const issue = createMockIssue({
+        fields: {
+          ...createMockIssue().fields,
+          status: {
+            id: '10001',
+            name: 'Work In Progress',
+            statusCategory: {
+              id: 2,
+              key: 'in-progress',
+              colorName: 'blue',
+              name: 'In Progress'
+            }
+          },
+          created: createdDate.toISOString()
+        }
+      });
+
+      const result = processJiraIssue(issue);
+      expect(result.ageDays).toBe(5);
+    });
+
+    it('should return 0 for daysOld when issue is done', () => {
+      const createdDate = new Date();
+      createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
+
+      const issue = createMockIssue({
+        fields: {
+          ...createMockIssue().fields,
+
+          created: createdDate.toISOString()
+        }
+      });
+
+      const result = processJiraIssue(issue);
+      expect(result.ageDays).toBe(0);
+    });
+
     it('should calculate lead time correctly', () => {
       const createdDate = new Date('2024-01-01');
       const completedDate = new Date('2024-01-15');
@@ -188,7 +283,7 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
 
       // Lead time should be ~14 days
-      const leadTimeDays = msToDays(result.leadTime);
+      const leadTimeDays = msToDays(result.leadTimeDays);
       expect(leadTimeDays).toBeCloseTo(14, 0);
     });
 
@@ -222,7 +317,7 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
 
       // Cycle time should be ~7 days (from in-progress to done)
-      const cycleTimeDays = msToDays(result.cycleTime);
+      const cycleTimeDays = msToDays(result.cycleTimeDays);
       expect(cycleTimeDays).toBeCloseTo(7, 0);
     });
 
@@ -234,20 +329,112 @@ describe('Flow Processor', () => {
       ]);
 
       const result = processJiraIssue(issue, changelog);
-      expect(result.cycleTime).toBe(0);
+      expect(result.cycleTimeDays).toBe(0);
     });
   });
 
   describe('msToDays helper', () => {
-    it('should convert milliseconds to days', () => {
+    it('should convert milliseconds to days adding one', () => {
       const oneDay = 24 * 60 * 60 * 1000;
       expect(msToDays(oneDay)).toBe(1);
       expect(msToDays(oneDay * 7)).toBe(7);
     });
 
-    it('should round to 1 decimal place', () => {
+    it('should round to 0 decimal place', () => {
       const oneDayAndHalf = 36 * 60 * 60 * 1000;
-      expect(msToDays(oneDayAndHalf)).toBe(1.5);
+      expect(msToDays(oneDayAndHalf)).toBe(2);
+    });
+  });
+
+  describe('calculateSummary', () => {
+    it('should return total number of issues', () => {
+      const issues = createProcessedIssues();
+
+      const result = calculateSummary(issues);
+
+      expect(result.total).toBe(5);
+    });
+
+    it('should calculate average age correctly', () => {
+      const issueInProgress = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        ageDays: 6
+      });
+
+      const issueInTesting = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        ageDays: 8
+      });
+
+      const result = calculateSummary([issueInProgress, issueInTesting]);
+
+      expect(result.averageAge).toBe(7);
+    });
+
+    it('should exclude done issues from average age calculation', () => {
+      const issueInProgress = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        ageDays: 6
+      });
+
+      const issueInTesting = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        ageDays: 8
+      });
+
+      const issueDone = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        currentStage: 'done',
+      })
+
+      const result = calculateSummary([issueInProgress, issueInTesting, issueDone]);
+
+      expect(result.averageAge).toBe(7);
+    });
+
+    it('should include not-in-progress issues in average age calculation', () => {
+      const issueOpen = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        currentStage: 'backlog',
+        ageDays: 4
+      });
+
+      const issueInProgress = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        currentStage: 'in-progress',
+        ageDays: 6
+      });
+
+      const issueInTesting = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        currentStage: 'testing',
+        ageDays: 8
+      });
+
+      const issueDone = createMockProcessedIssue({
+        ...createMockProcessedIssue(),
+        currentStage: 'done',
+      })
+
+      const result = calculateSummary([issueOpen, issueInProgress, issueInTesting, issueDone]);
+
+      expect(result.averageAge).toBe(6);
+    });
+
+    it('should calculate WIP correctly', () => {
+      const processedIssues = createProcessedIssues();
+
+      const result = calculateSummary(processedIssues);
+
+      expect(result.workInProgress).toBe(2);
+    });
+
+    it('should calculate average Cycletime correctly', () => {
+      const processedIssues = createProcessedIssues();
+
+      const result = calculateSummary(processedIssues);
+
+      expect(result.averageCycletime).toBe(7);
     });
   });
 });
