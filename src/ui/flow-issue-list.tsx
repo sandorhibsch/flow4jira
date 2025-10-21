@@ -1,7 +1,6 @@
 // src/ui/flow-issue-list.tsx
 
 import { ProcessedFlowIssue } from '@/lib/flow/processor';
-import { msToDays } from '@/lib/flow/processor';
 import { FlowIssueSummary } from '@/lib/jira/types';
 
 type FlowIssueListProps = {
@@ -21,12 +20,6 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
       case 'done': return 'bg-green-400';
       default: return 'bg-gray-400';
     }
-  };
-
-  const formatDuration = (ms: number) => {
-    if (ms === 0) return '-';
-    const days = msToDays(ms);
-    return days;
   };
 
   return (
@@ -114,10 +107,10 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
                     <span className="text-sm text-gray-900">{issue.ageDays}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{formatDuration(issue.leadTimeDays)}</span>
+                    <span className="text-sm text-gray-900">{issue.leadTimeDays}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{formatDuration(issue.cycleTimeDays)}</span>
+                    <span className="text-sm text-gray-900">{issue.cycleTimeDays}</span>
                   </td>
                 </tr>
               ))}
