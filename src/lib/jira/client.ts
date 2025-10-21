@@ -51,7 +51,6 @@ export class JiraClient {
 
     } while (allIssues.length < total);
 
-    console.log(allIssues);
     return {
       expand: '',
       startAt: 0,
