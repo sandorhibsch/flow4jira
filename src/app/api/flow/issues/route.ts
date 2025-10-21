@@ -2,7 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
-import { processJiraIssues } from '@/lib/flow/processor';
+import { processJiraIssues, calculateSummary } from '@/lib/flow/processor';
 import { FLOW_METRICS_FILTER } from '@/lib/jira/filters';
 
 export async function GET(request: NextRequest) {
@@ -65,33 +65,13 @@ export async function GET(request: NextRequest) {
       return processJiraIssues([{ issue, changelog }])[0];
     });
 
-    // Calculate summary statistics
-    const completedIssues = processedIssues.filter(i => i.currentStage === 'done');
-    const inProgressIssues = processedIssues.filter(i =>
-      i.currentStage === 'in-progress' ||
-      i.currentStage === 'review' ||
-      i.currentStage === 'testing'
-    );
-
-    const avgLeadTime = completedIssues.length > 0
-      ? completedIssues.reduce((sum, i) => sum + i.leadTime, 0) / completedIssues.length
-      : 0;
-
-    const avgCycleTime = completedIssues.length > 0
-      ? completedIssues.reduce((sum, i) => sum + i.cycleTime, 0) / completedIssues.length
-      : 0;
+    const summary = calculateSummary(processedIssues);
 
     return NextResponse.json({
       success: true,
       data: {
         issues: processedIssues,
-        summary: {
-          total: processedIssues.length,
-          completed: completedIssues.length,
-          inProgress: inProgressIssues.length,
-          avgLeadTimeDays: Math.round(avgLeadTime / (1000 * 60 * 60 * 24) * 10) / 10,
-          avgCycleTimeDays: Math.round(avgCycleTime / (1000 * 60 * 60 * 24) * 10) / 10,
-        }
+        summary: summary
       },
       metadata: {
         query: jql,

@@ -2,16 +2,11 @@
 
 import { ProcessedFlowIssue } from '@/lib/flow/processor';
 import { msToDays } from '@/lib/flow/processor';
+import { FlowIssueSummary } from '@/lib/jira/types';
 
 type FlowIssueListProps = {
   issues: ProcessedFlowIssue[];
-  summary?: {
-    total: number;
-    completed: number;
-    inProgress: number;
-    avgLeadTimeDays: number;
-    avgCycleTimeDays: number;
-  };
+  summary?: FlowIssueSummary;
 };
 
 const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
@@ -43,24 +38,21 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
             <div className="text-sm text-gray-500">Total Issues</div>
             <div className="text-2xl font-bold">{summary.total}</div>
           </div>
+
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">Completed</div>
-            <div className="text-2xl font-bold text-green-600">{summary.completed}</div>
+            <div className="text-sm text-gray-500">WIP</div>
+            <div className="text-2xl font-bold text-blue-600">{summary.workInProgress}</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">In Progress</div>
-            <div className="text-2xl font-bold text-blue-600">{summary.inProgress}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">Avg Lead Time</div>
+            <div className="text-sm text-gray-500">Average Age</div>
             <div className="text-2xl font-bold text-purple-600">
-              {summary.avgLeadTimeDays}d
+              {summary.averageAge}d
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Avg Cycle Time</div>
             <div className="text-2xl font-bold text-orange-600">
-              {summary.avgCycleTimeDays}d
+              {summary.averageCycletime}d
             </div>
           </div>
         </div>
@@ -119,13 +111,13 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
                     <span className="text-sm text-gray-500">{issue.currentStatus}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{issue.daysOld}</span>
+                    <span className="text-sm text-gray-900">{issue.ageDays}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{formatDuration(issue.leadTime)}</span>
+                    <span className="text-sm text-gray-900">{formatDuration(issue.leadTimeDays)}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{formatDuration(issue.cycleTime)}</span>
+                    <span className="text-sm text-gray-900">{formatDuration(issue.cycleTimeDays)}</span>
                   </td>
                 </tr>
               ))}
