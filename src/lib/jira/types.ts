@@ -89,3 +89,10 @@ export interface StatusTransition {
   transitionDate: Date;
   author: string;
 }
+
+export interface FlowIssueSummary {
+  total: number;
+  averageAge: number;
+  workInProgress: number;
+  averageCycletime: number;
+}
