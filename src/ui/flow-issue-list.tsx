@@ -14,7 +14,7 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
       case 'backlog': return 'bg-gray-400';
       case 'analyze': return 'bg-blue-400';
       case 'ready': return 'bg-blue-800';
-      case 'in-progress': return 'bg-yellow-400';
+      case 'development': return 'bg-yellow-400';
       case 'deployment': return 'bg-orange-400';
       case 'testing': return 'bg-purple-400';
       case 'done': return 'bg-green-400';

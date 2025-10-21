@@ -22,7 +22,7 @@ export interface ProcessedFlowIssue {
 
   // Calculated metrics
   leadTimeDays: number; // Total time from creation to done (days)
-  cycleTimeDays: number; // Time from first "in-progress" to done (days)
+  cycleTimeDays: number; // Time from first "development" to done (days)
   ageDays: number; // How many days since creation
 }
 
@@ -173,12 +173,12 @@ function calculateLeadTime(
 }
 
 /**
- * Calculate cycle time: time from first "in-progress" to completion
+ * Calculate cycle time: time from first "development" to completion
  * Returns milliseconds, or 0 if not yet in progress
  */
 function calculateCycleTime(statusHistory: FlowIssueTransition[]): number {
-  // Find first in-progress entry
-  const firstInProgress = statusHistory.find(t => t.stage === 'in-progress');
+  // Find first development entry
+  const firstInProgress = statusHistory.find(t => t.stage === 'development');
   if (!firstInProgress || !firstInProgress.enteredAt) {
     return 0;
   }
@@ -186,7 +186,7 @@ function calculateCycleTime(statusHistory: FlowIssueTransition[]): number {
   // Find when it reached done
   const doneTransition = statusHistory.find(t => t.stage === 'done');
   if (doneTransition && doneTransition.enteredAt) {
-    // Cycle time is from entering in-progress to entering done
+    // Cycle time is from entering development to entering done
     const cycleTime = doneTransition.enteredAt.getTime() - firstInProgress.enteredAt.getTime();
     return msToDays(cycleTime);
   }
@@ -224,7 +224,7 @@ export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueSummary
   const doneIssues = issues.filter(i => i.currentStage === 'done');
   const inProgressIssues = issues.filter(i =>
     i.currentStage === 'analyze' ||
-    i.currentStage === 'in-progress' ||
+    i.currentStage === 'development' ||
     i.currentStage === 'deployment' ||
     i.currentStage === 'testing'
   );

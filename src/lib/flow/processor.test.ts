@@ -102,7 +102,7 @@ function createProcessedIssues(): ProcessedFlowIssue[] {
 
   const issueInProgress = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'in-progress',
+    currentStage: 'development',
     ageDays: 6
   });
 
@@ -202,7 +202,7 @@ describe('Flow Processor', () => {
       expect(result.statusHistory.length).toBeGreaterThan(0);
 
       // Find transitions
-      const inProgressTransition = result.statusHistory.find(t => t.stage === 'in-progress');
+      const inProgressTransition = result.statusHistory.find(t => t.stage === 'development');
       const deploymentTransition = result.statusHistory.find(t => t.stage === 'deployment');
       const testingTransition = result.statusHistory.find(t => t.stage === 'testing');
       const doneTransition = result.statusHistory.find(t => t.stage === 'done');
@@ -225,7 +225,7 @@ describe('Flow Processor', () => {
             name: 'Work In Progress',
             statusCategory: {
               id: 2,
-              key: 'in-progress',
+              key: 'development',
               colorName: 'blue',
               name: 'In Progress'
             }
@@ -287,7 +287,7 @@ describe('Flow Processor', () => {
       expect(leadTimeDays).toBeCloseTo(14, 0);
     });
 
-    it('should calculate cycle time (in-progress to done)', () => {
+    it('should calculate cycle time (development to done)', () => {
       const createdDate = new Date('2024-01-01');
       const inProgressDate = new Date('2024-01-03');
       const completedDate = new Date('2024-01-10');
@@ -316,12 +316,12 @@ describe('Flow Processor', () => {
 
       const result = processJiraIssue(issue, changelog);
 
-      // Cycle time should be ~7 days (from in-progress to done)
+      // Cycle time should be ~7 days (from development to done)
       const cycleTimeDays = msToDays(result.cycleTimeDays);
       expect(cycleTimeDays).toBeCloseTo(7, 0);
     });
 
-    it('should return 0 for cycle time if issue never went in-progress', () => {
+    it('should return 0 for cycle time if issue never went development', () => {
       const issue = createMockIssue();
 
       const changelog = createMockChangelog([
@@ -392,7 +392,7 @@ describe('Flow Processor', () => {
       expect(result.averageAge).toBe(7);
     });
 
-    it('should include not-in-progress issues in average age calculation', () => {
+    it('should include not-development issues in average age calculation', () => {
       const issueOpen = createMockProcessedIssue({
         ...createMockProcessedIssue(),
         currentStage: 'backlog',
@@ -401,7 +401,7 @@ describe('Flow Processor', () => {
 
       const issueInProgress = createMockProcessedIssue({
         ...createMockProcessedIssue(),
-        currentStage: 'in-progress',
+        currentStage: 'development',
         ageDays: 6
       });
 
