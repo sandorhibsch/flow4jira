@@ -4,7 +4,7 @@ export interface JiraConfig {
 }
 
 export interface JiraIssue {
-  expand: string;
+  expand?: string;
   id: string;
   self: string;
   key: string;
@@ -13,22 +13,22 @@ export interface JiraIssue {
     created: string;
     resolutiondate: string | null;
     issuetype: {
-      self: string;
+      self?: string;
       id: string;
-      description: string;
+      description?: string;
       iconUrl: string;
       name: string;
-      subtask: boolean;
-      avatarId: number;
+      subtask?: boolean;
+      avatarId?: number;
     };
     status: {
-      self: string,
-      description: string;
-      iconUrl: string;
+      self?: string,
+      description?: string;
+      iconUrl?: string;
       name: string;
       id: string;
       statusCategory: {
-        self: string;
+        self?: string;
         id: number;
         key: string;
         colorName: string;
