@@ -4,28 +4,38 @@ export interface JiraConfig {
 }
 
 export interface JiraIssue {
-  key: string;
+  expand: string;
   id: string;
   self: string;
+  key: string;
   fields: {
     summary: string;
     created: string;
+    resolutiondate: string | null;
     issuetype: {
+      self: string;
       id: string;
-      name: string;
+      description: string;
       iconUrl: string;
+      name: string;
+      subtask: boolean;
+      avatarId: number;
     };
     status: {
-      id: string;
+      self: string,
+      description: string;
+      iconUrl: string;
       name: string;
+      id: string;
       statusCategory: {
+        self: string;
         id: number;
         key: string;
         colorName: string;
         name: string;
       };
     };
-    resolutiondate: string;
+
     changelog?: JiraChangelogResponse;
     // Add more fields as needed - Jira returns a LOT
   };

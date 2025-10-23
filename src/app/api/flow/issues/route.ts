@@ -2,8 +2,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
-import { processJiraIssues, calculateSummary } from '@/lib/flow/processor';
+import { processJiraIssue, calculateSummary } from '@/lib/flow/processor';
 import { FLOW_METRICS_FILTER } from '@/lib/jira/filters';
+import { SampleData } from '@/data/sample-data';
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     const fields = 'summary,issuetype,status,created,resolutiondate';
     const expand = 'changelog';
 
-    const jiraResponse = await jiraClient.searchIssues(jql, 100, fields, expand);
+    const jiraResponse = SampleData; //await jiraClient.searchIssues(jql, 100, fields, expand);
 
     console.log(`Fetched ${jiraResponse.issues.length} issues, processing...`);
 
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
       const issueWithChangelog = issue as any;
       const changelog = issueWithChangelog.changelog;
 
-      return processJiraIssues([{ issue, changelog }])[0];
+      return processJiraIssue(issue, changelog);
     });
 
     const summary = calculateSummary(processedIssues);
