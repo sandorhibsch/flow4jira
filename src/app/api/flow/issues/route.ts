@@ -32,16 +32,16 @@ export async function GET(request: NextRequest) {
     });
 
     // Test connection
-    const connectionOk = await jiraClient.testConnection();
-    if (!connectionOk) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to connect to Jira. Check your credentials and base URL.'
-        },
-        { status: 401 }
-      );
-    }
+    // const connectionOk = await jiraClient.testConnection();
+    // if (!connectionOk) {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: 'Failed to connect to Jira. Check your credentials and base URL.'
+    //     },
+    //     { status: 401 }
+    //   );
+    // }
 
     console.log(`Fetching flow issues with JQL: ${jql}`);
 
