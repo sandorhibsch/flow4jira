@@ -1,4 +1,4 @@
-import { FlowStage } from "./filters";
+import { FlowStage } from "./workflow-config";
 
 export interface JiraConfig {
   baseUrl: string;

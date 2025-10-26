@@ -1,7 +1,7 @@
 // src/lib/flow/processor.ts
 
 import { JiraIssue, JiraChangelogResponse, FlowIssueSummary, StatusTransition } from '@/lib/jira/types';
-import { FlowStage, getFlowStage } from '@/lib/jira/filters';
+import { FlowStage, getFlowStage } from '@/lib/jira/workflow-config';
 
 export interface FlowIssueTransition {
   stage: FlowStage;
