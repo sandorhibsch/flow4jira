@@ -3,14 +3,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { processJiraIssue, calculateSummary } from '@/lib/flow/processor';
-import { FLOW_METRICS_FILTER } from '@/lib/jira/filters';
 import { SampleData } from '@/data/sample-data';
 
 export async function GET(request: NextRequest) {
   try {
     // Extract query parameters
     const searchParams = request.nextUrl.searchParams;
-    const jql = searchParams.get('jql') || FLOW_METRICS_FILTER.baseJql;
+    const jql = searchParams.get('jql') || 'updated>=-1d';
 
     // Validate environment variables
     const jiraBaseUrl = process.env.JIRA_BASE_URL;
