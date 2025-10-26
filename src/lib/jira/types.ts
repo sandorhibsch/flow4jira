@@ -43,12 +43,6 @@ export interface JiraIssue {
   };
 }
 
-export interface JiraSearchParams {
-  startAt: number;
-  maxResults: number;
-  total: number;
-  issues: JiraIssue[];
-}
 export interface JiraSearchResponse {
   expand: string;
   startAt: number;
@@ -84,15 +78,6 @@ export interface JiraChangelogResponse {
   total: number;
   isLast: boolean;
   histories: JiraChangelogEntry[];
-}
-
-// Flow-specific types derived from Jira data
-export interface FlowIssue {
-  key: string;
-  summary: string;
-  issueType: string;
-  created: Date;
-  statusTransitions: StatusTransition[];
 }
 
 export interface StatusTransition {
