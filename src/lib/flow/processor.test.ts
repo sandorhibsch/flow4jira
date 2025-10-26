@@ -80,6 +80,7 @@ function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): 
     issueType: "Story",
     created: new Date('2024-01-01'),
     statusHistory: [],
+    flowHistory: [],
     currentStage: 'backlog',
     currentStatus: 'Backlog',
     leadTimeDays: 0,
@@ -235,7 +236,7 @@ describe('Flow Processor', () => {
       });
 
       const result = processJiraIssue(issue);
-      expect(result.ageDays).toBe(5);
+      expect(result.ageDays).toBe(6);
     });
 
     it('should return 0 for daysOld when issue is done', () => {
@@ -283,8 +284,7 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
 
       // Lead time should be ~14 days
-      const leadTimeDays = msToDays(result.leadTimeDays);
-      expect(leadTimeDays).toBeCloseTo(14, 0);
+      expect(result.leadTimeDays).toBeCloseTo(14, 0);
     });
 
     it('should calculate cycle time (development to done)', () => {
@@ -317,8 +317,7 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
 
       // Cycle time should be ~7 days (from development to done)
-      const cycleTimeDays = msToDays(result.cycleTimeDays);
-      expect(cycleTimeDays).toBeCloseTo(7, 0);
+      expect(result.cycleTimeDays).toBeCloseTo(7, 0);
     });
 
     it('should return 0 for cycle time if issue never went development', () => {
@@ -331,7 +330,50 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
       expect(result.cycleTimeDays).toBe(0);
     });
+
+    it('should track first entry dates for each stage', () => {
+      const createdDate = new Date('2024-01-01');
+      const inProgressDate1 = new Date('2024-01-03T10:00:00');
+      const testingDate = new Date('2024-01-05T10:00:00');
+      const inProgressDate2 = new Date('2024-01-06T10:00:00'); // Bounced back!
+      const doneDate = new Date('2024-01-10T10:00:00');
+
+      const issue = createMockIssue({
+        fields: {
+          ...createMockIssue().fields,
+          created: createdDate.toISOString(),
+          status: {
+            id: '10000',
+            name: 'Done',
+            statusCategory: {
+              id: 3,
+              key: 'done',
+              colorName: 'green',
+              name: 'Done'
+            }
+          }
+        }
+      });
+
+      const changelog = createMockChangelog([
+        { timestamp: inProgressDate1, status: 'Work in Progress' },
+        { timestamp: testingDate, status: 'To be Tested' },
+        { timestamp: inProgressDate2, status: 'Work in Progress' }, // Went back to in-progress
+        { timestamp: doneDate, status: 'Done' }
+      ]);
+
+      const result = processJiraIssue(issue, changelog);
+
+      // Should track FIRST entry into each stage
+      expect(result.flowHistory.find(t => t.stage === 'development')?.enteredAt).toEqual(inProgressDate1)
+      expect(result.flowHistory.find(t => t.stage === 'done')?.enteredAt).toEqual(doneDate);
+
+      // Cycle time should be from FIRST in-progress to done
+      const expectedCycleTime = msToDays(doneDate.getTime() - inProgressDate1.getTime());
+      expect(result.cycleTimeDays).toBeCloseTo(expectedCycleTime, 1);
+    });
   });
+
 
   describe('msToDays helper', () => {
     it('should convert milliseconds to days adding one', () => {

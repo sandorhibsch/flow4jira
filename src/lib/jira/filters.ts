@@ -13,8 +13,9 @@ export const buildStatusChangedFilter = (projectKey: string, days: number = 30):
   return `project = "${projectKey}" AND status changed DURING (-${days}d, now()) ORDER BY updated DESC`;
 };
 
-// Status mapping for flow stages - customize this for your workflow
-export const FLOW_STATUS_MAPPING = {
+export type FlowStage = 'backlog' | 'analyze' | 'ready' | 'development' | 'deployment' | 'testing' | 'release' | 'done';
+
+export const STATUS_MAPPING: Record<string, FlowStage> = {
   // Map Jira statuses to flow stages
   'New': 'backlog',
   'Inbox': 'backlog',
@@ -36,13 +37,12 @@ export const FLOW_STATUS_MAPPING = {
   'Development Closed': 'done',
   'Abandonded': 'done',
   'Done': 'done'
-} as const;
-
-export type FlowStage = typeof FLOW_STATUS_MAPPING[keyof typeof FLOW_STATUS_MAPPING];
-
-export const getFlowStage = (jiraStatus: string): FlowStage => {
-  return FLOW_STATUS_MAPPING[jiraStatus as keyof typeof FLOW_STATUS_MAPPING] || 'backlog';
 };
+
+export function getFlowStage(jiraStatusName: string | undefined): FlowStage {
+  if (!jiraStatusName) return 'backlog';
+  return STATUS_MAPPING[jiraStatusName] ?? 'backlog';
+}
 
 // Issue type filtering - customize for your needs
 export const TRACKED_ISSUE_TYPES = [

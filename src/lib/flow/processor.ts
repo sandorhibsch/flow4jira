@@ -1,14 +1,14 @@
 // src/lib/flow/processor.ts
 
-import { JiraIssue, JiraChangelogResponse, FlowIssueSummary } from '@/lib/jira/types';
-import { FLOW_STATUS_MAPPING, FlowStage, getFlowStage } from '@/lib/jira/filters';
+import { JiraIssue, JiraChangelogResponse, FlowIssueSummary, StatusTransition } from '@/lib/jira/types';
+import { FlowStage, getFlowStage } from '@/lib/jira/filters';
 
 export interface FlowIssueTransition {
   stage: FlowStage;
   status: string; // The actual Jira status name
-  enteredAt: Date | null; // When the issue entered this stage
-  exitedAt: Date | null; // When it left this stage (null if still in stage)
-  durationMs: number; // How long it spent in this stage (0 if still in stage)
+  enteredAt: Date; // When the issue entered this stage
+  exitedAt?: Date | null; // When it left this stage (null if still in stage)
+  durationMs?: number; // How long it spent in this stage (0 if still in stage)
 }
 
 export interface ProcessedFlowIssue {
@@ -17,6 +17,7 @@ export interface ProcessedFlowIssue {
   issueType: string;
   created: Date;
   statusHistory: FlowIssueTransition[];
+  flowHistory: FlowIssueTransition[];
   currentStage: FlowStage;
   currentStatus: string;
 
@@ -38,11 +39,12 @@ export function processJiraIssue(
   const currentStage = getFlowStage(currentStatus);
 
   // Build status history from changelog
-  const statusHistory = buildStatusHistory(issue, changelog);
+  const statusChanges = filterStatusChanges(issue, changelog);
+  const flowHistory = buildFlowHistory(issue, statusChanges);
 
   // Calculate metrics
-  const leadTime = calculateLeadTime(created, statusHistory);
-  const cycleTime = calculateCycleTime(statusHistory);
+  const leadTime = calculateLeadTime(created, statusChanges);
+  const cycleTime = calculateCycleTime(statusChanges);
   const daysOld = calculateAge(created, currentStage);
 
   return {
@@ -50,7 +52,8 @@ export function processJiraIssue(
     summary: issue.fields.summary,
     issueType: issue.fields.issuetype.name,
     created,
-    statusHistory,
+    statusHistory: statusChanges,
+    flowHistory,
     currentStage,
     currentStatus,
     leadTimeDays: leadTime,
@@ -149,6 +152,76 @@ function buildStatusHistory(
   });
 
   return transitions;
+}
+
+export function filterStatusChanges(issue: JiraIssue, changelog?: JiraChangelogResponse): FlowIssueTransition[] {
+  const created = new Date(issue.fields.created);
+  if (!changelog || !changelog.histories || changelog.histories.length === 0) {
+    const currentStage = getFlowStage(issue.fields.status.name);
+    return [{
+      stage: currentStage,
+      status: issue.fields.status.name,
+      enteredAt: created,
+      exitedAt: null,
+      durationMs: Date.now() - created.getTime()
+    }];
+  }
+
+  const histories = changelog.histories ?? [];
+
+  // Flatten only status changes
+  const statusChanges: FlowIssueTransition[] = histories.flatMap(history => {
+    const transitionDate = new Date(history.created);
+    return history.items
+      .filter(item => item.field === 'status')
+      .map(item => ({
+        stage: getFlowStage(item.toString ?? item.to ?? 'backlog'),
+        status: item.toString ?? item.to ?? 'backlog',
+        enteredAt: transitionDate,
+      }));
+  });
+
+  return statusChanges;
+}
+
+/**
+ * Extract the first time an issue entered each flow stage
+ * This handles cases where issues bounce back and forth between stages
+ */
+export function buildFlowHistory(issue: JiraIssue, statusChanges: FlowIssueTransition[]): FlowIssueTransition[] {
+  // sort status changes chronologically ascending - 
+  // this will ensure the chronologically first item gets into flow history
+  statusChanges.sort((a, b) => a.enteredAt.getTime() - b.enteredAt.getTime());
+
+  const history: FlowIssueTransition[] = [];
+  const seenStages = new Set<FlowStage>();
+
+  const initialStage: FlowStage = 'backlog';
+  seenStages.add(initialStage);
+
+  history.push({
+    stage: initialStage,
+    status: 'new',
+    enteredAt: new Date(issue.fields.created),
+  })
+
+  // Walk through events and record the first time each stage is entered
+  for (const event of statusChanges) {
+    const toStatus = event.status ?? null;
+    const toStage = event.stage ?? getFlowStage(toStatus ?? undefined);
+
+    // If stage not recorded yet, add it
+    if (!seenStages.has(toStage)) {
+      history.push({
+        stage: toStage,
+        status: toStatus,
+        enteredAt: event.enteredAt
+      });
+      seenStages.add(toStage);
+    }
+  }
+
+  return history;
 }
 
 /**

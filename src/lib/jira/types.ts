@@ -1,3 +1,5 @@
+import { FlowStage } from "./filters";
+
 export interface JiraConfig {
   baseUrl: string;
   bearerToken: string;
@@ -94,10 +96,11 @@ export interface FlowIssue {
 }
 
 export interface StatusTransition {
-  from: string | null;
-  to: string;
   transitionDate: Date;
-  author: string;
+  from: string;
+  to: string;
+  fromStage: FlowStage;
+  toStage: FlowStage;
 }
 
 export interface FlowIssueSummary {
