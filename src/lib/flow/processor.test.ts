@@ -1,8 +1,9 @@
 // src/lib/flow/processor.test.ts
 // Run with: npm test or npx jest
 
-import { processJiraIssue, msToDays, calculateSummary, ProcessedFlowIssue } from './processor';
-import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/types';
+import { ProcessedFlowIssue } from './flow-types';
+import { processJiraIssue, msToDays, calculateSummary } from './processor';
+import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
 
 /**
  * Test helper: Create a mock Jira issue

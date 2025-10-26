@@ -1,6 +1,6 @@
 // src/lib/jira/client.ts
 
-import { JiraConfig, JiraSearchResponse, JiraChangelogResponse } from './types';
+import { JiraConfig, JiraSearchResponse, JiraChangelogResponse } from './jira-types';
 
 export class JiraApiError extends Error {
   constructor(

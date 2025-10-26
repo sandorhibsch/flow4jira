@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { ProcessedFlowIssue } from '@/lib/flow/processor';
 import FlowIssueList from '@/ui/flow-issue-list';
-import { FlowIssueSummary } from '@/lib/jira/types';
+import { FlowIssueSummary } from '@/lib/jira/jira-types';
 
 type FlowResult = {
   success: boolean;

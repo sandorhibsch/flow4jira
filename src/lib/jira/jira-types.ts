@@ -79,18 +79,3 @@ export interface JiraChangelogResponse {
   isLast: boolean;
   histories: JiraChangelogEntry[];
 }
-
-export interface StatusTransition {
-  transitionDate: Date;
-  from: string;
-  to: string;
-  fromStage: FlowStage;
-  toStage: FlowStage;
-}
-
-export interface FlowIssueSummary {
-  total: number;
-  averageAge: number;
-  workInProgress: number;
-  averageCycletime: number;
-}

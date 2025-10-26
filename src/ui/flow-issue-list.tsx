@@ -1,7 +1,7 @@
 // src/ui/flow-issue-list.tsx
 
 import { ProcessedFlowIssue } from '@/lib/flow/processor';
-import { FlowIssueSummary } from '@/lib/jira/types';
+import { FlowIssueSummary } from '@/lib/jira/jira-types';
 
 type FlowIssueListProps = {
   issues: ProcessedFlowIssue[];

@@ -1,4 +1,4 @@
-import { JiraIssue } from "@/lib/jira/types";
+import { JiraIssue } from "@/lib/jira/jira-types";
 
 type IssueListProps = {
   issues: JiraIssue[]

@@ -1,31 +1,10 @@
 // src/lib/flow/processor.ts
 
-import { JiraIssue, JiraChangelogResponse, FlowIssueSummary, StatusTransition } from '@/lib/jira/types';
+import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
+import { FlowIssueSummary, StatusTransition, ProcessedFlowIssue, FlowIssueTransition } from '@/lib/flow/flow-types';
 import { FlowStage, getFlowStage } from '@/lib/jira/workflow-config';
 
-export interface FlowIssueTransition {
-  stage: FlowStage;
-  status: string; // The actual Jira status name
-  enteredAt: Date; // When the issue entered this stage
-  exitedAt?: Date | null; // When it left this stage (null if still in stage)
-  durationMs?: number; // How long it spent in this stage (0 if still in stage)
-}
 
-export interface ProcessedFlowIssue {
-  key: string;
-  summary: string;
-  issueType: string;
-  created: Date;
-  statusHistory: FlowIssueTransition[];
-  flowHistory: FlowIssueTransition[];
-  currentStage: FlowStage;
-  currentStatus: string;
-
-  // Calculated metrics
-  leadTimeDays: number; // Total time from creation to done (days)
-  cycleTimeDays: number; // Time from first "development" to done (days)
-  ageDays: number; // How many days since creation
-}
 
 /**
  * Transform raw Jira issue + changelog into ProcessedFlowIssue
