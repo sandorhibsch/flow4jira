@@ -255,15 +255,6 @@ function calculateAge(created: Date, currentStage: FlowStage) {
 }
 
 /**
- * Batch process multiple issues
- */
-export function processJiraIssues(
-  issues: Array<{ issue: JiraIssue; changelog?: JiraChangelogResponse }>
-): ProcessedFlowIssue[] {
-  return issues.map(({ issue, changelog }) => processJiraIssue(issue, changelog));
-}
-
-/**
  * Helper to convert milliseconds to days for readability
  */
 export function msToDays(ms: number): number {
