@@ -132,13 +132,13 @@ describe('Flow Processor', () => {
       const result = processJiraIssue(issue, changelog);
 
       // Should have transitions through multiple stages
-      expect(result.statusHistory.length).toBeGreaterThan(0);
+      expect(result.flowHistory.length).toBeGreaterThan(0);
 
       // Find transitions
-      const inProgressTransition = result.statusHistory.find(t => t.stage === 'development');
-      const deploymentTransition = result.statusHistory.find(t => t.stage === 'deployment');
-      const testingTransition = result.statusHistory.find(t => t.stage === 'testing');
-      const doneTransition = result.statusHistory.find(t => t.stage === 'done');
+      const inProgressTransition = result.flowHistory.find(t => t.stage === 'development');
+      const deploymentTransition = result.flowHistory.find(t => t.stage === 'deployment');
+      const testingTransition = result.flowHistory.find(t => t.stage === 'testing');
+      const doneTransition = result.flowHistory.find(t => t.stage === 'done');
 
       expect(inProgressTransition).toBeDefined();
       expect(deploymentTransition).toBeDefined();

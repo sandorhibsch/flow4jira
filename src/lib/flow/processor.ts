@@ -1,10 +1,8 @@
 // src/lib/flow/processor.ts
 
 import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
-import { FlowIssueSummary, StatusTransition, ProcessedFlowIssue, FlowIssueTransition } from '@/lib/flow/flow-types';
+import { ProcessedFlowIssue, FlowIssueTransition } from '@/lib/flow/flow-types';
 import { FlowStage, getFlowStage } from '@/lib/jira/workflow-config';
-
-
 
 /**
  * Transform raw Jira issue + changelog into ProcessedFlowIssue
@@ -31,7 +29,6 @@ export function processJiraIssue(
     summary: issue.fields.summary,
     issueType: issue.fields.issuetype.name,
     created,
-    statusHistory: statusChanges,
     flowHistory,
     currentStage,
     currentStatus,
