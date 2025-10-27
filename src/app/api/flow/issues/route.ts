@@ -2,7 +2,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
-import { processJiraIssue, calculateSummary } from '@/lib/flow/processor';
+import { processJiraIssue } from '@/lib/flow/processor';
+import { calculateSummary } from '@/lib/flow/metrics-calculator';
 import { SampleData } from '@/data/sample-data';
 
 export async function GET(request: NextRequest) {
