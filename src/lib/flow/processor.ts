@@ -46,8 +46,6 @@ export function filterStatusChanges(issue: JiraIssue, changelog?: JiraChangelogR
       stage: currentStage,
       status: issue.fields.status.name,
       enteredAt: created,
-      exitedAt: null,
-      durationMs: Date.now() - created.getTime()
     }];
   }
 

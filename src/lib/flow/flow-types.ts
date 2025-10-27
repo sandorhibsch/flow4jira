@@ -19,8 +19,6 @@ export interface FlowIssueTransition {
   stage: FlowStage;
   status: string; // The actual Jira status name
   enteredAt: Date; // When the issue entered this stage
-  exitedAt?: Date | null; // When it left this stage (null if still in stage)
-  durationMs?: number; // How long it spent in this stage (0 if still in stage)
 }
 
 export interface FlowIssueSummary {
