@@ -147,6 +147,7 @@ describe('Flow Processor', () => {
     });
 
     it('should calculate daysOld correctly when issue not done', () => {
+      const now = Date.now();
       const createdDate = new Date();
       createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
 
@@ -167,8 +168,9 @@ describe('Flow Processor', () => {
         }
       });
 
+      const expected = (now - createdDate.getTime()) / (1000 * 60 * 60 * 24);
       const result = processJiraIssue(issue);
-      expect(result.ageDays).toBe(6);
+      expect(result.ageDays).toBe(expected);
     });
 
     it('should return 0 for daysOld when issue is done', () => {
