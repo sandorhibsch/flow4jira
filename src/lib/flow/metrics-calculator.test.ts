@@ -10,7 +10,6 @@ function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): 
     summary: "Take out the garbage",
     issueType: "Story",
     created: new Date('2024-01-01'),
-    statusHistory: [],
     flowHistory: [],
     currentStage: 'backlog',
     currentStatus: 'Backlog',
