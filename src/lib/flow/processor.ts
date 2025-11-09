@@ -1,8 +1,8 @@
 // src/lib/flow/processor.ts
 
 import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
-import { ProcessedFlowIssue, FlowIssueTransition } from '@/lib/flow/flow-types';
-import { findStageByStatus, FlowStage, getFlowStage, WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
+import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
+import { findStageByStatus, WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
 import { filterStatusChanges } from './history-builder';
 import { buildSequentialFlow, SequentialStageEntry } from './build-sequential-flow';
 
@@ -22,6 +22,10 @@ export function processJiraIssue(
   const statusChanges = filterStatusChanges(issue, changelog);
   const flowHistory = buildSequentialFlow(workflow, created, statusChanges);
 
+  // set done date from flow history
+  const doneTransitionIndex = flowHistory.findIndex(e => e.stage.isCycleEnd);
+  const doneDate = doneTransitionIndex == -1 ? undefined : flowHistory[doneTransitionIndex].enteredAt;
+
   // Calculate metrics
   const leadTime = calculateLeadTime(created, flowHistory);
   const cycleTime = calculateCycleTime(flowHistory);
@@ -35,6 +39,7 @@ export function processJiraIssue(
     flowHistory: flowHistory,
     currentStage: currentStage,
     currentStatus: currentStatus,
+    done: doneDate,
     leadTimeDays: leadTime,
     cycleTimeDays: cycleTime,
     ageDays: daysOld

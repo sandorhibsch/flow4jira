@@ -1,4 +1,4 @@
-import { FlowStage, WorkflowStage } from "../jira/workflow-config";
+import { WorkflowStage } from "../jira/workflow-config";
 import { SequentialStageEntry } from "./build-sequential-flow";
 
 export interface ProcessedFlowIssue {
@@ -9,17 +9,12 @@ export interface ProcessedFlowIssue {
   flowHistory: SequentialStageEntry[];
   currentStage: WorkflowStage;
   currentStatus: string;
+  done?: Date;
 
   // Calculated metrics
   leadTimeDays: number; // Total time from creation to done (days)
   cycleTimeDays: number; // Time from first "development" to done (days)
   ageDays: number; // How many days since creation
-}
-
-export interface FlowIssueTransition {
-  stage: FlowStage;
-  status: string; // The actual Jira status name
-  enteredAt: Date; // When the issue entered this stage
 }
 
 export interface FlowIssueSummary {

@@ -234,6 +234,38 @@ describe('Flow Processor', () => {
       expect(result.cycleTimeDays).toBe(1);
     });
 
+    it('should set done date if issue is closed', () => {
+      const createdDate = new Date('2024-01-01');
+      const inProgressDate = new Date('2024-01-03');
+      const completedDate = new Date('2024-01-10');
+
+      const issue = createMockIssue({
+        fields: {
+          ...createMockIssue().fields,
+          created: createdDate.toISOString(),
+          status: {
+            id: '10000',
+            name: 'Done',
+            statusCategory: {
+              id: 3,
+              key: 'done',
+              colorName: 'green',
+              name: 'Done'
+            }
+          }
+        }
+      });
+
+      const changelog = createMockChangelog([
+        { timestamp: inProgressDate, status: 'In Progress' },
+        { timestamp: completedDate, status: 'Done' }
+      ]);
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+
+      expect(result.done).toStrictEqual(completedDate);
+    });
+
   });
 
 
