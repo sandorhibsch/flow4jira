@@ -98,4 +98,63 @@ describe('Sequential flow test', () => {
     expect(result[3].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'done'));
   });
 
+  it('should find actual cycle start when default', () => {
+    const createdDate = new Date('2025-01-01T00:00:00');
+    const statusChanges: StatusChange[] = [
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') },
+      { to: 'In Progress', enteredAt: new Date('2025-01-12T09:43:00') },
+      { to: 'Test', enteredAt: new Date('2025-01-14T09:43:00') },
+      { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
+    ];
+
+    const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
+
+    expect(result.length).toBe(5);
+    expect(result[2].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
+    expect(result[2].isActualCycleStart).toBe(true);
+  });
+
+  it('should find actual cycle start when went from to do to testing', () => {
+    const createdDate = new Date('2025-01-01T00:00:00');
+    const statusChanges: StatusChange[] = [
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') },
+      { to: 'Test', enteredAt: new Date('2025-01-14T09:43:00') },
+      { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
+    ];
+
+    const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
+
+    expect(result.length).toBe(4);
+    expect(result[1].isActualCycleStart).toBe(true);
+  });
+
+  it('should find actual cycle start when went from new to testing', () => {
+    const createdDate = new Date('2025-01-01T00:00:00');
+    const statusChanges: StatusChange[] = [
+      { to: 'Test', enteredAt: new Date('2025-01-14T09:43:00') },
+      { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
+    ];
+
+    const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
+
+    expect(result.length).toBe(3);
+    expect(result[0].isActualCycleStart).toBe(true);
+  });
+
+  it('should count addition to sprint as stage change to ready', () => {
+    const createdDate = new Date('2025-01-01T00:00:00');
+    const statusChanges: StatusChange[] = [
+      { to: 'Sprint 1', enteredAt: new Date('2025-01-10T10:00:00'), isAddedToSprint: true },
+      { to: 'Test', enteredAt: new Date('2025-01-12T09:43:00') },
+      { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') }
+    ];
+
+    const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
+
+    expect(result.length).toBe(4);
+    expect(result[1].stage.stageType).toBe('ready');
+    expect(result[1].isActualCycleStart).toBe(true);
+    expect(result[0].isActualCycleStart).toBe(undefined);
+  });
+
 });

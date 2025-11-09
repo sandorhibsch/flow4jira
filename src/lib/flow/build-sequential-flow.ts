@@ -6,6 +6,7 @@ export type SequentialStageEntry = {
   stage: WorkflowStage;
   enteredAt: Date;
   jiraStatus: string;
+  isActualCycleStart?: boolean;
 };
 
 export function buildSequentialFlow(
@@ -36,7 +37,8 @@ export function buildSequentialFlow(
       allTransitions.push({
         stage: toStage,
         jiraStatus: event.to,
-        enteredAt: event.enteredAt
+        enteredAt: event.enteredAt,
+        isActualCycleStart: toStage.isCycleStart
       });
       seenStages.add(toStage);
     }
@@ -46,7 +48,7 @@ export function buildSequentialFlow(
   const seenStageKeys = new Set<string>();
   const orderedStages = workflow.stages.map(s => s.key);
 
-  const sequential = allTransitions
+  const sequentialFlow = allTransitions
     .filter(transition => {
       if (seenStageKeys.has(transition.stage.key)) return false;
       seenStageKeys.add(transition.stage.key);
@@ -59,7 +61,38 @@ export function buildSequentialFlow(
       return aIdx - bIdx;
     });
 
-  return sequential;
+  //find stageentry where item entered the cycle
+  // --- NEW LOGIC: detect and mark the actual cycle start ---
+  const definedStartIdx = workflow.stages.findIndex(s => s.isCycleStart);
+  if (definedStartIdx >= 0) {
+    // Find the actual stage to start from
+    let actualStart: SequentialStageEntry | undefined = sequentialFlow.find(
+      e => e.stage.isCycleStart
+    );
+
+    // If missing, look backward in the workflow
+    if (!actualStart) {
+      for (let i = definedStartIdx - 1; i >= 0; i--) {
+        const prevKey = workflow.stages[i].key;
+        const candidate = sequentialFlow.find(e => e.stage.key === prevKey);
+        if (candidate) {
+          actualStart = candidate;
+          break;
+        }
+      }
+    }
+
+    // If still missing, fall back to the first recorded stage
+    if (!actualStart && sequentialFlow.length > 0) {
+      actualStart = sequentialFlow[0];
+    }
+
+    if (actualStart) {
+      actualStart.isActualCycleStart = true;
+    }
+  }
+
+  return sequentialFlow;
 }
 
 function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: WorkflowDefinition): WorkflowStage {
