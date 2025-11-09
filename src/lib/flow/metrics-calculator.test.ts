@@ -1,5 +1,20 @@
+import { WorkflowDefinition } from "../jira/workflow-config";
 import { ProcessedFlowIssue } from "./flow-types";
 import { calculateSummary } from "./metrics-calculator";
+
+const TEST_WORKFLOW: WorkflowDefinition = {
+  key: 'default',
+  name: 'Full Development Workflow',
+  stages: [
+    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Backlog'], stageType: 'new' },
+    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], stageType: 'ready' },
+    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
+    { key: 'deploy', name: 'Deployment', jiraStatuses: ['Deployed'], stageType: 'in-progress' },
+    { key: 'test', name: 'Testing', jiraStatuses: ['Test'], stageType: 'in-progress' },
+    { key: 'release', name: 'Release', jiraStatuses: ['To be Released'], stageType: 'in-progress' },
+    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
+  ],
+};
 
 /**
  * Test helper: Create mock processed issue
@@ -11,7 +26,7 @@ function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): 
     issueType: "Story",
     created: new Date('2024-01-01'),
     flowHistory: [],
-    currentStage: 'backlog',
+    currentStage: TEST_WORKFLOW.stages[0],
     currentStatus: 'Backlog',
     leadTimeDays: 0,
     cycleTimeDays: 0,
@@ -27,25 +42,25 @@ function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): 
 function createProcessedIssues(): ProcessedFlowIssue[] {
   const issueOpen = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'backlog',
+    currentStage: TEST_WORKFLOW.stages[0],
     ageDays: 4
   });
 
   const issueInProgress = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'development',
+    currentStage: TEST_WORKFLOW.stages[2],
     ageDays: 6
   });
 
   const issueInTesting = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'testing',
+    currentStage: TEST_WORKFLOW.stages[4],
     ageDays: 8
   });
 
   const issueDone1 = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'done',
+    currentStage: TEST_WORKFLOW.stages[6],
     cycleTimeDays: 6,
     leadTimeDays: 8,
     ageDays: 0
@@ -53,7 +68,7 @@ function createProcessedIssues(): ProcessedFlowIssue[] {
 
   const issueDone2 = createMockProcessedIssue({
     ...createMockProcessedIssue(),
-    currentStage: 'done',
+    currentStage: TEST_WORKFLOW.stages[6],
     cycleTimeDays: 8,
     leadTimeDays: 10,
     ageDays: 0
@@ -106,7 +121,7 @@ describe('calculateSummary', () => {
 
     const issueDone = createMockProcessedIssue({
       ...createMockProcessedIssue(),
-      currentStage: 'done',
+      currentStage: TEST_WORKFLOW.stages[6],
     })
 
     const result = calculateSummary([issueInProgress, issueInTesting, issueDone]);
@@ -117,25 +132,25 @@ describe('calculateSummary', () => {
   it('should include not-development issues in average age calculation', () => {
     const issueOpen = createMockProcessedIssue({
       ...createMockProcessedIssue(),
-      currentStage: 'backlog',
+      currentStage: TEST_WORKFLOW.stages[0],
       ageDays: 4
     });
 
     const issueInProgress = createMockProcessedIssue({
       ...createMockProcessedIssue(),
-      currentStage: 'development',
+      currentStage: TEST_WORKFLOW.stages[2],
       ageDays: 6
     });
 
     const issueInTesting = createMockProcessedIssue({
       ...createMockProcessedIssue(),
-      currentStage: 'testing',
+      currentStage: TEST_WORKFLOW.stages[4],
       ageDays: 8
     });
 
     const issueDone = createMockProcessedIssue({
       ...createMockProcessedIssue(),
-      currentStage: 'done',
+      currentStage: TEST_WORKFLOW.stages[6],
     })
 
     const result = calculateSummary([issueOpen, issueInProgress, issueInTesting, issueDone]);
