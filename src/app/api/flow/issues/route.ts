@@ -5,6 +5,7 @@ import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { processJiraIssue } from '@/lib/flow/processor';
 import { calculateSummary } from '@/lib/flow/metrics-calculator';
 import { SampleData } from '@/data/sample-data';
+import { DEFAULT_WORKFLOW } from '@/lib/jira/workflow-config';
 
 export async function GET(request: NextRequest) {
   try {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     const fields = 'summary,issuetype,status,created,resolutiondate';
     const expand = 'changelog';
 
-    const jiraResponse = SampleData; //await jiraClient.searchIssues(jql, 100, fields, expand);
+    const jiraResponse = SampleData //await jiraClient.searchIssues(jql, 100, fields, expand);
 
     console.log(`Fetched ${jiraResponse.issues.length} issues, processing...`);
 
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
       const issueWithChangelog = issue as any;
       const changelog = issueWithChangelog.changelog;
 
-      return processJiraIssue(issue, changelog);
+      return processJiraIssue(DEFAULT_WORKFLOW, issue, changelog);
     });
 
     const summary = calculateSummary(processedIssues);

@@ -1,12 +1,13 @@
-import { FlowStage } from "../jira/workflow-config";
+import { FlowStage, WorkflowStage } from "../jira/workflow-config";
+import { SequentialStageEntry } from "./build-sequential-flow";
 
 export interface ProcessedFlowIssue {
   key: string;
   summary: string;
   issueType: string;
   created: Date;
-  flowHistory: FlowIssueTransition[];
-  currentStage: FlowStage;
+  flowHistory: SequentialStageEntry[];
+  currentStage: WorkflowStage;
   currentStatus: string;
 
   // Calculated metrics

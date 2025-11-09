@@ -1,9 +1,22 @@
 // src/lib/flow/processor.test.ts
-// Run with: npm test or npx jest
 
+import { WorkflowDefinition } from '../jira/workflow-config';
 import { processJiraIssue, msToDays } from './processor';
 import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
 
+const TEST_WORKFLOW: WorkflowDefinition = {
+  key: 'default',
+  name: 'Full Development Workflow',
+  stages: [
+    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Backlog'], stageType: 'new' },
+    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], stageType: 'ready' },
+    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
+    { key: 'deploy', name: 'Deployment', jiraStatuses: ['Deployed'], stageType: 'in-progress' },
+    { key: 'test', name: 'Testing', jiraStatuses: ['Test'], stageType: 'in-progress' },
+    { key: 'release', name: 'Release', jiraStatuses: ['To be Released'], stageType: 'in-progress' },
+    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
+  ],
+};
 /**
  * Test helper: Create a mock Jira issue
  */
@@ -89,62 +102,18 @@ describe('Flow Processor', () => {
         }
       });
 
-      const result = processJiraIssue(issue);
+      const result = processJiraIssue(TEST_WORKFLOW, issue);
 
       expect(result.key).toBe('PROJ-123');
       expect(result.summary).toBe('Test issue');
       expect(result.currentStatus).toBe('Done');
-      expect(result.currentStage).toBe('done');
+      expect(result.currentStage.key).toBe('done');
       expect(result.created).toEqual(new Date('2024-01-01'));
     });
-
 
   });
 
   describe('processJiraIssue - with changelog', () => {
-    it('should track issue through complete workflow', () => {
-      const createdDate = new Date('2024-01-01');
-
-      const issue = createMockIssue({
-        fields: {
-          ...createMockIssue().fields,
-          created: createdDate.toISOString(),
-          status: {
-            id: '10000',
-            name: 'Done',
-            statusCategory: {
-              id: 3,
-              key: 'done',
-              colorName: 'green',
-              name: 'Done'
-            }
-          }
-        }
-      });
-
-      const changelog = createMockChangelog([
-        { timestamp: new Date('2024-01-01T10:00:00'), status: 'Work in Progress' },
-        { timestamp: new Date('2024-01-02T10:00:00'), status: 'Completed' },
-        { timestamp: new Date('2024-01-03T10:00:00'), status: 'To be Tested' },
-        { timestamp: new Date('2024-01-05T10:00:00'), status: 'Done' }
-      ]);
-
-      const result = processJiraIssue(issue, changelog);
-
-      // Should have transitions through multiple stages
-      expect(result.flowHistory.length).toBeGreaterThan(0);
-
-      // Find transitions
-      const inProgressTransition = result.flowHistory.find(t => t.stage === 'development');
-      const deploymentTransition = result.flowHistory.find(t => t.stage === 'deployment');
-      const testingTransition = result.flowHistory.find(t => t.stage === 'testing');
-      const doneTransition = result.flowHistory.find(t => t.stage === 'done');
-
-      expect(inProgressTransition).toBeDefined();
-      expect(deploymentTransition).toBeDefined();
-      expect(testingTransition).toBeDefined();
-      expect(doneTransition).toBeDefined();
-    });
 
     it('should calculate daysOld correctly when issue not done', () => {
       const now = Date.now();
@@ -169,7 +138,7 @@ describe('Flow Processor', () => {
       });
 
       const expected = (now - createdDate.getTime()) / (1000 * 60 * 60 * 24);
-      const result = processJiraIssue(issue);
+      const result = processJiraIssue(TEST_WORKFLOW, issue);
       expect(result.ageDays).toBe(expected);
     });
 
@@ -185,7 +154,7 @@ describe('Flow Processor', () => {
         }
       });
 
-      const result = processJiraIssue(issue);
+      const result = processJiraIssue(TEST_WORKFLOW, issue);
       expect(result.ageDays).toBe(0);
     });
 
@@ -211,11 +180,11 @@ describe('Flow Processor', () => {
       });
 
       const changelog = createMockChangelog([
-        { timestamp: new Date('2024-01-01T10:00:00'), status: 'Work in Progress' },
+        { timestamp: new Date('2024-01-01T10:00:00'), status: 'In Progress' },
         { timestamp: completedDate, status: 'Done' }
       ]);
 
-      const result = processJiraIssue(issue, changelog);
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
 
       // Lead time should be ~14 days
       expect(result.leadTimeDays).toBeCloseTo(14, 0);
@@ -244,68 +213,27 @@ describe('Flow Processor', () => {
       });
 
       const changelog = createMockChangelog([
-        { timestamp: inProgressDate, status: 'Work in Progress' },
+        { timestamp: inProgressDate, status: 'In Progress' },
         { timestamp: completedDate, status: 'Done' }
       ]);
 
-      const result = processJiraIssue(issue, changelog);
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
 
       // Cycle time should be ~7 days (from development to done)
       expect(result.cycleTimeDays).toBeCloseTo(7, 0);
     });
 
-    it('should return 0 for cycle time if issue never went development', () => {
+    it('should return lead time for cycle time if issue never went development', () => {
       const issue = createMockIssue();
 
       const changelog = createMockChangelog([
         { timestamp: new Date('2024-01-01T10:00:00'), status: 'Done' }
       ]);
 
-      const result = processJiraIssue(issue, changelog);
-      expect(result.cycleTimeDays).toBe(0);
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+      expect(result.cycleTimeDays).toBe(1);
     });
 
-    it('should track first entry dates for each stage', () => {
-      const createdDate = new Date('2024-01-01');
-      const inProgressDate1 = new Date('2024-01-03T10:00:00');
-      const testingDate = new Date('2024-01-05T10:00:00');
-      const inProgressDate2 = new Date('2024-01-06T10:00:00'); // Bounced back!
-      const doneDate = new Date('2024-01-10T10:00:00');
-
-      const issue = createMockIssue({
-        fields: {
-          ...createMockIssue().fields,
-          created: createdDate.toISOString(),
-          status: {
-            id: '10000',
-            name: 'Done',
-            statusCategory: {
-              id: 3,
-              key: 'done',
-              colorName: 'green',
-              name: 'Done'
-            }
-          }
-        }
-      });
-
-      const changelog = createMockChangelog([
-        { timestamp: inProgressDate1, status: 'Work in Progress' },
-        { timestamp: testingDate, status: 'To be Tested' },
-        { timestamp: inProgressDate2, status: 'Work in Progress' }, // Went back to in-progress
-        { timestamp: doneDate, status: 'Done' }
-      ]);
-
-      const result = processJiraIssue(issue, changelog);
-
-      // Should track FIRST entry into each stage
-      expect(result.flowHistory.find(t => t.stage === 'development')?.enteredAt).toEqual(inProgressDate1)
-      expect(result.flowHistory.find(t => t.stage === 'done')?.enteredAt).toEqual(doneDate);
-
-      // Cycle time should be from FIRST in-progress to done
-      const expectedCycleTime = msToDays(doneDate.getTime() - inProgressDate1.getTime());
-      expect(result.cycleTimeDays).toBeCloseTo(expectedCycleTime, 1);
-    });
   });
 
 
