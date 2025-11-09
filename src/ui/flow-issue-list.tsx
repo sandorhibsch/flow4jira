@@ -39,13 +39,13 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Average Age</div>
             <div className="text-2xl font-bold text-purple-600">
-              {summary.averageAge}d
+              {summary.averageAge.toFixed(2)}d
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="text-sm text-gray-500">Avg Cycle Time</div>
             <div className="text-2xl font-bold text-orange-600">
-              {summary.averageCycletime}d
+              {summary.averageCycletime.toFixed(2)}d
             </div>
           </div>
         </div>
