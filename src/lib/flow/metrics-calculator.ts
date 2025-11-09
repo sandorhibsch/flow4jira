@@ -3,14 +3,9 @@ import { FlowIssueSummary, ProcessedFlowIssue } from "./flow-types";
 export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueSummary {
   const total = issues.length;
 
-  const doneIssues = issues.filter(i => i.currentStage === 'done');
-  const inProgressIssues = issues.filter(i =>
-    i.currentStage === 'analyze' ||
-    i.currentStage === 'development' ||
-    i.currentStage === 'deployment' ||
-    i.currentStage === 'testing'
-  );
-  const openIssues = issues.filter(i => i.currentStage != 'done')
+  const doneIssues = issues.filter(i => i.currentStage.stageType === 'done');
+  const inProgressIssues = issues.filter(i => i.currentStage.stageType === 'in-progress');
+  const openIssues = issues.filter(i => i.currentStage.stageType != 'done')
   const averageAge = openIssues.length > 0
     ? openIssues.reduce((sum, i) => sum + i.ageDays, 0) / openIssues.length
     : 0;
