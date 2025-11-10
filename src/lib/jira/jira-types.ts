@@ -1,5 +1,3 @@
-import { FlowStage } from "./workflow-config";
-
 export interface JiraConfig {
   baseUrl: string;
   bearerToken: string;
