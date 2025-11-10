@@ -7,6 +7,7 @@ import FlowIssueList from '@/ui/flow-issue-list';
 import CollapsibleSection from '@/ui/collapsible-section';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import { ResponsiveContainer } from 'recharts';
+import AgingScatterplot from '@/ui/aging-scatterplot';
 
 type FlowResult = {
   success: boolean;
@@ -97,6 +98,9 @@ export default function FlowDashboard() {
           <>
             <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
               <CycleTimeScatterplot issues={result.data.issues} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Aging chart">
+              <AgingScatterplot issues={result.data.issues} />
             </CollapsibleSection>
             <CollapsibleSection title="Issue list">
               <FlowIssueList
