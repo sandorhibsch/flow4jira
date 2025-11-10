@@ -2,9 +2,11 @@
 
 'use client';
 import { useState } from 'react';
-import { ProcessedFlowIssue } from '@/lib/flow/processor';
+import { ProcessedFlowIssue, FlowIssueSummary } from '@/lib/flow/flow-types';
 import FlowIssueList from '@/ui/flow-issue-list';
-import { FlowIssueSummary } from '@/lib/jira/jira-types';
+import CollapsibleSection from '@/ui/collapsible-section';
+import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
+import { ResponsiveContainer } from 'recharts';
 
 type FlowResult = {
   success: boolean;
@@ -51,7 +53,7 @@ export default function FlowDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full h-96">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Flow4Jira™ - Flow Metrics Dashboard
         </h1>
@@ -92,10 +94,17 @@ export default function FlowDashboard() {
 
         {/* Results */}
         {result && result.success && result.data && (
-          <FlowIssueList
-            issues={result.data.issues}
-            summary={result.data.summary}
-          />
+          <>
+            <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
+              <CycleTimeScatterplot issues={result.data.issues} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Issue list">
+              <FlowIssueList
+                issues={result.data.issues}
+                summary={result.data.summary}
+              />
+            </CollapsibleSection>
+          </>
         )}
 
         {/* Empty State */}
