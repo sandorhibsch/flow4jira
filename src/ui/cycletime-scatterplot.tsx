@@ -105,58 +105,77 @@ export default function CycleTimeScatterplot({
 
   return (
     <div style={{ width: "100%" }}>
-      <ResponsiveContainer width="100%" aspect={2}>
-        <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 20 }}>
-          <CartesianGrid strokeDasharray="1 1" />
-          <XAxis
-            dataKey="x"
-            name="Completed"
-            type="number"
-            domain={["dataMin", "dataMax"]}
-            tickFormatter={(v) => new Date(v).toLocaleDateString()}
-            tick={{ fontSize: 14 }}
-          />
-          <YAxis
-            dataKey="y"
-            name="Cycle Time (days)"
-            domain={[0, "dataMax + 1"]}
-            tick={{ fontSize: 14 }}
-          />
-          <Tooltip content={<CustomTooltip />} />
+      <div className="flex flex-row">
+        <div className="gap-4 mb-6 mt-6">
+          <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
+            <div className="text-sm text-grey-800">50% certainty</div>
+            <div className="text-2xl font-bold text-red-600">{percentiles[50]}d</div>
+          </div>
 
-          {Object.entries(percentiles).map(([p, value]) => (
-            <ReferenceLine
-              key={p}
-              y={value}
-              stroke={
-                p === "50"
-                  ? "#f97316"
-                  : p === "85"
-                    ? "#22c55e"
-                    : "#ef4444"
-              }
-              strokeDasharray="4 4"
-              label={{
-                value: `${p}% certainty: ${value.toFixed(0)}d`,
-                position: "insideTopRight",
-                fill:
-                  p === "50"
-                    ? "#9a3412"
-                    : p === "85"
-                      ? "#15803d"
-                      : "#991b1b",
-                fontSize: 14,
-              }}
+          <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
+            <div className="text-sm text-grey-800">85% certainty</div>
+            <div className="text-2xl font-bold text-green-600">{percentiles[85]}d</div>
+          </div>
+
+          <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
+            <div className="text-sm text-grey-800">95% certainty</div>
+            <div className="text-2xl font-bold text-blue-600">{percentiles[85]}d</div>
+          </div>
+
+        </div>
+        <ResponsiveContainer width="100%" aspect={2}>
+          <ScatterChart margin={{ top: 20, right: 20, bottom: 30, left: 20 }}>
+            <CartesianGrid strokeDasharray="1 1" />
+            <XAxis
+              dataKey="x"
+              name="Completed"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={(v) => new Date(v).toLocaleDateString()}
+              tick={{ fontSize: 14 }}
             />
-          ))}
-          <Scatter
-            name="issues"
-            data={data}
-            fill="#3182CE"
-            shape="circle"
-          />
-        </ScatterChart>
-      </ResponsiveContainer>
+            <YAxis
+              dataKey="y"
+              name="Cycle Time (days)"
+              domain={[0, "dataMax + 1"]}
+              tick={{ fontSize: 14 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+
+            {Object.entries(percentiles).map(([p, value]) => (
+              <ReferenceLine
+                key={p}
+                y={value}
+                stroke={
+                  p === "50"
+                    ? "#f97316"
+                    : p === "85"
+                      ? "#22c55e"
+                      : "#ef4444"
+                }
+                strokeDasharray="4 4"
+                label={{
+                  value: `${p}% certainty: ${value.toFixed(0)}d`,
+                  position: "insideTopRight",
+                  fill:
+                    p === "50"
+                      ? "#9a3412"
+                      : p === "85"
+                        ? "#15803d"
+                        : "#991b1b",
+                  fontSize: 14,
+                }}
+              />
+            ))}
+            <Scatter
+              name="issues"
+              data={data}
+              fill="#3182CE"
+              shape="circle"
+            />
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
