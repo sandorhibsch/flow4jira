@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { DEFAULT_WORKFLOW, WorkflowStage } from "@/lib/jira/workflow-config";
+import { DEFAULT_WORKFLOW, WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
 
 type Point = {
   key: string;
@@ -46,14 +46,14 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
-export default function AgingScatterplot({ issues }: { issues: ProcessedFlowIssue[] }) {
-  const workflow: WorkflowStage[] = DEFAULT_WORKFLOW.stages;
+export default function AgingScatterplot({ issues, workflow }: { issues: ProcessedFlowIssue[], workflow: WorkflowDefinition }) {
+  const workflowStages: WorkflowStage[] = workflow.stages;
 
   const orderMap = React.useMemo(() => {
     const map: Record<string, number> = {};
-    workflow.forEach((w, idx) => (map[w.key] = idx));
+    workflowStages.forEach((w, idx) => (map[w.key] = idx));
     return map;
-  }, [workflow]);
+  }, [workflowStages]);
 
   const data = React.useMemo(() => {
     return issues
@@ -85,7 +85,7 @@ export default function AgingScatterplot({ issues }: { issues: ProcessedFlowIssu
             type="category"
             name="Stage"
             allowDuplicatedCategory={false}
-            domain={DEFAULT_WORKFLOW.stages.map(s => s.key)}
+            domain={workflowStages.map(s => s.key)}
             tick={{ fontSize: 12 }}
           />
           <YAxis

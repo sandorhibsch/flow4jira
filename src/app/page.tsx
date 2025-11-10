@@ -1,18 +1,20 @@
-// src/app/flow/page.tsx
-
 'use client';
+
 import { useState } from 'react';
 import { ProcessedFlowIssue, FlowIssueSummary } from '@/lib/flow/flow-types';
-import FlowIssueList from '@/ui/flow-issue-list';
+import { WorkflowDefinition } from '@/lib/jira/workflow-config';
+
 import CollapsibleSection from '@/ui/collapsible-section';
+import FlowIssueList from '@/ui/flow-issue-list';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
-import { ResponsiveContainer } from 'recharts';
 import AgingScatterplot from '@/ui/aging-scatterplot';
+
 
 type FlowResult = {
   success: boolean;
   data?: {
     issues: ProcessedFlowIssue[];
+    workflow: WorkflowDefinition;
     summary: FlowIssueSummary;
   };
   error?: string;
@@ -100,7 +102,7 @@ export default function FlowDashboard() {
               <CycleTimeScatterplot issues={result.data.issues} />
             </CollapsibleSection>
             <CollapsibleSection title="Aging chart">
-              <AgingScatterplot issues={result.data.issues} />
+              <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
             <CollapsibleSection title="Issue list">
               <FlowIssueList

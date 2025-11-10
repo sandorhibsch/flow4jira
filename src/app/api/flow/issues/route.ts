@@ -5,10 +5,13 @@ import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { processJiraIssue } from '@/lib/flow/processor';
 import { calculateSummary } from '@/lib/flow/metrics-calculator';
 import { SampleData } from '@/data/sample-data';
-import { DEFAULT_WORKFLOW } from '@/lib/jira/workflow-config';
+import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
 
 export async function GET(request: NextRequest) {
   try {
+    // Set workflow
+    //TODO: make it a parameter
+    const workflow: WorkflowDefinition = DEFAULT_WORKFLOW;
     // Extract query parameters
     const searchParams = request.nextUrl.searchParams;
     const jql = searchParams.get('jql') || 'updated>=-1d';
@@ -64,7 +67,7 @@ export async function GET(request: NextRequest) {
       const issueWithChangelog = issue as any;
       const changelog = issueWithChangelog.changelog;
 
-      return processJiraIssue(DEFAULT_WORKFLOW, issue, changelog);
+      return processJiraIssue(workflow, issue, changelog);
     });
 
     const summary = calculateSummary(processedIssues);
@@ -73,6 +76,7 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         issues: processedIssues,
+        workflow: workflow,
         summary: summary
       },
       metadata: {
