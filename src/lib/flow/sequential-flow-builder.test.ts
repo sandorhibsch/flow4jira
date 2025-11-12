@@ -1,6 +1,6 @@
 import { JiraIssue } from "../jira/jira-types";
 import { WorkflowDefinition } from "../jira/workflow-config";
-import { buildSequentialFlow, SequentialStageEntry } from "./build-sequential-flow";
+import { buildSequentialFlow, SequentialStageEntry } from "./sequential-flow-builder";
 import { StatusChange } from "./history-builder";
 
 const TEST_WORKFLOW: WorkflowDefinition = {

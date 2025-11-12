@@ -4,7 +4,7 @@ import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { findStageByStatus, WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
 import { filterStatusChanges } from './history-builder';
-import { buildSequentialFlow, SequentialStageEntry } from './build-sequential-flow';
+import { buildSequentialFlow, SequentialStageEntry } from './sequential-flow-builder';
 
 /**
  * Transform raw Jira issue + changelog into ProcessedFlowIssue
