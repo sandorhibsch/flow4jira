@@ -119,7 +119,7 @@ export default function CycleTimeScatterplot({
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">95% certainty</div>
-            <div className="text-2xl font-bold text-blue-600">{percentiles[85]}d</div>
+            <div className="text-2xl font-bold text-blue-600">{percentiles[95]}d</div>
           </div>
 
         </div>
