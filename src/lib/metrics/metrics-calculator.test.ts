@@ -1,5 +1,5 @@
 import { WorkflowDefinition } from "../jira/workflow-config";
-import { ProcessedFlowIssue } from "./flow-types";
+import { ProcessedFlowIssue } from "../flow/flow-types";
 import { calculateSummary } from "./metrics-calculator";
 
 const TEST_WORKFLOW: WorkflowDefinition = {

@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { processJiraIssue } from '@/lib/flow/processor';
-import { calculateSummary } from '@/lib/flow/metrics-calculator';
+import { calculateSummary } from '@/lib/metrics/metrics-calculator';
 import { SampleData } from '@/data/sample-data';
 import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
 
