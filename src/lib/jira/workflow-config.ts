@@ -5,6 +5,7 @@ export type WorkflowStage = {
   isCycleStart?: boolean;
   isCycleEnd?: boolean;
   stageType: 'new' | 'ready' | 'in-progress' | 'done';
+  color?: string;
 };
 
 export type WorkflowDefinition = {
@@ -18,14 +19,14 @@ export const DEFAULT_WORKFLOW: WorkflowDefinition = {
   key: 'default',
   name: 'Full Development Workflow',
   stages: [
-    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Inbox', 'Backlog'], stageType: 'new' },
-    { key: 'analyze', name: 'Analysis', jiraStatuses: ['Analyze in Progress', 'Specification'], isCycleStart: true, stageType: 'in-progress' },
-    { key: 'ready', name: 'Ready', jiraStatuses: ['Planned for Release', 'Specification Done'], stageType: 'in-progress' },
-    { key: 'dev', name: 'Development', jiraStatuses: ['Work in Progress', 'Implementation'], stageType: 'in-progress' },
-    { key: 'deploy', name: 'Deployment', jiraStatuses: ['Completed', 'Implementation Done', 'Waiting for CITST'], stageType: 'in-progress' },
-    { key: 'test', name: 'Testing', jiraStatuses: ['CITST', 'To be Tested'], stageType: 'in-progress' },
-    { key: 'release', name: 'Release', jiraStatuses: ['To be Delivered', 'Solution to be Approved', 'CITST Done'], stageType: 'in-progress' },
-    { key: 'done', name: 'Done', jiraStatuses: ['Closed', 'Development Closed', 'Abandoned', 'Done'], isCycleEnd: true, stageType: 'done' },
+    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Inbox', 'Backlog'], stageType: 'new', color: "#9CA3AF" },
+    { key: 'analyze', name: 'Analysis', jiraStatuses: ['Analyze in Progress', 'Specification'], isCycleStart: true, stageType: 'in-progress', color: "#FBBF24" },
+    { key: 'ready', name: 'Ready', jiraStatuses: ['Planned for Release', 'Specification Done'], stageType: 'in-progress', color: "#FBBF48" },
+    { key: 'dev', name: 'Development', jiraStatuses: ['Work in Progress', 'Implementation'], stageType: 'in-progress', color: "#FBBF96" },
+    { key: 'deploy', name: 'Deployment', jiraStatuses: ['Completed', 'Implementation Done', 'Waiting for CITST'], stageType: 'in-progress', color: "#FBCA00" },
+    { key: 'test', name: 'Testing', jiraStatuses: ['CITST', 'To be Tested'], stageType: 'in-progress', color: "#8B5CF6" },
+    { key: 'release', name: 'Release', jiraStatuses: ['To be Delivered', 'Solution to be Approved', 'CITST Done'], stageType: 'in-progress', color: "#FBCA48" },
+    { key: 'done', name: 'Done', jiraStatuses: ['Closed', 'Development Closed', 'Abandoned', 'Done'], isCycleEnd: true, stageType: 'done', color: "#10B981" },
   ],
 };
 
