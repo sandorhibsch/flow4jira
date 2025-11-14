@@ -8,6 +8,7 @@ import CollapsibleSection from '@/ui/collapsible-section';
 import FlowIssueList from '@/ui/flow-issue-list';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
+import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
 
 
 type FlowResult = {
@@ -103,6 +104,9 @@ export default function FlowDashboard() {
             </CollapsibleSection>
             <CollapsibleSection title="Aging chart">
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Cumulative Flow Diagram">
+              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
             <CollapsibleSection title="Issue list">
               <FlowIssueList
