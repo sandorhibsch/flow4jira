@@ -35,10 +35,10 @@ export interface JiraIssue {
         name: string;
       };
     };
-
-    changelog?: JiraChangelogResponse;
-    // Add more fields as needed - Jira returns a LOT
   };
+  changelog?: JiraChangelogResponse;
+  // Add more fields as needed - Jira returns a LOT
+
 }
 
 export interface JiraSearchResponse {
