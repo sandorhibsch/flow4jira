@@ -29,11 +29,23 @@ export class JiraClient {
       expand
     };
 
-    return this.getAllPagesForQuery(params, maxResults);
+    const url = new URL(`${this.config.baseUrl}/rest/api/latest/search`);
+
+    return this.getAllPagesForQuery(url, params, maxResults);
+  }
+
+  async getIssueChangelog(issueKey: string): Promise<JiraChangelogResponse> {
+    const params = {
+      fields: "summary",
+      expand: "changelog"
+    }
+    const url = new URL(`${this.config.baseUrl}/rest/api/latest/issue/${issueKey}`);
+
+    return this.makeRequest<JiraChangelogResponse>(url, params);
   }
 
   // Helper method to get all issues (handles pagination)
-  private async getAllPagesForQuery(params: Record<string, string>, pageSize: number): Promise<JiraSearchResponse> {
+  private async getAllPagesForQuery(url: URL, params: Record<string, string>, pageSize: number): Promise<JiraSearchResponse> {
     let startAt = 0;
     let allIssues: JiraSearchResponse['issues'] = [];
     let total = 0;
@@ -44,7 +56,7 @@ export class JiraClient {
         startAt: startAt.toString(),
       };
 
-      const batch = await this.makeRequest<JiraSearchResponse>('search', pagination);
+      const batch = await this.makeRequest<JiraSearchResponse>(url, pagination);
       allIssues = allIssues.concat(batch.issues);
       total = batch.total;
       startAt += pageSize;
@@ -60,8 +72,8 @@ export class JiraClient {
     };
   }
 
-  private async makeRequest<T>(endpoint: string, params?: Record<string, string>): Promise<T> {
-    const url = new URL(`${this.config.baseUrl}/rest/api/latest/${endpoint}`);
+  private async makeRequest<T>(url: URL, params?: Record<string, string>): Promise<T> {
+    //const url = new URL(`${this.config.baseUrl}/rest/api/latest/${endpoint}`);
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -92,18 +104,10 @@ export class JiraClient {
     return response.json();
   }
 
-  async getIssueChangelog(issueKey: string): Promise<JiraChangelogResponse> {
-    const params = {
-      fields: "summary",
-      expand: "changelog"
-    }
-    return this.makeRequest<JiraChangelogResponse>(`issue/${issueKey}`, params);
-  }
-
   // Test connection method
   async testConnection(): Promise<boolean> {
     try {
-      await this.makeRequest('myself');
+      await this.makeRequest(new URL(`${this.config.baseUrl}/rest/api/latest/myself`));
       return true;
     } catch (error) {
       console.error('Jira connection test failed:', error);
