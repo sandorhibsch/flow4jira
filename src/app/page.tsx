@@ -10,6 +10,7 @@ import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
 
+type QueryMode = 'jql' | 'board';
 
 type FlowResult = {
   success: boolean;
@@ -22,20 +23,42 @@ type FlowResult = {
 };
 
 export default function FlowDashboard() {
+  const [queryMode, setQueryMode] = useState<QueryMode>('jql');
+
+  // JQL inputs
   const [jql, setJql] = useState('');
+
+  // Board inputs
+  const [boardId, setBoardId] = useState('');
+  const [periodDays, setPeriodDays] = useState('30');
+
   const [result, setResult] = useState<FlowResult>();
   const [loading, setLoading] = useState(false);
 
   const fetchFlowMetrics = async () => {
-    if (!jql) {
+    // Validate inputs based on mode
+    if (queryMode === 'jql' && !jql) {
       alert('Please enter a JQL query');
+      return;
+    }
+
+    if (queryMode === 'board' && !boardId) {
+      alert('Please enter a Board ID');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/flow/issues?jql=${encodeURIComponent(jql)}`, {
+      let url: string;
+
+      if (queryMode === 'jql') {
+        url = `/api/flow/issues?jql=${encodeURIComponent(jql)}`;
+      } else {
+        url = `/api/flow/board?boardId=${encodeURIComponent(boardId)}&periodDays=${encodeURIComponent(periodDays)}`;
+      }
+
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -64,28 +87,98 @@ export default function FlowDashboard() {
 
         {/* Query Input */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            JQL Query:
-          </label>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              value={jql}
-              onChange={(e) => setJql(e.target.value)}
-              placeholder='e.g., project="PROJ" AND updated>=-30d'
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* Mode Selector */}
+          <div className="flex space-x-4 mb-4">
             <button
-              onClick={fetchFlowMetrics}
-              disabled={loading}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
+              onClick={() => setQueryMode('jql')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${queryMode === 'jql'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
-              {loading ? 'Loading...' : 'Analyze Flow'}
+              JQL Query
+            </button>
+            <button
+              onClick={() => setQueryMode('board')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${queryMode === 'board'
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+            >
+              Board ID
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Enter a JQL query to analyze flow metrics for those issues
-          </p>
+
+          {/* JQL Input Mode */}
+          {queryMode === 'jql' && (
+            <>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                JQL Query:
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={jql}
+                  onChange={(e) => setJql(e.target.value)}
+                  placeholder='e.g., project="PROJ" AND updated>=-30d'
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={fetchFlowMetrics}
+                  disabled={loading}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
+                >
+                  {loading ? 'Loading...' : 'Analyze Flow'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Enter a JQL query to analyze flow metrics for those issues
+              </p>
+            </>
+          )}
+
+          {/* Board Input Mode */}
+          {queryMode === 'board' && (
+            <>
+              <div className="grid grid-cols-2 gap-4 mb-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Board ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={boardId}
+                    onChange={(e) => setBoardId(e.target.value)}
+                    placeholder="e.g., 123"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Period (days):
+                  </label>
+                  <input
+                    type="number"
+                    value={periodDays}
+                    onChange={(e) => setPeriodDays(e.target.value)}
+                    placeholder="30"
+                    min="1"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <button
+                onClick={fetchFlowMetrics}
+                disabled={loading}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50 mt-2"
+              >
+                {loading ? 'Loading...' : 'Analyze Flow'}
+              </button>
+              <p className="text-xs text-gray-500 mt-2">
+                Enter a board ID to analyze flow metrics for issues updated in the last N days
+              </p>
+            </>
+          )}
         </div>
 
         {/* Error Display */}
@@ -126,7 +219,9 @@ export default function FlowDashboard() {
               No flow metrics yet
             </h3>
             <p className="text-gray-500">
-              Enter a JQL query above to analyze your team's flow metrics
+              {queryMode === 'jql'
+                ? 'Enter a JQL query above to analyze your team\'s flow metrics'
+                : 'Enter a board ID above to analyze your team\'s flow metrics'}
             </p>
           </div>
         )}
