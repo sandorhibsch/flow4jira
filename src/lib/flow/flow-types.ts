@@ -17,7 +17,7 @@ export interface ProcessedFlowIssue {
   ageDays: number; // How many days since creation
 }
 
-export interface FlowIssueSummary {
+export interface FlowIssueCalculatedMetrics {
   total: number;
   averageAge: number;
   workInProgress: number;

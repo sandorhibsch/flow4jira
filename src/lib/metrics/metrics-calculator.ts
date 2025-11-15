@@ -1,6 +1,6 @@
-import { FlowIssueSummary, ProcessedFlowIssue } from "../flow/flow-types";
+import { FlowIssueCalculatedMetrics, ProcessedFlowIssue } from "../flow/flow-types";
 
-export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueSummary {
+export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueCalculatedMetrics {
   const total = issues.length;
 
   const doneIssues = issues.filter(i => i.currentStage.stageType === 'done');

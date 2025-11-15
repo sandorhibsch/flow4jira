@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ProcessedFlowIssue, FlowIssueSummary } from '@/lib/flow/flow-types';
+import { ProcessedFlowIssue, FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
 import { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
 import CollapsibleSection from '@/ui/collapsible-section';
@@ -16,7 +16,7 @@ type FlowResult = {
   data?: {
     issues: ProcessedFlowIssue[];
     workflow: WorkflowDefinition;
-    summary: FlowIssueSummary;
+    summary: FlowIssueCalculatedMetrics;
   };
   error?: string;
 };

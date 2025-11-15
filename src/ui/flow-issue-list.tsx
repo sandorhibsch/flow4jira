@@ -1,11 +1,11 @@
 // src/ui/flow-issue-list.tsx
 
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
-import { FlowIssueSummary } from '@/lib/flow/flow-types';
+import { FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
 
 type FlowIssueListProps = {
   issues: ProcessedFlowIssue[];
-  summary?: FlowIssueSummary;
+  summary?: FlowIssueCalculatedMetrics;
 };
 
 const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
