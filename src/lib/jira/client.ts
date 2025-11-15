@@ -1,6 +1,6 @@
 // src/lib/jira/client.ts
 
-import { JiraConfig, JiraSearchResponse, JiraChangelogResponse } from './jira-types';
+import { JiraConfig, JiraSearchResponse, JiraChangelogResponse, JiraIssue } from './jira-types';
 
 export class JiraApiError extends Error {
   constructor(
@@ -48,14 +48,14 @@ export class JiraClient {
     return this.getAllPagesForQuery(url, params, maxResults);
   }
 
-  async getIssueChangelog(issueKey: string): Promise<JiraChangelogResponse> {
+  async getIssueWithChangelog(issueKey: string): Promise<JiraIssue> {
     const params = {
       fields: "summary",
       expand: "changelog"
     }
     const url = new URL(`${this.config.baseUrl}/rest/api/latest/issue/${issueKey}`);
 
-    return this.makeRequest<JiraChangelogResponse>(url, params);
+    return this.makeRequest<JiraIssue>(url, params);
   }
 
   // Helper method to get all issues (handles pagination)
@@ -87,17 +87,22 @@ export class JiraClient {
   }
 
   private async makeRequest<T>(url: URL, params?: Record<string, string>): Promise<T> {
-    //const url = new URL(`${this.config.baseUrl}/rest/api/latest/${endpoint}`);
+    // Clone the URL to avoid parameter accumulation across pagination
+    // Using url.toString() creates a new URL instance with a fresh searchParams
+    const requestUrl = new URL(url.toString());
 
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
-        url.searchParams.append(key, value);
+        // Use .set() instead of .append() to replace existing params, not accumulate
+        requestUrl.searchParams.set(key, value);
       });
     }
 
-    console.log(`Querying URL: ${url}`);
+    // Convert to string AFTER setting params - this includes all query parameters
+    const urlString = requestUrl.toString();
+    console.log(`Querying URL: ${urlString}`);
 
-    const response = await fetch(url.toString(), {
+    const response = await fetch(urlString, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${this.config.bearerToken}`,
