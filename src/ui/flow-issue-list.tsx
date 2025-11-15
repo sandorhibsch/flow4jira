@@ -1,14 +1,7 @@
-// src/ui/flow-issue-list.tsx
-
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
-import { FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
+import FlowIssueSummary from './flow-issue-summary';
 
-type FlowIssueListProps = {
-  issues: ProcessedFlowIssue[];
-  summary?: FlowIssueCalculatedMetrics;
-};
-
-const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
+const FlowIssueList = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'backlog': return 'bg-gray-400';
@@ -24,32 +17,7 @@ const FlowIssueList = ({ issues, summary }: FlowIssueListProps) => {
 
   return (
     <div className="space-y-6">
-      {/* Summary Stats */}
-      {summary && (
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">Total Issues</div>
-            <div className="text-2xl font-bold">{summary.total}</div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">WIP</div>
-            <div className="text-2xl font-bold text-blue-600">{summary.workInProgress}</div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">Average Age</div>
-            <div className="text-2xl font-bold text-purple-600">
-              {summary.averageAge.toFixed(2)}d
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="text-sm text-gray-500">Avg Cycle Time</div>
-            <div className="text-2xl font-bold text-orange-600">
-              {summary.averageCycletime.toFixed(2)}d
-            </div>
-          </div>
-        </div>
-      )}
+      <FlowIssueSummary issues={issues} />
 
       {/* Issues Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">

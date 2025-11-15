@@ -109,10 +109,7 @@ export default function FlowDashboard() {
               <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
             <CollapsibleSection title="Issue list">
-              <FlowIssueList
-                issues={result.data.issues}
-                summary={result.data.summary}
-              />
+              <FlowIssueList issues={result.data.issues} />
             </CollapsibleSection>
           </>
         )}

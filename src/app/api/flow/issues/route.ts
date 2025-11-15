@@ -3,7 +3,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { processJiraIssue } from '@/lib/flow/processor';
-import { calculateSummary } from '@/lib/metrics/metrics-calculator';
 import { SampleData } from '@/data/sample-data';
 import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
 
@@ -54,7 +53,7 @@ export async function GET(request: NextRequest) {
     const fields = 'summary,issuetype,status,created,resolutiondate';
     const expand = 'changelog';
 
-    const jiraResponse = SampleData //await jiraClient.searchIssues(jql, 100, fields, expand);
+    const jiraResponse = await jiraClient.searchIssues(jql, 100, fields, expand);
 
     console.log(`Fetched ${jiraResponse.issues.length} issues, processing...`);
 
@@ -70,14 +69,11 @@ export async function GET(request: NextRequest) {
       return processJiraIssue(workflow, issue, changelog);
     });
 
-    const summary = calculateSummary(processedIssues);
-
     return NextResponse.json({
       success: true,
       data: {
         issues: processedIssues,
         workflow: workflow,
-        summary: summary
       },
       metadata: {
         query: jql,
