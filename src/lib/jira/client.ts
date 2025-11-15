@@ -34,6 +34,20 @@ export class JiraClient {
     return this.getAllPagesForQuery(url, params, maxResults);
   }
 
+  async getIssuesForBoard(boardId: string, periodDays: string, maxResults: number = 50, fields: string, expand: string): Promise<JiraSearchResponse> {
+    const jql = `updated>=-${periodDays}d`
+    const params = {
+      jql,
+      maxResults: maxResults.toString(),
+      fields,
+      expand
+    };
+
+    const url = new URL(`${this.config.baseUrl}/rest/agile/latest/board/${boardId}/issue`);
+
+    return this.getAllPagesForQuery(url, params, maxResults);
+  }
+
   async getIssueChangelog(issueKey: string): Promise<JiraChangelogResponse> {
     const params = {
       fields: "summary",
