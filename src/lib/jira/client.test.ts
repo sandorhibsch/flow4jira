@@ -1,7 +1,7 @@
 // src/lib/jira/client.test.ts
 
 import { JiraClient, JiraApiError } from './client';
-import { JiraSearchResponse } from './jira-types';
+import { JiraBoardConfigResponse, JiraSearchResponse, JiraStatusResponse } from './jira-types';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -297,6 +297,57 @@ describe('JiraClient', () => {
       const keys = result.issues.map(i => i.key);
       expect(keys).toEqual(['BOARD-1', 'BOARD-2', 'BOARD-3']);
     });
+  });
+
+  describe('getBoardConfiguration', () => {
+    it('should return board configuration for board ID', async () => {
+      const boardConfigResponse: JiraBoardConfigResponse = {
+        id: '123',
+        name: 'Test Board',
+        type: 'scrum',
+        columnConfig: {
+          columns: [
+            {
+              name: 'To Do',
+              statuses: [{
+                id: '1'
+              }]
+            }
+          ]
+        }
+      }
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => boardConfigResponse } as Response);
+
+      const client = new JiraClient(TEST_CONFIG);
+      const result = await client.getBoardConfiguration('123');
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(result.name).toBe('Test Board');
+      expect(result.columnConfig.columns[0].name).toBe('To Do');
+      expect(result.columnConfig.columns[0].statuses[0].id).toBe('1');
+
+    })
+  });
+
+  describe('getStatus', () => {
+    it('should return status response for actual status', async () => {
+      const statusResponse: JiraStatusResponse = {
+        id: '1',
+        name: 'New',
+        statusCategory: {
+          name: 'To Do'
+        }
+      };
+
+      mockFetch.mockResolvedValueOnce({ ok: true, json: async () => statusResponse } as Response);
+      const client = new JiraClient(TEST_CONFIG);
+      const result = await client.getStatus('1');
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(result.name).toBe('New');
+      expect(result.statusCategory.name).toBe('To Do')
+    })
+
   });
 
   describe('getIssueChangelog', () => {

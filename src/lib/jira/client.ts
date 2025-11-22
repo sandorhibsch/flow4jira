@@ -1,6 +1,6 @@
 // src/lib/jira/client.ts
 
-import { JiraConfig, JiraSearchResponse, JiraChangelogResponse, JiraIssue } from './jira-types';
+import { JiraConfig, JiraSearchResponse, JiraChangelogResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
 
 export class JiraApiError extends Error {
   constructor(
@@ -56,6 +56,16 @@ export class JiraClient {
     const url = new URL(`${this.config.baseUrl}/rest/api/latest/issue/${issueKey}`);
 
     return this.makeRequest<JiraIssue>(url, params);
+  }
+
+  async getBoardConfiguration(boardId: string): Promise<JiraBoardConfigResponse> {
+    const url = new URL(`${this.config.baseUrl}/rest/agile/latest/board/${boardId}/configuration`);
+    return this.makeRequest<JiraBoardConfigResponse>(url);
+  }
+
+  async getStatus(statusId: string): Promise<JiraStatusResponse> {
+    const url = new URL(`${this.config.baseUrl}/rest/api/latest/status/${statusId}`);
+    return this.makeRequest<JiraStatusResponse>(url);
   }
 
   // Helper method to get all issues (handles pagination)
@@ -129,7 +139,7 @@ export class JiraClient {
       await this.makeRequest(new URL(`${this.config.baseUrl}/rest/api/latest/myself`));
       return true;
     } catch (error) {
-      console.error('Jira connection test failed:', error);
+      //console.error('Jira connection test failed:', error);
       return false;
     }
   }

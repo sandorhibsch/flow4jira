@@ -77,3 +77,30 @@ export interface JiraChangelogResponse {
   isLast: boolean;
   histories: JiraChangelogEntry[];
 }
+
+export interface JiraStatus {
+  id: string;
+}
+
+export interface JiraColumn {
+  name: string;
+  statuses: JiraStatus[]
+}
+
+export interface JiraBoardConfigResponse {
+  id: string;
+  name: string;
+  type: "Kanban" | "scrum";
+  columnConfig: {
+    columns: JiraColumn[];
+  }
+}
+
+export interface JiraStatusResponse {
+  id: string;
+  name: string;
+  statusCategory: {
+    name: string;
+  }
+
+}
