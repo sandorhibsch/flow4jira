@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProcessedFlowIssue, FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
 import { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
@@ -9,6 +9,8 @@ import FlowIssueList from '@/ui/flow-issue-list';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
+import BoardList from '@/ui/board-list';
+import { useSearchParams } from 'next/navigation';
 
 type QueryMode = 'jql' | 'board';
 
@@ -23,17 +25,27 @@ type FlowResult = {
 };
 
 export default function FlowDashboard() {
-  const [queryMode, setQueryMode] = useState<QueryMode>('jql');
+  const searchParams = useSearchParams();
+  const [queryMode, setQueryMode] = useState<QueryMode>(
+    (searchParams?.get('mode') as QueryMode) || 'jql'
+  );
 
   // JQL inputs
   const [jql, setJql] = useState('');
 
   // Board inputs
-  const [boardId, setBoardId] = useState('');
+  const [boardId, setBoardId] = useState(searchParams?.get('boardId') || '');
   const [periodDays, setPeriodDays] = useState('30');
 
   const [result, setResult] = useState<FlowResult>();
   const [loading, setLoading] = useState(false);
+
+  // Auto-fetch if URL has parameters
+  useEffect(() => {
+    if (searchParams?.get('boardId') && searchParams?.get('mode') === 'board') {
+      fetchFlowMetrics();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFlowMetrics = async () => {
     // Validate inputs based on mode
@@ -66,6 +78,27 @@ export default function FlowDashboard() {
       });
 
       const data = await response.json();
+
+      // If using board mode, try to load custom workflow
+      if (queryMode === 'board' && data.success) {
+        const { WorkflowConfigService } = await import('@/lib/services/workflow-config-service');
+        const customWorkflow = WorkflowConfigService.load(boardId);
+
+        if (customWorkflow) {
+          // Replace workflow with custom one
+          data.data.workflow = customWorkflow;
+
+          // Reprocess issues with custom workflow
+          const { processJiraIssue } = await import('@/lib/flow/processor');
+          const { calculateSummary } = await import('@/lib/metrics/metrics-calculator');
+
+          // Note: This is a simplified reprocessing. In production, you'd want to
+          // fetch the raw issues with changelog and reprocess them properly.
+          // For now, we just update the workflow reference.
+          data.data.summary = calculateSummary(data.data.issues);
+        }
+      }
+
       setResult(data);
 
     } catch (error) {
@@ -84,6 +117,16 @@ export default function FlowDashboard() {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">
           Flow4Jira™ - Flow Metrics Dashboard
         </h1>
+
+        {/* Configure Link */}
+        <div className="mb-6">
+          <a
+            href="/configure"
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            → Configure Custom Workflow for a Board
+          </a>
+        </div>
 
         {/* Query Input */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -180,6 +223,13 @@ export default function FlowDashboard() {
             </>
           )}
         </div>
+
+        {/* Board List */}
+        {!result && (
+          <div className="mb-6">
+            <BoardList />
+          </div>
+        )}
 
         {/* Error Display */}
         {result && !result.success && (
