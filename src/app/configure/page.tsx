@@ -143,13 +143,6 @@ export default function ConfigurePage() {
       return 'At least one stage is required';
     }
 
-    // Check all statuses are mapped
-    const mappedStatuses = new Set(stages.flatMap(s => s.jiraStatuses));
-    const unmappedStatuses = availableStatuses.filter(s => !mappedStatuses.has(s));
-    if (unmappedStatuses.length > 0) {
-      return `Unmapped statuses: ${unmappedStatuses.join(', ')}`;
-    }
-
     // Check for cycle start
     const hasCycleStart = stages.some(s => s.isCycleStart);
     if (!hasCycleStart) {
