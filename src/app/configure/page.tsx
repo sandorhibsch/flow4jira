@@ -22,8 +22,8 @@ type FetchBoardResult = {
 };
 
 const STAGE_COLORS = [
-  '#4e79a7', // blue
   '#bab0ac', // gray
+  '#4e79a7', // blue
   '#9c755f', // brown
   '#f28e2b', // orange
   '#edc948', // yellow
@@ -246,12 +246,7 @@ export default function ConfigurePage() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">3. Configure Stages</h2>
-                <button
-                  onClick={addStage}
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  + Add Stage
-                </button>
+
               </div>
 
               <div className="space-y-6">
@@ -375,6 +370,12 @@ export default function ConfigurePage() {
                     </div>
                   </div>
                 ))}
+                <button
+                  onClick={addStage}
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                >
+                  + Add Stage
+                </button>
               </div>
             </div>
 
