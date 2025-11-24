@@ -191,7 +191,7 @@ export default function BoardMetricsPage() {
 
             {/* Full issue list*/}
             <CollapsibleSection title="Issue List">
-              <FlowIssueList issues={result.data.issues} />
+              <FlowIssueList issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
           </>
         )}

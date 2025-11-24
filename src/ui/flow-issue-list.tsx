@@ -1,19 +1,14 @@
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import FlowIssueSummary from './flow-issue-summary';
+import { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
-const FlowIssueList = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'backlog': return 'bg-gray-400';
-      case 'analyze': return 'bg-blue-400';
-      case 'ready': return 'bg-blue-800';
-      case 'development': return 'bg-yellow-400';
-      case 'deployment': return 'bg-orange-400';
-      case 'testing': return 'bg-purple-400';
-      case 'done': return 'bg-green-400';
-      default: return 'bg-gray-400';
-    }
-  };
+const FlowIssueList = ({
+  issues,
+  workflow }: {
+    issues: ProcessedFlowIssue[],
+    workflow: WorkflowDefinition
+  }) => {
+
 
   return (
     <div className="space-y-6">
@@ -40,6 +35,11 @@ const FlowIssueList = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Status
                 </th>
+                {workflow.stages.map((stage) => (
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    {stage.name}
+                  </th>
+                ))}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Age
                 </th>
@@ -55,7 +55,7 @@ const FlowIssueList = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
               {issues.map((issue) => (
                 <tr key={issue.key} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className={`w-3 h-3 rounded-full ${getStageColor(issue.currentStage.name)}`} title={issue.currentStage.name} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: issue.currentStage.color || '#6b7280' }} title={issue.currentStage.name} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm font-medium text-blue-600">{issue.key}</span>
@@ -71,6 +71,11 @@ const FlowIssueList = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-500">{issue.currentStatus}</span>
                   </td>
+                  {workflow.stages.map((stage) => (
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toString()}</span>
+                    </td>
+                  ))}
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-900">{issue.ageDays}</span>
                   </td>
