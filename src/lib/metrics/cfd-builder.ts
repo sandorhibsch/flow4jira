@@ -11,7 +11,6 @@ export function buildCumulativeFlowData(
   const now = new Date();
   const startDate = addDays(now, -periodDays);
   const allDates = eachDayOfInterval({ start: startDate, end: now });
-  console.log(`CFD period starts ${periodDays} days ago, on ${startDate}`);
 
   const workflowStages = workflow.stages.filter(s => s.stageType != 'new');
   // orderMap: stage.key -> index
