@@ -22,11 +22,9 @@ type ScatterPlotPoint = {
   url?: string;
 };
 
-function prepareData(issues: ProcessedFlowIssue[], days = 60): ScatterPlotPoint[] {
-  const cutoff = Date.now() - (days * 24 * 60 * 60 * 1000);
-
+function prepareData(issues: ProcessedFlowIssue[], dateMin: number): ScatterPlotPoint[] {
   return issues
-    .filter(i => i.done && new Date(i.done).getTime() >= cutoff)
+    .filter(i => i.done && new Date(i.done).getTime() >= dateMin)
     .map((i) => {
       const doneTimestamp = i.done ? new Date(i.done).getTime() : new Date().getTime();
       const y = i.cycleTimeDays;
@@ -61,13 +59,6 @@ function computePercentiles(data: ScatterPlotPoint[], percentiles = [50, 85, 95]
   return Object.fromEntries(percentiles.map((p) => [p, get(p)]));
 }
 
-const formatNumberSafe = (v: unknown, digits = 2) => {
-  if (typeof v === "number" && Number.isFinite(v)) return v.toFixed(digits);
-  const asNum = Number(v);
-  if (!Number.isFinite(asNum)) return "—";
-  return asNum.toFixed(digits);
-};
-
 const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as ScatterPlotPoint;
@@ -97,10 +88,14 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function CycleTimeScatterplot({
   issues,
+  periodDays
 }: {
   issues: ProcessedFlowIssue[];
+  periodDays: number;
 }) {
-  const data = React.useMemo(() => prepareData(issues, 60), [issues]);
+  const dateMax = new Date().setHours(23, 59, 59, 999);
+  const dateMin = dateMax - (periodDays * 24 * 60 * 60 * 1000);
+  const data = React.useMemo(() => prepareData(issues, dateMin), [issues]);
   const percentiles = React.useMemo(() => computePercentiles(data), [data]);
 
   return (
@@ -130,7 +125,10 @@ export default function CycleTimeScatterplot({
               dataKey="x"
               name="Completed"
               type="number"
-              domain={["dataMin", "dataMax"]}
+              domain={[
+                dateMin,
+                dateMax]
+              }
               tickFormatter={(v) => new Date(v).toLocaleDateString()}
               tick={{ fontSize: 14 }}
             />

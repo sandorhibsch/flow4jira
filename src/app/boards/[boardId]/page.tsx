@@ -178,7 +178,7 @@ export default function BoardMetricsPage() {
         {result && result.success && result.data && (
           <>
             <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
-              <CycleTimeScatterplot issues={result.data.issues} />
+              <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
             <CollapsibleSection title="Aging Chart">
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
