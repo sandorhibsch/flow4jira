@@ -17,8 +17,16 @@ import { WorkflowDefinition } from "@/lib/jira/workflow-config";
 import { buildCumulativeFlowData } from "@/lib/metrics/cfd-builder";
 import { ProcessedFlowIssue } from "@/lib/flow/flow-types";
 
-export default function CumulativeFlowDiagram({ issues, workflow }: { issues: ProcessedFlowIssue[], workflow: WorkflowDefinition }) {
-  const data = React.useMemo(() => buildCumulativeFlowData(issues, workflow, 60), [issues, workflow]);
+export default function CumulativeFlowDiagram(
+  {
+    issues,
+    workflow,
+    periodDays }: {
+      issues: ProcessedFlowIssue[],
+      workflow: WorkflowDefinition,
+      periodDays: number
+    }) {
+  const data = React.useMemo(() => buildCumulativeFlowData(issues, workflow, periodDays), [issues, workflow]);
 
   const stages = workflow.stages.filter(s => s.stageType != 'new');
   const reverseStages = [...stages].reverse();

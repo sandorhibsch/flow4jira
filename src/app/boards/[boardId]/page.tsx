@@ -184,7 +184,7 @@ export default function BoardMetricsPage() {
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
             <CollapsibleSection title="Cumulative Flow Diagram">
-              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} />
+              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
             <CollapsibleSection title="Issue List">
               <FlowIssueList issues={result.data.issues} />

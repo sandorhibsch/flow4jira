@@ -6,11 +6,12 @@ import { ProcessedFlowIssue } from "../flow/flow-types";
 export function buildCumulativeFlowData(
   issues: ProcessedFlowIssue[],
   workflow: WorkflowDefinition,
-  days = 90
+  periodDays = 90
 ) {
   const now = new Date();
-  const startDate = addDays(now, -days);
+  const startDate = addDays(now, -periodDays);
   const allDates = eachDayOfInterval({ start: startDate, end: now });
+  console.log(`CFD period starts ${periodDays} days ago, on ${startDate}`);
 
   const workflowStages = workflow.stages.filter(s => s.stageType != 'new');
   // orderMap: stage.key -> index
