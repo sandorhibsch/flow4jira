@@ -181,11 +181,11 @@ export default function BoardMetricsPage() {
             <CollapsibleSection title="Aging Chart">
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
-            <CollapsibleSection title="Cumulative Flow Diagram">
+            <CollapsibleSection title={`Cumulative Flow Diagram (Last ${periodDays} Days)`}>
               <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
             {/* Single-item forecast*/}
-            <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
+            <CollapsibleSection title={`Cycle Time Scatterplot (Last ${periodDays} Days)`}>
               <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
 
