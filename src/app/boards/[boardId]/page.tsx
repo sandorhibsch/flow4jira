@@ -177,15 +177,19 @@ export default function BoardMetricsPage() {
         {/* Results */}
         {result && result.success && result.data && (
           <>
-            <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
-              <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
-            </CollapsibleSection>
+            {/* Process health*/}
             <CollapsibleSection title="Aging Chart">
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
             <CollapsibleSection title="Cumulative Flow Diagram">
               <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
+            {/* Single-item forecast*/}
+            <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
+              <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
+            </CollapsibleSection>
+
+            {/* Full issue list*/}
             <CollapsibleSection title="Issue List">
               <FlowIssueList issues={result.data.issues} />
             </CollapsibleSection>
