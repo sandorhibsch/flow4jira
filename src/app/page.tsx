@@ -1,278 +1,154 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ProcessedFlowIssue, FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
-import { WorkflowDefinition } from '@/lib/jira/workflow-config';
+import { useEffect, useState } from 'react';
+import { WorkflowConfigService, WorkflowConfigWithMetadata } from '@/lib/services/workflow-config-service';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-import CollapsibleSection from '@/ui/collapsible-section';
-import FlowIssueList from '@/ui/flow-issue-list';
-import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
-import AgingScatterplot from '@/ui/aging-scatterplot';
-import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
-import BoardList from '@/ui/board-list';
-import { useSearchParams } from 'next/navigation';
+export default function HomePage() {
+  const router = useRouter();
+  const [configs, setConfigs] = useState<WorkflowConfigWithMetadata[]>([]);
+  const [loading, setLoading] = useState(true);
 
-type QueryMode = 'jql' | 'board';
-
-type FlowResult = {
-  success: boolean;
-  data?: {
-    issues: ProcessedFlowIssue[];
-    workflow: WorkflowDefinition;
-    summary: FlowIssueCalculatedMetrics;
-  };
-  error?: string;
-};
-
-export default function FlowDashboard() {
-  const searchParams = useSearchParams();
-  const [queryMode, setQueryMode] = useState<QueryMode>(
-    (searchParams?.get('mode') as QueryMode) || 'jql'
-  );
-
-  // JQL inputs
-  const [jql, setJql] = useState('');
-
-  // Board inputs
-  const [boardId, setBoardId] = useState(searchParams?.get('boardId') || '');
-  const [periodDays, setPeriodDays] = useState('30');
-
-  const [result, setResult] = useState<FlowResult>();
-  const [loading, setLoading] = useState(false);
-
-  // Auto-fetch if URL has parameters
   useEffect(() => {
-    if (searchParams?.get('boardId') && searchParams?.get('mode') === 'board') {
-      fetchFlowMetrics();
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    loadConfigs();
+  }, []);
 
-  const fetchFlowMetrics = async () => {
-    // Validate inputs based on mode
-    if (queryMode === 'jql' && !jql) {
-      alert('Please enter a JQL query');
-      return;
-    }
-
-    if (queryMode === 'board' && !boardId) {
-      alert('Please enter a Board ID');
-      return;
-    }
-
-    setLoading(true);
-
+  const loadConfigs = () => {
     try {
-      let url: string;
-
-      if (queryMode === 'jql') {
-        url = `/api/flow/issues?jql=${encodeURIComponent(jql)}`;
-      } else {
-        url = `/api/flow/board?boardId=${encodeURIComponent(boardId)}&periodDays=${encodeURIComponent(periodDays)}`;
-      }
-
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-      });
-
-      const data = await response.json();
-
-      // If using board mode, try to load custom workflow
-      if (queryMode === 'board' && data.success) {
-        const { WorkflowConfigService } = await import('@/lib/services/workflow-config-service');
-        const customWorkflow = WorkflowConfigService.load(boardId);
-
-        if (customWorkflow) {
-          // Replace workflow with custom one
-          data.data.workflow = customWorkflow;
-
-          // Reprocess issues with custom workflow
-          const { processJiraIssue } = await import('@/lib/flow/processor');
-          const { calculateSummary } = await import('@/lib/metrics/metrics-calculator');
-
-          // Note: This is a simplified reprocessing. In production, you'd want to
-          // fetch the raw issues with changelog and reprocess them properly.
-          // For now, we just update the workflow reference.
-          data.data.summary = calculateSummary(data.data.issues);
-        }
-      }
-
-      setResult(data);
-
+      const allConfigs = WorkflowConfigService.listAll();
+      setConfigs(allConfigs);
     } catch (error) {
-      setResult({
-        success: false,
-        error: "Failed to fetch flow metrics"
-      });
+      console.error('Failed to load configs:', error);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDelete = (boardId: string, boardName?: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete the configuration for ${boardName || `Board ${boardId}`}?`
+    );
+
+    if (confirmed) {
+      const success = WorkflowConfigService.delete(boardId);
+      if (success) {
+        loadConfigs(); // Refresh list
+      } else {
+        alert('Failed to delete configuration');
+      }
+    }
+  };
+
+  const handleCreateNew = () => {
+    const boardId = prompt('Enter Board ID to configure:');
+    if (boardId && boardId.trim()) {
+      router.push(`/boards/${boardId.trim()}/configure`);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-gray-500">Loading boards...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="w-full h-96">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          Flow4Jira™ - Flow Metrics Dashboard
-        </h1>
-
-        {/* Configure Link */}
-        <div className="mb-6">
-          <a
-            href="/configure"
-            className="text-blue-600 hover:text-blue-800 font-medium"
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Flow4Jira™ - Your Boards
+          </h1>
+          <button
+            onClick={handleCreateNew}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
           >
-            → Configure Custom Workflow for a Board
-          </a>
+            + Configure New Board
+          </button>
         </div>
 
-        {/* Query Input */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          {/* Mode Selector */}
-          <div className="flex space-x-4 mb-4">
-            <button
-              onClick={() => setQueryMode('jql')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${queryMode === 'jql'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-            >
-              JQL Query
-            </button>
-            <button
-              onClick={() => setQueryMode('board')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors ${queryMode === 'board'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-            >
-              Board ID
-            </button>
-          </div>
-
-          {/* JQL Input Mode */}
-          {queryMode === 'jql' && (
-            <>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                JQL Query:
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={jql}
-                  onChange={(e) => setJql(e.target.value)}
-                  placeholder='e.g., project="PROJ" AND updated>=-30d'
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={fetchFlowMetrics}
-                  disabled={loading}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
-                >
-                  {loading ? 'Loading...' : 'Analyze Flow'}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Enter a JQL query to analyze flow metrics for those issues
-              </p>
-            </>
-          )}
-
-          {/* Board Input Mode */}
-          {queryMode === 'board' && (
-            <>
-              <div className="grid grid-cols-2 gap-4 mb-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Board ID:
-                  </label>
-                  <input
-                    type="text"
-                    value={boardId}
-                    onChange={(e) => setBoardId(e.target.value)}
-                    placeholder="e.g., 123"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Period (days):
-                  </label>
-                  <input
-                    type="number"
-                    value={periodDays}
-                    onChange={(e) => setPeriodDays(e.target.value)}
-                    placeholder="30"
-                    min="1"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-              <button
-                onClick={fetchFlowMetrics}
-                disabled={loading}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50 mt-2"
-              >
-                {loading ? 'Loading...' : 'Analyze Flow'}
-              </button>
-              <p className="text-xs text-gray-500 mt-2">
-                Enter a board ID to analyze flow metrics for issues updated in the last N days
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Board List */}
-        {!result && (
-          <div className="mb-6">
-            <BoardList />
-          </div>
-        )}
-
-        {/* Error Display */}
-        {result && !result.success && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <h3 className="text-red-800 font-medium">Error</h3>
-            <p className="text-red-700 text-sm">{result.error}</p>
-          </div>
-        )}
-
-        {/* Results */}
-        {result && result.success && result.data && (
-          <>
-            <CollapsibleSection title="Cycle Time Scatterplot (Last 60 Days)">
-              <CycleTimeScatterplot issues={result.data.issues} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Aging chart">
-              <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Cumulative Flow Diagram">
-              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Issue list">
-              <FlowIssueList issues={result.data.issues} />
-            </CollapsibleSection>
-          </>
-        )}
-
-        {/* Empty State */}
-        {!result && (
+        {configs.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <div className="text-gray-400 mb-4">
               <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No flow metrics yet
+              No boards configured yet
             </h3>
-            <p className="text-gray-500">
-              {queryMode === 'jql'
-                ? 'Enter a JQL query above to analyze your team\'s flow metrics'
-                : 'Enter a board ID above to analyze your team\'s flow metrics'}
+            <p className="text-gray-500 mb-6">
+              Configure your first board to start tracking flow metrics
             </p>
+            <button
+              onClick={handleCreateNew}
+              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+            >
+              Configure Your First Board
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {configs.map((config) => (
+              <div
+                key={config.metadata.boardId}
+                className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                      {config.metadata.boardName || `Board ${config.metadata.boardId}`}
+                    </h2>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Workflow: <span className="font-medium">{config.workflow.name}</span>
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {config.workflow.stages.length} stages •
+                      Last modified: {new Date(config.metadata.lastModified).toLocaleDateString()}
+                    </p>
+
+                    {/* Stage Pills */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {config.workflow.stages.map((stage) => (
+                        <span
+                          key={stage.key}
+                          className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white"
+                          style={{ backgroundColor: stage.color || '#6b7280' }}
+                        >
+                          {stage.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col space-y-2 ml-4">
+                    <Link
+                      href={`/boards/${config.metadata.boardId}`}
+                      className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded text-center text-sm"
+                    >
+                      View Metrics
+                    </Link>
+                    <Link
+                      href={`/boards/${config.metadata.boardId}/configure`}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded text-center text-sm"
+                    >
+                      Edit Config
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(config.metadata.boardId, config.metadata.boardName)}
+                      className="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
