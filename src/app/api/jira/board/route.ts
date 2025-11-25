@@ -5,7 +5,9 @@ import { JiraClient } from '@/lib/jira/client';
 
 /**
  * GET /api/jira/board?boardId={id}
- * Fetch board information and configuration from Jira
+ * Fetch board configuration from Jira
+ * Note: Returns column structure but NOT status names (to avoid rate limiting)
+ * Users will manually enter status names in the UI
  */
 export async function GET(request: NextRequest) {
   try {
@@ -37,35 +39,17 @@ export async function GET(request: NextRequest) {
     // Fetch board configuration
     const boardConfig = await jiraClient.getBoardConfiguration(boardId);
 
-    // Extract unique status IDs from columns
-    const statusIds = new Set<string>();
+    // Extract column names (helpful for user to see board structure)
+    const columns: Array<{ name: string; statusCount: number }> = [];
+
     if (boardConfig.columnConfig?.columns) {
       boardConfig.columnConfig.columns.forEach((column: any) => {
-        if (column.statuses) {
-          column.statuses.forEach((status: any) => {
-            statusIds.add(status.id);
-          });
-        }
+        columns.push({
+          name: column.name,
+          statusCount: column.statuses?.length || 0,
+        });
       });
     }
-
-    // Fetch status details for each status ID
-    const statusPromises = Array.from(statusIds).map(async (statusId) => {
-      try {
-        const status = await jiraClient.getStatus(statusId);
-        return status.name;
-      } catch (error) {
-        //console.error(`Failed to fetch status ${statusId}:`, error);
-        return null;
-      }
-    });
-
-    const statusNames = await Promise.all(statusPromises);
-
-    // Filter out nulls and sort
-    const statuses = statusNames
-      .filter((name): name is string => name !== null)
-      .sort();
 
     return NextResponse.json({
       success: true,
@@ -75,12 +59,12 @@ export async function GET(request: NextRequest) {
           name: boardConfig.name,
           type: boardConfig.type || 'unknown',
         },
-        statuses: statuses,
-        columns: boardConfig.columnConfig?.columns || [],
+        columns: columns,
+        message: 'Board configuration loaded. You can now manually add status names to your workflow stages.',
       },
     });
   } catch (error) {
-    //console.error('Error fetching board info:', error);
+    console.error('Error fetching board info:', error);
 
     if (error && typeof error === 'object' && 'status' in error && 'name' in error && error.name === 'JiraApiError') {
       const jiraError = error as unknown as { message: string; status: number };

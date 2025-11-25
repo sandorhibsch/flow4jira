@@ -3,7 +3,6 @@
 import { NextRequest } from 'next/server';
 import { GET } from './route';
 import { JiraClient } from '@/lib/jira/client';
-import { JiraBoardConfigResponse } from '@/lib/jira/jira-types';
 
 // Mock the JiraClient class
 jest.mock('@/lib/jira/client');
@@ -34,8 +33,8 @@ function createMockRequest(searchParams: Record<string, string> = {}): NextReque
   return new NextRequest(url);
 }
 
-const MOCK_BOARD_CONFIG: JiraBoardConfigResponse = {
-  id: '123',
+const MOCK_BOARD_CONFIG = {
+  id: 123,
   name: 'Engineering Board',
   type: 'scrum',
   columnConfig: {
@@ -43,7 +42,7 @@ const MOCK_BOARD_CONFIG: JiraBoardConfigResponse = {
       {
         name: 'To Do',
         statuses: [
-          { id: '1' }, // Note: no name in config, we fetch it separately
+          { id: '1' },
           { id: '2' },
         ],
       },
@@ -62,15 +61,6 @@ const MOCK_BOARD_CONFIG: JiraBoardConfigResponse = {
       },
     ],
   },
-};
-
-// Mock status responses (from /rest/api/latest/status/{id})
-const MOCK_STATUSES: Record<string, { id: string; name: string }> = {
-  '1': { id: '1', name: 'Backlog' },
-  '2': { id: '2', name: 'To Do' },
-  '3': { id: '3', name: 'In Progress' },
-  '4': { id: '4', name: 'In Review' },
-  '5': { id: '5', name: 'Done' },
 };
 
 describe('Board Info API Route', () => {
@@ -112,16 +102,12 @@ describe('Board Info API Route', () => {
       expect(data.error).toContain('Missing Jira configuration');
     });
 
-    it('should fetch board config and status names', async () => {
+    it('should fetch board config and return column info without status names', async () => {
       const mockGetBoardConfiguration = jest.fn().mockResolvedValue(MOCK_BOARD_CONFIG);
-      const mockGetStatus = jest.fn().mockImplementation((statusId: string) => {
-        return Promise.resolve(MOCK_STATUSES[statusId]);
-      });
 
       (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => {
         return {
           getBoardConfiguration: mockGetBoardConfiguration,
-          getStatus: mockGetStatus,
         } as any;
       });
 
@@ -138,25 +124,18 @@ describe('Board Info API Route', () => {
         type: 'scrum',
       });
 
-      // Should fetch status names for all status IDs and sort alphabetically
-      expect(data.data.statuses).toEqual([
-        'Backlog',
-        'Done',
-        'In Progress',
-        'In Review',
-        'To Do',
+      // Should return column info with status counts
+      expect(data.data.columns).toEqual([
+        { name: 'To Do', statusCount: 2 },
+        { name: 'In Progress', statusCount: 2 },
+        { name: 'Done', statusCount: 1 },
       ]);
 
-      expect(data.data.columns).toHaveLength(3);
+      // Should include helpful message
+      expect(data.data.message).toContain('manually add status names');
 
-      // Verify methods were called
+      // Verify method was called
       expect(mockGetBoardConfiguration).toHaveBeenCalledWith('123');
-      expect(mockGetStatus).toHaveBeenCalledTimes(5); // 5 unique status IDs
-      expect(mockGetStatus).toHaveBeenCalledWith('1');
-      expect(mockGetStatus).toHaveBeenCalledWith('2');
-      expect(mockGetStatus).toHaveBeenCalledWith('3');
-      expect(mockGetStatus).toHaveBeenCalledWith('4');
-      expect(mockGetStatus).toHaveBeenCalledWith('5');
     });
 
     it('should handle board configuration without columns', async () => {
@@ -164,14 +143,12 @@ describe('Board Info API Route', () => {
         id: 123,
         name: 'Engineering Board',
         type: 'scrum',
-        columnConfig: null, // No columns
+        columnConfig: null,
       });
-      const mockGetStatus = jest.fn();
 
       (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => {
         return {
           getBoardConfiguration: mockGetBoardConfiguration,
-          getStatus: mockGetStatus,
         } as any;
       });
 
@@ -182,44 +159,7 @@ describe('Board Info API Route', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.data.statuses).toEqual([]);
       expect(data.data.columns).toEqual([]);
-      expect(mockGetStatus).not.toHaveBeenCalled(); // No statuses to fetch
-    });
-
-    it('should handle failed status fetch gracefully', async () => {
-      const mockGetBoardConfiguration = jest.fn().mockResolvedValue(MOCK_BOARD_CONFIG);
-      const mockGetStatus = jest.fn().mockImplementation((statusId: string) => {
-        if (statusId === '3') {
-          // Simulate failure for one status
-          return Promise.reject(new Error('Status not found'));
-        }
-        return Promise.resolve(MOCK_STATUSES[statusId]);
-      });
-
-      (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => {
-        return {
-          getBoardConfiguration: mockGetBoardConfiguration,
-          getStatus: mockGetStatus,
-        } as any;
-      });
-
-      const request = createMockRequest({ boardId: '123' });
-
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-
-      // Should exclude the failed status but include others
-      expect(data.data.statuses).toEqual([
-        'Backlog',
-        'Done',
-        'In Review',
-        'To Do',
-      ]);
-      expect(data.data.statuses).not.toContain('In Progress'); // ID '3' failed
     });
 
     it('should handle JiraApiError with correct status', async () => {
@@ -267,87 +207,32 @@ describe('Board Info API Route', () => {
       expect(data.error).toContain('Network timeout');
     });
 
-    it('should deduplicate status IDs before fetching', async () => {
-      const configWithDuplicates = {
+    it('should calculate status counts correctly', async () => {
+      const configWithVaryingCounts = {
         ...MOCK_BOARD_CONFIG,
         columnConfig: {
           columns: [
             {
               name: 'Column 1',
-              statuses: [{ id: '1' }],
+              statuses: [{ id: '1' }], // 1 status
             },
             {
               name: 'Column 2',
-              statuses: [
-                { id: '1' }, // Duplicate ID
-                { id: '2' },
-              ],
+              statuses: [{ id: '2' }, { id: '3' }, { id: '4' }], // 3 statuses
             },
-          ],
-        },
-      };
-
-      const mockGetBoardConfiguration = jest.fn().mockResolvedValue(configWithDuplicates);
-      const mockGetStatus = jest.fn().mockImplementation((statusId: string) => {
-        return Promise.resolve(MOCK_STATUSES[statusId]);
-      });
-
-      (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => {
-        return {
-          getBoardConfiguration: mockGetBoardConfiguration,
-          getStatus: mockGetStatus,
-        } as any;
-      });
-
-      const request = createMockRequest({ boardId: '123' });
-
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-
-      // Should only fetch each status ID once
-      expect(mockGetStatus).toHaveBeenCalledTimes(2); // IDs '1' and '2'
-      expect(mockGetStatus).toHaveBeenCalledWith('1');
-      expect(mockGetStatus).toHaveBeenCalledWith('2');
-
-      // Result should have 2 unique status names
-      expect(data.data.statuses).toEqual(['Backlog', 'To Do']);
-    });
-
-    it('should sort status names alphabetically', async () => {
-      const mockStatuses: Record<string, { id: string; name: string }> = {
-        '1': { id: '1', name: 'Zebra' },
-        '2': { id: '2', name: 'Apple' },
-        '3': { id: '3', name: 'Mango' },
-      };
-
-      const configWithUnsortedStatuses = {
-        id: 123,
-        name: 'Test Board',
-        columnConfig: {
-          columns: [
             {
-              name: 'Column',
-              statuses: [
-                { id: '1' },
-                { id: '2' },
-                { id: '3' },
-              ],
+              name: 'Column 3',
+              statuses: [], // 0 statuses
             },
           ],
         },
       };
 
-      const mockGetBoardConfiguration = jest.fn().mockResolvedValue(configWithUnsortedStatuses);
-      const mockGetStatus = jest.fn().mockImplementation((statusId: string) => {
-        return Promise.resolve(mockStatuses[statusId]);
-      });
+      const mockGetBoardConfiguration = jest.fn().mockResolvedValue(configWithVaryingCounts);
 
       (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => {
         return {
           getBoardConfiguration: mockGetBoardConfiguration,
-          getStatus: mockGetStatus,
         } as any;
       });
 
@@ -356,7 +241,11 @@ describe('Board Info API Route', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(data.data.statuses).toEqual(['Apple', 'Mango', 'Zebra']);
+      expect(data.data.columns).toEqual([
+        { name: 'Column 1', statusCount: 1 },
+        { name: 'Column 2', statusCount: 3 },
+        { name: 'Column 3', statusCount: 0 },
+      ]);
     });
   });
 });

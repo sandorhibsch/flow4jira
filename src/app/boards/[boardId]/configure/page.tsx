@@ -23,8 +23,8 @@ type FetchBoardResult = {
 };
 
 const STAGE_COLORS = [
-  '#4e79a7', // blue
   '#bab0ac', // gray
+  '#4e79a7', // blue
   '#9c755f', // brown
   '#f28e2b', // orange
   '#edc948', // yellow
@@ -41,7 +41,7 @@ export default function ConfigurePage() {
   const [boardId, setBoardId] = useState(boardIdFromUrl || '');
   const [loading, setLoading] = useState(false);
   const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null);
-  const [availableStatuses, setAvailableStatuses] = useState<string[]>([]);
+  const [boardColumns, setBoardColumns] = useState<Array<{ name: string; statusCount: number }>>([]);
 
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
@@ -83,7 +83,7 @@ export default function ConfigurePage() {
       }
 
       setBoardInfo(data.data!.board);
-      setAvailableStatuses(data.data!.statuses);
+      setBoardColumns(data.data!.columns || []);
       setWorkflowName(`${data.data!.board.name} Workflow`);
 
       // Check if config already exists
@@ -127,15 +127,22 @@ export default function ConfigurePage() {
     setStages(newStages);
   };
 
-  const toggleStatus = (stageIndex: number, status: string) => {
+  const addStatusToStage = (stageIndex: number, statusName: string) => {
+    if (!statusName.trim()) return;
+
     const stage = stages[stageIndex];
-    const hasStatus = stage.jiraStatuses.includes(status);
+    if (stage.jiraStatuses.includes(statusName)) return; // Already exists
 
-    const newStatuses = hasStatus
-      ? stage.jiraStatuses.filter(s => s !== status)
-      : [...stage.jiraStatuses, status];
+    updateStage(stageIndex, {
+      jiraStatuses: [...stage.jiraStatuses, statusName]
+    });
+  };
 
-    updateStage(stageIndex, { jiraStatuses: newStatuses });
+  const removeStatusFromStage = (stageIndex: number, statusName: string) => {
+    const stage = stages[stageIndex];
+    updateStage(stageIndex, {
+      jiraStatuses: stage.jiraStatuses.filter(s => s !== statusName)
+    });
   };
 
   const validateWorkflow = (): string | null => {
@@ -147,11 +154,10 @@ export default function ConfigurePage() {
       return 'At least one stage is required';
     }
 
-    // Check all statuses are mapped
-    const mappedStatuses = new Set(stages.flatMap(s => s.jiraStatuses));
-    const unmappedStatuses = availableStatuses.filter(s => !mappedStatuses.has(s));
-    if (unmappedStatuses.length > 0) {
-      return `Unmapped statuses: ${unmappedStatuses.join(', ')}`;
+    // Check that stages have statuses
+    const stagesWithoutStatuses = stages.filter(s => s.jiraStatuses.length === 0);
+    if (stagesWithoutStatuses.length > 0) {
+      return `Some stages have no statuses: ${stagesWithoutStatuses.map(s => s.name).join(', ')}`;
     }
 
     // Check for cycle start
@@ -246,9 +252,21 @@ export default function ConfigurePage() {
               <p className="font-medium text-green-800">
                 Board: {boardInfo.name} (ID: {boardInfo.id})
               </p>
-              <p className="text-sm text-green-700">
-                Found {availableStatuses.length} statuses
-              </p>
+              {boardColumns.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-green-700 font-medium">Board Columns:</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {boardColumns.map((col, idx) => (
+                      <span key={idx} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        {col.name} ({col.statusCount} {col.statusCount === 1 ? 'status' : 'statuses'})
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    💡 Use these column names as a guide when adding statuses to your workflow stages below
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -272,12 +290,6 @@ export default function ConfigurePage() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold">3. Configure Stages</h2>
-                <button
-                  onClick={addStage}
-                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                >
-                  + Add Stage
-                </button>
               </div>
 
               <div className="space-y-6">
@@ -363,31 +375,66 @@ export default function ConfigurePage() {
                       </label>
                     </div>
 
-                    {/* Status Mapping */}
+                    {/* Status Management */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Jira Statuses (select all that belong to this stage)
+                        Jira Statuses
                       </label>
-                      <div className="flex flex-wrap gap-2">
-                        {availableStatuses.map((status) => {
-                          const isSelected = stage.jiraStatuses.includes(status);
-                          return (
-                            <button
+
+                      {/* Current Statuses */}
+                      {stage.jiraStatuses.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {stage.jiraStatuses.map((status) => (
+                            <span
                               key={status}
-                              onClick={() => toggleStatus(index, status)}
-                              className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${isSelected
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                }`}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
                             >
                               {status}
-                            </button>
-                          );
-                        })}
+                              <button
+                                onClick={() => removeStatusFromStage(index, status)}
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-bold"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add Status Input */}
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          placeholder="Enter status name (e.g., 'In Progress')"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const input = e.currentTarget;
+                              addStatusToStage(index, input.value);
+                              input.value = '';
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                            addStatusToStage(index, input.value);
+                            input.value = '';
+                          }}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium"
+                        >
+                          Add
+                        </button>
                       </div>
+
                       <p className="text-xs text-gray-500 mt-2">
-                        Selected: {stage.jiraStatuses.length} status(es)
+                        Add status names exactly as they appear in Jira (case-sensitive)
                       </p>
+                      {stage.jiraStatuses.length === 0 && (
+                        <p className="text-xs text-red-600 mt-1">
+                          ⚠️ At least one status is required
+                        </p>
+                      )}
                     </div>
 
                     {/* Remove Button */}
@@ -402,6 +449,12 @@ export default function ConfigurePage() {
                   </div>
                 ))}
               </div>
+              <button
+                onClick={addStage}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+              >
+                + Add Stage
+              </button>
             </div>
 
             {/* Save Section */}
