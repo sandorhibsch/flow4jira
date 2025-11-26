@@ -2,6 +2,7 @@
 
 import { WorkflowConfigService } from './workflow-config-service';
 import { WorkflowDefinition } from '../jira/workflow-config';
+import { TEST_WORKFLOW } from '../testutils/create-mocks';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -38,33 +39,6 @@ beforeAll(() => {
 beforeEach(() => {
   localStorageMock.clear();
 });
-
-const TEST_WORKFLOW: WorkflowDefinition = {
-  key: 'test-workflow',
-  name: 'Test Workflow',
-  stages: [
-    {
-      key: 'backlog',
-      name: 'Backlog',
-      jiraStatuses: ['Backlog'],
-      stageType: 'new',
-    },
-    {
-      key: 'dev',
-      name: 'Development',
-      jiraStatuses: ['In Progress'],
-      stageType: 'in-progress',
-      isCycleStart: true,
-    },
-    {
-      key: 'done',
-      name: 'Done',
-      jiraStatuses: ['Done'],
-      stageType: 'done',
-      isCycleEnd: true,
-    },
-  ],
-};
 
 describe('WorkflowConfigService', () => {
   describe('save', () => {

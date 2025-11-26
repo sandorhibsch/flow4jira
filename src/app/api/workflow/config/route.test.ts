@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { DELETE, GET, POST } from "./route";
 import { WorkflowConfigService } from "@/lib/services/workflow-config-service";
 import { WorkflowDefinition } from "@/lib/jira/workflow-config";
+import { TEST_WORKFLOW } from "@/lib/testutils/create-mocks";
 
 jest.mock('@/lib/services/workflow-config-service');
 
@@ -28,26 +29,6 @@ function createMockRequest(
 
   return request;
 }
-
-const TEST_WORKFLOW = {
-  key: 'board-123',
-  name: 'Test Workflow',
-  stages: [
-    {
-      key: 'backlog',
-      name: 'Backlog',
-      jiraStatuses: ['Backlog'],
-      stageType: 'new' as const,
-    },
-    {
-      key: 'done',
-      name: 'Done',
-      jiraStatuses: ['Done'],
-      stageType: 'done' as const,
-      isCycleEnd: true,
-    },
-  ],
-};
 
 const TEST_CONFIG_WITH_METADATA = {
   metadata: {

@@ -3,20 +3,8 @@
 import { WorkflowDefinition } from '../jira/workflow-config';
 import { processJiraIssue, msToDays } from './processor';
 import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
+import { TEST_WORKFLOW } from '../testutils/create-mocks';
 
-const TEST_WORKFLOW: WorkflowDefinition = {
-  key: 'default',
-  name: 'Full Development Workflow',
-  stages: [
-    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Backlog'], stageType: 'new' },
-    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], stageType: 'ready' },
-    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
-    { key: 'deploy', name: 'Deployment', jiraStatuses: ['Deployed'], stageType: 'in-progress' },
-    { key: 'test', name: 'Testing', jiraStatuses: ['Test'], stageType: 'in-progress' },
-    { key: 'release', name: 'Release', jiraStatuses: ['To be Released'], stageType: 'in-progress' },
-    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
-  ],
-};
 /**
  * Test helper: Create a mock Jira issue
  */
