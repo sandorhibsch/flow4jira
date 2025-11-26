@@ -2,33 +2,13 @@ import { NextRequest } from "next/server";
 import { DELETE, GET, POST } from "./route";
 import { WorkflowConfigService } from "@/lib/services/workflow-config-service";
 import { WorkflowDefinition } from "@/lib/jira/workflow-config";
-import { TEST_WORKFLOW } from "@/lib/testutils/create-mocks";
+import { TEST_WORKFLOW, createMockRequest } from "@/lib/testutils/create-mocks";
 
 jest.mock('@/lib/services/workflow-config-service');
 
 const mockWorkflowService = WorkflowConfigService as jest.Mocked<typeof WorkflowConfigService>;
 
-//helper to mock request
-function createMockRequest(
-  searchParams: Record<string, string> = {},
-  body?: any
-): NextRequest {
-  const url = new URL('http://localhost/api/workflow/config');
-  Object.entries(searchParams).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-
-  const request = new NextRequest(url, {
-    method: body ? 'POST' : 'GET',
-  });
-
-  // Mock json() for POST requests
-  if (body) {
-    jest.spyOn(request, 'json').mockResolvedValue(body);
-  }
-
-  return request;
-}
+const baseUrl = 'http://localhost/api/workflow/config';
 
 const TEST_CONFIG_WITH_METADATA = {
   metadata: {
@@ -46,7 +26,7 @@ beforeEach(() => {
 describe('Workflow config CRUD operations', () => {
   describe('Get board config', () => {
     it('should return error if boardId is missing', async () => {
-      const request = createMockRequest({});
+      const request = createMockRequest(baseUrl, {});
 
       const response = await GET(request);
       const data = await response.json();
@@ -60,7 +40,7 @@ describe('Workflow config CRUD operations', () => {
     it('should return error if boardId doesnt exist', async () => {
       const mockResolvedValue = mockWorkflowService.loadWithMetadata.mockReturnValue(null);
 
-      const request = createMockRequest({ boardId: '999' });
+      const request = createMockRequest(baseUrl, { boardId: '999' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -74,7 +54,7 @@ describe('Workflow config CRUD operations', () => {
     it('should return board config for board ID', async () => {
       const mockConfig = mockWorkflowService.loadWithMetadata.mockReturnValue(TEST_CONFIG_WITH_METADATA);
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -89,7 +69,7 @@ describe('Workflow config CRUD operations', () => {
     it('should save and return new board config', async () => {
       mockWorkflowService.save.mockReturnValue(true);
 
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
         workflow: TEST_WORKFLOW,
         boardName: 'Test Board',
@@ -109,7 +89,7 @@ describe('Workflow config CRUD operations', () => {
     });
 
     it('should throw error if board ID is missing', async () => {
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         workflow: TEST_WORKFLOW
       });
 
@@ -123,7 +103,7 @@ describe('Workflow config CRUD operations', () => {
     });
 
     it('should throw error if workflow is missing', async () => {
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         boardId: '123'
       });
 
@@ -138,7 +118,7 @@ describe('Workflow config CRUD operations', () => {
 
     it('should throw error if workflow is invalid', async () => {
       const BAD_WORKFLOW = {}
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
         workflow: BAD_WORKFLOW,
         boardName: 'This is not a board'
@@ -156,7 +136,7 @@ describe('Workflow config CRUD operations', () => {
     it('should throw error if save fails', async () => {
       mockWorkflowService.save.mockReturnValue(false);
 
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
         workflow: TEST_WORKFLOW,
       });
@@ -178,7 +158,7 @@ describe('Workflow config CRUD operations', () => {
         ...TEST_WORKFLOW,
         name: 'Updated workflow name'
       }
-      const request = createMockRequest({}, {
+      const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
         workflow: updatedWorkflow,
         boardName: 'Test Board'
@@ -202,7 +182,7 @@ describe('Workflow config CRUD operations', () => {
     it('should delete board config', async () => {
       mockWorkflowService.delete.mockReturnValue(true);
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -214,7 +194,7 @@ describe('Workflow config CRUD operations', () => {
     });
 
     it('should throw error if boardId is missing', async () => {
-      const request = createMockRequest({});
+      const request = createMockRequest(baseUrl, {});
 
       const response = await DELETE(request);
       const data = await response.json();
@@ -228,7 +208,7 @@ describe('Workflow config CRUD operations', () => {
     it('should throw error if boardId doesnt exist', async () => {
       mockWorkflowService.delete.mockReturnValue(false);
 
-      const request = createMockRequest({ boardId: '123 ' });
+      const request = createMockRequest(baseUrl, { boardId: '123 ' });
 
       const response = await DELETE(request);
       const data = await response.json();

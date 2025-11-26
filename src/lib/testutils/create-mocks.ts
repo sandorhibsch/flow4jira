@@ -1,5 +1,28 @@
+import { NextRequest } from "next/server";
 import { ProcessedFlowIssue } from "../flow/flow-types";
 import { WorkflowDefinition } from "../jira/workflow-config";
+
+export function createMockRequest(
+  baseUrl: string,
+  searchParams: Record<string, string> = {},
+  body?: any
+): NextRequest {
+  const url = new URL(baseUrl);
+  Object.entries(searchParams).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+
+  const request = new NextRequest(url, {
+    method: body ? 'POST' : 'GET',
+  });
+
+  // Mock json() for POST requests
+  if (body) {
+    jest.spyOn(request, 'json').mockResolvedValue(body);
+  }
+
+  return request;
+}
 
 export const TEST_WORKFLOW: WorkflowDefinition = {
   key: 'default',

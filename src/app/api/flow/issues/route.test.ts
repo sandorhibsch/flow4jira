@@ -1,8 +1,9 @@
 // src/app/api/flow/board/route.test.ts
 
-import { NextRequest } from 'next/server';
 import { GET } from './route';
 import { handleFlowRequest } from '@/lib/api/flow-handler';
+
+import { createMockRequest } from '@/lib/testutils/create-mocks';
 
 // Mock the dependencies
 jest.mock('@/lib/jira/client');
@@ -15,15 +16,7 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
-// Helper to create mock NextRequest
-function createMockRequest(searchParams: Record<string, string>): NextRequest {
-  const url = new URL('http://localhost/api/flow/issues');
-  Object.entries(searchParams).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-
-  return new NextRequest(url);
-}
+const baseUrl = 'http://localhost/api/flow/issues';
 
 describe('Issues Flow API Route', () => {
   describe('Validation', () => {
@@ -39,7 +32,7 @@ describe('Issues Flow API Route', () => {
         status: 200
       });
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       await GET(request);
 
@@ -61,7 +54,7 @@ describe('Issues Flow API Route', () => {
         status: 200
       });
 
-      const request = createMockRequest({ boardId: '456', periodDays: '60' });
+      const request = createMockRequest(baseUrl, { boardId: '456', periodDays: '60' });
 
       await GET(request);
 
@@ -86,7 +79,7 @@ describe('Issues Flow API Route', () => {
         status: 200
       });
 
-      const request = createMockRequest({ boardId: '123', periodDays: '30' });
+      const request = createMockRequest(baseUrl, { boardId: '123', periodDays: '30' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -104,7 +97,7 @@ describe('Issues Flow API Route', () => {
         status: 404
       });
 
-      const request = createMockRequest({ boardId: '999', periodDays: '30' });
+      const request = createMockRequest(baseUrl, { boardId: '999', periodDays: '30' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -124,7 +117,7 @@ describe('Issues Flow API Route', () => {
         status: 401
       });
 
-      const request = createMockRequest({ boardId: '123', periodDays: '30' });
+      const request = createMockRequest(baseUrl, { boardId: '123', periodDays: '30' });
 
       const response = await GET(request);
       const data = await response.json();

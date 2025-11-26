@@ -1,8 +1,9 @@
 // src/app/api/jira/board/route.test.ts
 
-import { NextRequest } from 'next/server';
 import { GET } from './route';
 import { JiraClient } from '@/lib/jira/client';
+
+import { createMockRequest } from '@/lib/testutils/create-mocks';
 
 // Mock the JiraClient class
 jest.mock('@/lib/jira/client');
@@ -24,14 +25,7 @@ afterEach(() => {
   process.env = originalEnv;
 });
 
-// Helper to create mock NextRequest
-function createMockRequest(searchParams: Record<string, string> = {}): NextRequest {
-  const url = new URL('http://localhost/api/jira/board');
-  Object.entries(searchParams).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-  return new NextRequest(url);
-}
+const baseUrl = 'http://localhost/api/jira/board';
 
 const MOCK_BOARD_CONFIG = {
   id: 123,
@@ -66,7 +60,7 @@ const MOCK_BOARD_CONFIG = {
 describe('Board Info API Route', () => {
   describe('GET /api/jira/board', () => {
     it('should return error if boardId is missing', async () => {
-      const request = createMockRequest({});
+      const request = createMockRequest(baseUrl, {});
 
       const response = await GET(request);
       const data = await response.json();
@@ -79,7 +73,7 @@ describe('Board Info API Route', () => {
     it('should return error if JIRA_BASE_URL is missing', async () => {
       delete process.env.JIRA_BASE_URL;
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -92,7 +86,7 @@ describe('Board Info API Route', () => {
     it('should return error if JIRA_PERSONAL_ACCESS_TOKEN is missing', async () => {
       delete process.env.JIRA_PERSONAL_ACCESS_TOKEN;
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -111,7 +105,7 @@ describe('Board Info API Route', () => {
         } as any;
       });
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -152,7 +146,7 @@ describe('Board Info API Route', () => {
         } as any;
       });
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -178,7 +172,7 @@ describe('Board Info API Route', () => {
         } as any;
       });
 
-      const request = createMockRequest({ boardId: '999' });
+      const request = createMockRequest(baseUrl, { boardId: '999' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -197,7 +191,7 @@ describe('Board Info API Route', () => {
         } as any;
       });
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();
@@ -236,7 +230,7 @@ describe('Board Info API Route', () => {
         } as any;
       });
 
-      const request = createMockRequest({ boardId: '123' });
+      const request = createMockRequest(baseUrl, { boardId: '123' });
 
       const response = await GET(request);
       const data = await response.json();

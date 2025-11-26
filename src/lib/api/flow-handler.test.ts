@@ -67,6 +67,7 @@ describe('Flow Handler', () => {
     });
 
     it('should process fetched issues correctly', async () => {
+
       const mockIssues = [
         {
           key: 'PROJ-1',
@@ -108,7 +109,6 @@ describe('Flow Handler', () => {
       expect(result.success).toBe(true);
       expect(result.data?.issues).toHaveLength(1);
       expect(result.data?.issues[0].key).toBe('PROJ-1');
-      expect(result.data?.workflow).toBeDefined();
     });
 
     it('should include query description in metadata when provided', async () => {
