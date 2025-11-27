@@ -24,6 +24,31 @@ export function createMockRequest(
   return request;
 }
 
+export const mockJiraIssue = {
+  key: 'PROJ-1',
+  id: '1',
+  self: 'http://jira/issue/1',
+  fields: {
+    summary: 'Test issue',
+    created: new Date('2024-01-01').toISOString(),
+    resolutiondate: null,
+    issuetype: { id: '1', name: 'Story', iconUrl: '' },
+    status: {
+      id: '1',
+      name: 'In Progress',
+      statusCategory: { id: 2, key: 'indeterminate', colorName: 'yellow', name: 'In Progress' }
+    }
+  },
+  changelog: {
+    self: '',
+    maxResults: 0,
+    startAt: 0,
+    total: 0,
+    isLast: true,
+    histories: []
+  }
+}
+
 export const TEST_WORKFLOW: WorkflowDefinition = {
   key: 'default',
   name: 'Full Development Workflow',
