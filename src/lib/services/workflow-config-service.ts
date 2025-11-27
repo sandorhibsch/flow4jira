@@ -7,6 +7,7 @@ const STORAGE_PREFIX = 'workflow:board:';
 export type WorkflowConfigMetadata = {
   boardId: string;
   boardName?: string;
+  boardType?: string;
   lastModified: string;
 };
 
@@ -26,7 +27,8 @@ export class WorkflowConfigService {
   static save(
     boardId: string,
     workflow: WorkflowDefinition,
-    boardName?: string
+    boardName?: string,
+    boardType?: string
   ): boolean {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
@@ -34,6 +36,7 @@ export class WorkflowConfigService {
         metadata: {
           boardId,
           boardName,
+          boardType,
           lastModified: new Date().toISOString(),
         },
         workflow,

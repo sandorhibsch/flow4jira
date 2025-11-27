@@ -95,13 +95,14 @@ describe('WorkflowConfigService', () => {
 
   describe('loadWithMetadata', () => {
     it('should load full config with metadata', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board');
+      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum');
 
       const result = WorkflowConfigService.loadWithMetadata('123');
 
       expect(result).toBeDefined();
       expect(result?.metadata.boardId).toBe('123');
       expect(result?.metadata.boardName).toBe('Test Board');
+      expect(result?.metadata.boardType).toBe('scrum');
       expect(result?.workflow).toEqual(TEST_WORKFLOW);
     });
 
