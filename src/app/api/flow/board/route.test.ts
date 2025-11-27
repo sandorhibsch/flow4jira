@@ -2,7 +2,7 @@
 
 import { GET } from './route';
 import { handleFlowRequest } from '@/lib/api/flow-handler';
-import { createMockRequest } from '@/lib/testutils/create-mocks';
+import { createMockRequest, mockJiraIssue } from '@/lib/testutils/create-mocks';
 
 // Mock the dependencies
 jest.mock('@/lib/jira/client');
@@ -36,7 +36,6 @@ describe('Board Flow API Route', () => {
         success: true,
         data: {
           issues: [],
-          workflow: {} as any
         },
         metadata: { timestamp: new Date().toISOString() },
         status: 200
@@ -57,8 +56,7 @@ describe('Board Flow API Route', () => {
       mockHandleFlowRequest.mockResolvedValue({
         success: true,
         data: {
-          issues: [],
-          workflow: {} as any,
+          issues: []
         },
         metadata: { timestamp: new Date().toISOString() },
         status: 200
@@ -78,8 +76,7 @@ describe('Board Flow API Route', () => {
   describe('Handler Integration', () => {
     it('should return success response from handler', async () => {
       const mockData = {
-        issues: [{ key: 'PROJ-1', summary: 'Test' }],
-        workflow: {} as any,
+        issues: [mockJiraIssue]
       };
 
       mockHandleFlowRequest.mockResolvedValue({

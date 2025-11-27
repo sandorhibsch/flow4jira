@@ -3,6 +3,7 @@
 import { handleFlowRequest } from './flow-handler';
 import { JiraClient, JiraApiError } from '@/lib/jira/client';
 import { JiraSearchResponse } from '@/lib/jira/jira-types';
+import { mockJiraIssue } from '../testutils/create-mocks';
 
 jest.mock('@/lib/jira/client');
 
@@ -50,6 +51,7 @@ describe('Flow Handler', () => {
   });
 
   describe('Issue Fetching', () => {
+
     it('should call fetch function with JiraClient', async () => {
       const mockResponse: JiraSearchResponse = {
         expand: '',
@@ -64,36 +66,12 @@ describe('Flow Handler', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(expect.any(JiraClient));
       expect(result.success).toBe(true);
+      expect(result.status).toBe(200);
     });
 
-    it('should process fetched issues correctly', async () => {
+    it('should return fetched issues as received from Jira', async () => {
 
-      const mockIssues = [
-        {
-          key: 'PROJ-1',
-          id: '1',
-          self: 'http://jira/issue/1',
-          fields: {
-            summary: 'Test issue',
-            created: new Date('2024-01-01').toISOString(),
-            resolutiondate: null,
-            issuetype: { id: '1', name: 'Story', iconUrl: '' },
-            status: {
-              id: '1',
-              name: 'In Progress',
-              statusCategory: { id: 2, key: 'indeterminate', colorName: 'yellow', name: 'In Progress' }
-            }
-          },
-          changelog: {
-            self: '',
-            maxResults: 0,
-            startAt: 0,
-            total: 0,
-            isLast: true,
-            histories: []
-          }
-        }
-      ];
+      const mockIssues = [mockJiraIssue];
 
       const mockResponse: JiraSearchResponse = {
         expand: '',
@@ -109,6 +87,23 @@ describe('Flow Handler', () => {
       expect(result.success).toBe(true);
       expect(result.data?.issues).toHaveLength(1);
       expect(result.data?.issues[0].key).toBe('PROJ-1');
+      expect(result.data?.issues[0].fields.summary).toBe('Test issue');
+    });
+
+    it('should always include timestamp in metadata', async () => {
+      const mockResponse: JiraSearchResponse = {
+        expand: '',
+        startAt: 0,
+        maxResults: 0,
+        total: 0,
+        issues: []
+      };
+
+      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
+      const result = await handleFlowRequest(mockFetch);
+
+      expect(result.metadata?.timestamp).toBeDefined();
+      expect(new Date(result.metadata!.timestamp)).toBeInstanceOf(Date);
     });
 
     it('should include query description in metadata when provided', async () => {
@@ -140,6 +135,7 @@ describe('Flow Handler', () => {
 
       expect(result.metadata?.query).toBeUndefined();
     });
+
   });
 
   describe('Error Handling', () => {
@@ -203,36 +199,4 @@ describe('Flow Handler', () => {
     });
   });
 
-  describe('Response Structure', () => {
-    it('should always include timestamp in metadata', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.metadata?.timestamp).toBeDefined();
-      expect(new Date(result.metadata!.timestamp)).toBeInstanceOf(Date);
-    });
-
-    it('should return proper status codes', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.status).toBe(200);
-    });
-  });
 });

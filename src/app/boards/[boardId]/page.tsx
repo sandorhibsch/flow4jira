@@ -1,10 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ProcessedFlowIssue, FlowIssueCalculatedMetrics } from '@/lib/flow/flow-types';
-import { WorkflowDefinition } from '@/lib/jira/workflow-config';
+
+import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
+import { processJiraIssue } from '@/lib/flow/processor';
+import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
 import { WorkflowConfigService } from '@/lib/services/workflow-config-service';
 
 import CollapsibleSection from '@/ui/collapsible-section';
@@ -12,16 +15,24 @@ import FlowIssueList from '@/ui/flow-issue-list';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
+import { JiraIssue } from '@/lib/jira/jira-types';
+
+type IssueListResult = {
+  success: boolean;
+  data?: {
+    issues: JiraIssue[];
+  };
+  error?: string;
+};
 
 type FlowResult = {
   success: boolean;
   data?: {
     issues: ProcessedFlowIssue[];
     workflow: WorkflowDefinition;
-    summary: FlowIssueCalculatedMetrics;
   };
   error?: string;
-};
+}
 
 export default function BoardMetricsPage() {
   const params = useParams();
@@ -54,7 +65,7 @@ export default function BoardMetricsPage() {
     }
   }, [boardId, router]);
 
-  const fetchFlowMetrics = async () => {
+  const processIssuesWithWorkflow = async () => {
     if (!boardId) {
       alert('Board ID is required');
       return;
@@ -72,19 +83,26 @@ export default function BoardMetricsPage() {
         },
       });
 
-      const data = await response.json();
+      const data: IssueListResult = await response.json();
 
       // Load custom workflow
-      if (data.success) {
-        const customWorkflow = WorkflowConfigService.load(boardId);
+      if (data.success && data.data) {
+        const boardWorkflow = WorkflowConfigService.load(boardId) || DEFAULT_WORKFLOW;
+        const processedIssues = data.data?.issues.map(issue => {
+          const issueWithChangelog = issue as any;
+          const changelog = issueWithChangelog.changelog;
+          return processJiraIssue(boardWorkflow, issue, changelog);
+        });
 
-        if (customWorkflow) {
-          // Replace workflow with custom one
-          data.data.workflow = customWorkflow;
+        const flowResult = {
+          success: true,
+          data: {
+            issues: processedIssues,
+            workflow: boardWorkflow
+          }
         }
+        setResult(flowResult);
       }
-
-      setResult(data);
 
     } catch (error) {
       setResult({
@@ -153,7 +171,7 @@ export default function BoardMetricsPage() {
               />
             </div>
             <button
-              onClick={fetchFlowMetrics}
+              onClick={processIssuesWithWorkflow}
               disabled={loading}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
             >

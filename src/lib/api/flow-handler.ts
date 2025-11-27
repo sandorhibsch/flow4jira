@@ -3,13 +3,12 @@
 import { JiraClient } from '@/lib/jira/client';
 import { processJiraIssue } from '@/lib/flow/processor';
 import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
-import { JiraSearchResponse } from '@/lib/jira/jira-types';
+import { JiraIssue, JiraSearchResponse } from '@/lib/jira/jira-types';
 
 export type FlowHandlerResult = {
   success: boolean;
   data?: {
-    issues: any[];
-    workflow: WorkflowDefinition;
+    issues: JiraIssue[];
   };
   metadata?: {
     timestamp: string;
@@ -25,9 +24,6 @@ export async function handleFlowRequest(
   queryDescription?: string
 ): Promise<FlowHandlerResult> {
   try {
-    // Set workflow
-    const workflow: WorkflowDefinition = DEFAULT_WORKFLOW;
-
     // Validate environment variables
     const jiraBaseUrl = process.env.JIRA_BASE_URL;
     const jiraBearerToken = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
@@ -46,25 +42,13 @@ export async function handleFlowRequest(
       bearerToken: jiraBearerToken
     });
 
-    //console.log(`Fetching flow issues${queryDescription ? `: ${queryDescription}` : ''}`);
-
     // Fetch issues using the provided function
     const jiraResponse = await fetchIssues(jiraClient);
-
-    //console.log(`Fetched ${jiraResponse.issues.length} issues, processing...`);
-
-    // Process issues through flow processor
-    const processedIssues = jiraResponse.issues.map(issue => {
-      const issueWithChangelog = issue as any;
-      const changelog = issueWithChangelog.changelog;
-      return processJiraIssue(workflow, issue, changelog);
-    });
 
     return {
       success: true,
       data: {
-        issues: processedIssues,
-        workflow: workflow
+        issues: jiraResponse.issues,
       },
       metadata: {
         timestamp: new Date().toISOString(),
@@ -91,6 +75,7 @@ export async function handleFlowRequest(
       };
     }
 
+    //handle generic errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return {
       success: false,
