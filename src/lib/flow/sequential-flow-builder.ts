@@ -97,7 +97,7 @@ export function buildSequentialFlow(
 
 function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: WorkflowDefinition): WorkflowStage {
   const calculatedStage = event.isAddedToSprint ?
-    workflow.stages.find(s => s.stageType === 'ready') :
+    workflow.stages.find(s => s.isAddedToSprint) :
     findStageByStatus(workflow, event.to);
 
   return calculatedStage ?? workflow.stages[0];

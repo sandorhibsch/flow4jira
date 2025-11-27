@@ -154,9 +154,9 @@ export default function ConfigurePage() {
       return 'At least one stage is required';
     }
 
-    // Check that stages have statuses
+    // Check that stages have statuses except with Scrum board
     const stagesWithoutStatuses = stages.filter(s => s.jiraStatuses.length === 0);
-    if (stagesWithoutStatuses.length > 0) {
+    if (stagesWithoutStatuses.length > 0 && boardInfo?.type != 'scrum') {
       return `Some stages have no statuses: ${stagesWithoutStatuses.map(s => s.name).join(', ')}`;
     }
 
@@ -355,6 +355,17 @@ export default function ConfigurePage() {
 
                     {/* Cycle Markers */}
                     <div className="flex space-x-4 mb-4">
+                      {boardInfo.type === 'scrum' && (
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={stage.isAddedToSprint || false}
+                            onChange={(e) => updateStage(index, { isAddedToSprint: e.target.checked })}
+                            className="mr-2"
+                          />
+                          <span className="text-sm">Added to Sprint</span>
+                        </label>
+                      )}
                       <label className="flex items-center">
                         <input
                           type="checkbox"
@@ -373,6 +384,7 @@ export default function ConfigurePage() {
                         />
                         <span className="text-sm">Cycle End</span>
                       </label>
+
                     </div>
 
                     {/* Status Management */}
@@ -430,7 +442,7 @@ export default function ConfigurePage() {
                       <p className="text-xs text-gray-500 mt-2">
                         Add status names exactly as they appear in Jira (case-sensitive)
                       </p>
-                      {stage.jiraStatuses.length === 0 && (
+                      {boardInfo.type != 'scrum' && stage.jiraStatuses.length === 0 && (
                         <p className="text-xs text-red-600 mt-1">
                           ⚠️ At least one status is required
                         </p>
