@@ -74,24 +74,33 @@ export default function ConfigurePage() {
     setSaveStatus(null);
 
     try {
-      const response = await fetch(`/api/jira/board?boardId=${encodeURIComponent(boardId)}`);
-      const data: FetchBoardResult = await response.json();
+      const workflowConfig = WorkflowConfigService.loadWithMetadata(boardId);
+      if (workflowConfig) {
+        setWorkflowName(workflowConfig.workflow.name);
 
-      if (!data.success) {
-        alert(`Error: ${data.error}`);
-        return;
-      }
+        const boardInfo: BoardInfo = {
+          id: workflowConfig.metadata.boardId,
+          name: workflowConfig.metadata.boardName || 'Workflow',
+          type: workflowConfig.metadata.boardType || 'unknown'
+        }
 
-      setBoardInfo(data.data!.board);
-      setBoardColumns(data.data!.columns || []);
-      setWorkflowName(`${data.data!.board.name} Workflow`);
+        setBoardInfo(boardInfo);
 
-      // Check if config already exists
-      const existingConfig = WorkflowConfigService.loadWithMetadata(boardId);
-      if (existingConfig) {
-        setWorkflowName(existingConfig.workflow.name);
-        setStages(existingConfig.workflow.stages);
+        setStages(workflowConfig.workflow.stages);
         setSaveStatus({ type: 'success', message: 'Loaded existing configuration' });
+      } else {
+
+        const response = await fetch(`/api/jira/board?boardId=${encodeURIComponent(boardId)}`);
+        const data: FetchBoardResult = await response.json();
+
+        if (!data.success) {
+          alert(`Error: ${data.error}`);
+          return;
+        }
+
+        setBoardInfo(data.data!.board);
+        setWorkflowName(`${data.data!.board.name} Workflow`);
+
       }
     } catch (error) {
       alert('Failed to fetch board information');
