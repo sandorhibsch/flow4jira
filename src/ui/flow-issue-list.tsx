@@ -19,7 +19,7 @@ const FlowIssueList = ({
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
-              <tr>
+              <tr key="issueListHeader">
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Stage
                 </th>
@@ -36,7 +36,7 @@ const FlowIssueList = ({
                   Status
                 </th>
                 {workflow.stages.map((stage) => (
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th key={stage.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     {stage.name}
                   </th>
                 ))}
@@ -72,7 +72,7 @@ const FlowIssueList = ({
                     <span className="text-sm text-gray-500">{issue.currentStatus}</span>
                   </td>
                   {workflow.stages.map((stage) => (
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td key={`${issue.key}-${stage.key}`} className="px-4 py-3 whitespace-nowrap">
                       <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toString()}</span>
                     </td>
                   ))}
