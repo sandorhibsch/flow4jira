@@ -2,6 +2,7 @@ export type WorkflowStage = {
   key: string;
   name: string;
   jiraStatuses: string[];
+  isAddedToSprint?: boolean;
   isCycleStart?: boolean;
   isCycleEnd?: boolean;
   stageType: 'new' | 'ready' | 'in-progress' | 'done';

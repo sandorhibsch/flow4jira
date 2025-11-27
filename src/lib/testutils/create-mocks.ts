@@ -54,7 +54,7 @@ export const TEST_WORKFLOW: WorkflowDefinition = {
   name: 'Full Development Workflow',
   stages: [
     { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Backlog'], stageType: 'new' },
-    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], stageType: 'ready' },
+    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], isAddedToSprint: true, stageType: 'ready' },
     { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
     { key: 'deploy', name: 'Deployment', jiraStatuses: ['Deployed'], stageType: 'in-progress' },
     { key: 'test', name: 'Testing', jiraStatuses: ['Test'], stageType: 'in-progress' },
