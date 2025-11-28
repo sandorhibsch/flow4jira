@@ -17,6 +17,7 @@ import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
 import { JiraIssue } from '@/lib/jira/jira-types';
 import { MonteCarloHowManyChart } from '@/ui/montecarlo-howmany';
+import { MonteCarloWhenChart } from '@/ui/montecarlo-when';
 
 type IssueListResult = {
   success: boolean;
@@ -211,6 +212,9 @@ export default function BoardMetricsPage() {
             {/*Multi-item forecasts */}
             <CollapsibleSection title={`Forecast - Number of Items Completed`}>
               <MonteCarloHowManyChart issues={result.data.issues} periodDays={parseInt(periodDays)} />
+            </CollapsibleSection>
+            <CollapsibleSection title={`Forecast - Days Required to Complete Next X Items`}>
+              <MonteCarloWhenChart issues={result.data.issues} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
 
             {/* Full issue list*/}
