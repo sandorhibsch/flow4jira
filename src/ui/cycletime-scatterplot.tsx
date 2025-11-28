@@ -104,17 +104,17 @@ export default function CycleTimeScatterplot({
         <div className="gap-4 mb-6 mt-6">
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">50% certainty</div>
-            <div className="text-2xl font-bold text-red-600">{percentiles[50]}d</div>
+            <div className="text-2xl font-bold text-orange-500">{percentiles[50]}d</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">85% certainty</div>
-            <div className="text-2xl font-bold text-green-600">{percentiles[85]}d</div>
+            <div className="text-2xl font-bold text-green-500">{percentiles[85]}d</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">95% certainty</div>
-            <div className="text-2xl font-bold text-blue-600">{percentiles[95]}d</div>
+            <div className="text-2xl font-bold text-blue-500">{percentiles[95]}d</div>
           </div>
 
         </div>
@@ -146,10 +146,10 @@ export default function CycleTimeScatterplot({
                 y={value}
                 stroke={
                   p === "50"
-                    ? "#f97316"
+                    ? "orange"
                     : p === "85"
-                      ? "#22c55e"
-                      : "#ef4444"
+                      ? "green"
+                      : "blue"
                 }
                 strokeDasharray="4 4"
                 label={{
@@ -157,10 +157,10 @@ export default function CycleTimeScatterplot({
                   position: "insideTopRight",
                   fill:
                     p === "50"
-                      ? "#9a3412"
+                      ? "orange"
                       : p === "85"
-                        ? "#15803d"
-                        : "#991b1b",
+                        ? "green"
+                        : "blue",
                   fontSize: 14,
                 }}
               />
