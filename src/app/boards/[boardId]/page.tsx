@@ -16,6 +16,7 @@ import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
 import { JiraIssue } from '@/lib/jira/jira-types';
+import { MonteCarloHowManyChart } from '@/ui/montecarlo-howmany';
 
 type IssueListResult = {
   success: boolean;
@@ -205,6 +206,11 @@ export default function BoardMetricsPage() {
             {/* Single-item forecast*/}
             <CollapsibleSection title={`Cycle Time Scatterplot (Last ${periodDays} Days)`}>
               <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
+            </CollapsibleSection>
+
+            {/*Multi-item forecasts */}
+            <CollapsibleSection title={`Forecast - Number of Items Completed`}>
+              <MonteCarloHowManyChart issues={result.data.issues} periodDays={parseInt(periodDays)} />
             </CollapsibleSection>
 
             {/* Full issue list*/}
