@@ -44,7 +44,7 @@ export default function BoardMetricsPage() {
   const [periodDays, setPeriodDays] = useState('30');
   const [result, setResult] = useState<FlowResult>();
   const [loading, setLoading] = useState(false);
-  const [boardConfig, setBoardConfig] = useState<{ boardName?: string; workflowName?: string }>();
+  const [boardConfig, setBoardConfig] = useState<{ boardName?: string; boardType?: string, workflowName?: string; issues?: ProcessedFlowIssue[] }>();
 
   useEffect(() => {
     // Load board config metadata
@@ -52,8 +52,19 @@ export default function BoardMetricsPage() {
     if (config) {
       setBoardConfig({
         boardName: config.metadata.boardName,
-        workflowName: config.workflow.name,
+        boardType: config.metadata.boardType,
+        workflowName: config.workflow.name
       });
+
+      const flowResult = {
+        success: true,
+        data: {
+          issues: config.processedIssues || [],
+          workflow: config.workflow
+        }
+      }
+
+      setResult(flowResult);
     } else {
       // No config found - redirect to configure
       const shouldConfigure = window.confirm(
@@ -89,7 +100,8 @@ export default function BoardMetricsPage() {
 
       // Load custom workflow
       if (data.success && data.data) {
-        const boardWorkflow = WorkflowConfigService.load(boardId) || DEFAULT_WORKFLOW;
+        const boardConfig = WorkflowConfigService.loadWithMetadata(boardId);
+        const boardWorkflow = boardConfig?.workflow || DEFAULT_WORKFLOW;
         const processedIssues = data.data?.issues.map(issue => {
           const issueWithChangelog = issue as any;
           const changelog = issueWithChangelog.changelog;
@@ -103,6 +115,7 @@ export default function BoardMetricsPage() {
             workflow: boardWorkflow
           }
         }
+        WorkflowConfigService.save(boardId, boardWorkflow, boardConfig?.metadata.boardName, boardConfig?.metadata.boardType, processedIssues);
         setResult(flowResult);
       }
 

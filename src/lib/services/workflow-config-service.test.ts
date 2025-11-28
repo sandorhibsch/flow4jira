@@ -2,7 +2,7 @@
 
 import { WorkflowConfigService } from './workflow-config-service';
 import { WorkflowDefinition } from '../jira/workflow-config';
-import { TEST_WORKFLOW } from '../testutils/create-mocks';
+import { TEST_WORKFLOW, createProcessedIssues } from '../testutils/create-mocks';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -43,7 +43,8 @@ beforeEach(() => {
 describe('WorkflowConfigService', () => {
   describe('save', () => {
     it('should save workflow configuration with metadata', () => {
-      const result = WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board');
+      const issues = createProcessedIssues();
+      const result = WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
 
       expect(result).toBe(true);
 
@@ -56,6 +57,7 @@ describe('WorkflowConfigService', () => {
       expect(savedData.metadata.boardName).toBe('Test Board');
       expect(savedData.metadata.lastModified).toBeDefined();
       expect(savedData.workflow).toEqual(TEST_WORKFLOW);
+      expect(savedData.processedIssues.length).toBe(5);
     });
 
     it('should save without board name', () => {
@@ -76,6 +78,16 @@ describe('WorkflowConfigService', () => {
       const result = WorkflowConfigService.load('123');
 
       expect(result).toEqual(TEST_WORKFLOW);
+    });
+
+    it('should load issues from workflow configuration', () => {
+      const issues = createProcessedIssues();
+      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
+
+      const result = WorkflowConfigService.loadWithMetadata('123');
+
+      expect(result?.processedIssues).toBeDefined;
+      expect(result?.processedIssues?.length).toBe(5);
     });
 
     it('should return null if config not found', () => {

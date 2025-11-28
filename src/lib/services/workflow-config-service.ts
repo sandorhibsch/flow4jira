@@ -1,5 +1,6 @@
 // src/lib/services/workflow-config-service.ts
 
+import { ProcessedFlowIssue } from '../flow/flow-types';
 import { WorkflowDefinition } from '../jira/workflow-config';
 
 const STORAGE_PREFIX = 'workflow:board:';
@@ -14,6 +15,7 @@ export type WorkflowConfigMetadata = {
 export type WorkflowConfigWithMetadata = {
   metadata: WorkflowConfigMetadata;
   workflow: WorkflowDefinition;
+  processedIssues?: ProcessedFlowIssue[]
 };
 
 /**
@@ -28,7 +30,8 @@ export class WorkflowConfigService {
     boardId: string,
     workflow: WorkflowDefinition,
     boardName?: string,
-    boardType?: string
+    boardType?: string,
+    processedIssues?: ProcessedFlowIssue[]
   ): boolean {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
@@ -40,6 +43,7 @@ export class WorkflowConfigService {
           lastModified: new Date().toISOString(),
         },
         workflow,
+        processedIssues
       };
 
       localStorage.setItem(key, JSON.stringify(config));
