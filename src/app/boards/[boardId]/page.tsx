@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { processJiraIssue } from '@/lib/flow/processor';
 import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
-import { WorkflowConfigService } from '@/lib/services/workflow-config-service';
+import { BoardConfigMetadata, BoardConfigWithMetadata, WorkflowConfigService } from '@/lib/services/workflow-config-service';
 
 import CollapsibleSection from '@/ui/collapsible-section';
 import FlowIssueList from '@/ui/flow-issue-list';
@@ -27,11 +27,12 @@ type IssueListResult = {
   error?: string;
 };
 
-type FlowResult = {
+type BoardResult = {
   success: boolean;
   data?: {
-    issues: ProcessedFlowIssue[];
+    metadata: BoardConfigMetadata;
     workflow: WorkflowDefinition;
+    issues: ProcessedFlowIssue[];
   };
   error?: string;
 }
@@ -41,30 +42,36 @@ export default function BoardMetricsPage() {
   const router = useRouter();
   const boardId = params?.boardId as string;
 
-  const [periodDays, setPeriodDays] = useState('30');
-  const [result, setResult] = useState<FlowResult>();
+  const [periodDays, setPeriodDays] = useState('');
+  const [result, setResult] = useState<BoardResult>();
   const [loading, setLoading] = useState(false);
-  const [boardConfig, setBoardConfig] = useState<{ boardName?: string; boardType?: string, workflowName?: string; issues?: ProcessedFlowIssue[] }>();
+  const [boardConfig, setBoardConfig] = useState<{ boardName?: string; boardType?: string; workflowName?: string; lastFetchedAt?: string; lastFetchedPeriod?: string }>();
 
   useEffect(() => {
     // Load board config metadata
-    const config = WorkflowConfigService.loadWithMetadata(boardId);
-    if (config) {
+    const savedBoard: BoardConfigWithMetadata | null = WorkflowConfigService.loadWithMetadata(boardId);
+    if (savedBoard) {
+
       setBoardConfig({
-        boardName: config.metadata.boardName,
-        boardType: config.metadata.boardType,
-        workflowName: config.workflow.name
+        boardName: savedBoard.metadata.boardName,
+        boardType: savedBoard.metadata.boardType,
+        workflowName: savedBoard.workflow.name,
+        lastFetchedAt: savedBoard.metadata.lastFetched,
+        lastFetchedPeriod: savedBoard.metadata.periodDays
       });
 
-      const flowResult = {
+      setPeriodDays(savedBoard.metadata.periodDays);
+
+      const boardResult: BoardResult = {
         success: true,
         data: {
-          issues: config.processedIssues || [],
-          workflow: config.workflow
+          metadata: savedBoard.metadata,
+          workflow: savedBoard.workflow,
+          issues: savedBoard.processedIssues || []
         }
       }
 
-      setResult(flowResult);
+      setResult(boardResult);
     } else {
       // No config found - redirect to configure
       const shouldConfigure = window.confirm(
@@ -98,27 +105,27 @@ export default function BoardMetricsPage() {
 
       const data: IssueListResult = await response.json();
 
-      // Load custom workflow
-      if (data.success && data.data) {
-        const boardConfig = WorkflowConfigService.loadWithMetadata(boardId);
-        const boardWorkflow = boardConfig?.workflow || DEFAULT_WORKFLOW;
+      const savedBoard: BoardConfigWithMetadata | null = WorkflowConfigService.loadWithMetadata(boardId);
+
+      // Load and process issues
+      if (data.success && data.data && savedBoard) {
         const processedIssues = data.data?.issues.map(issue => {
           const issueWithChangelog = issue as any;
           const changelog = issueWithChangelog.changelog;
-          return processJiraIssue(boardWorkflow, issue, changelog);
+          return processJiraIssue(savedBoard.workflow, issue, changelog);
         });
 
-        const flowResult = {
+        const boardResult: BoardResult = {
           success: true,
           data: {
+            metadata: savedBoard.metadata,
+            workflow: savedBoard.workflow,
             issues: processedIssues,
-            workflow: boardWorkflow
           }
         }
-        WorkflowConfigService.save(boardId, boardWorkflow, boardConfig?.metadata.boardName, boardConfig?.metadata.boardType, processedIssues);
-        setResult(flowResult);
+        WorkflowConfigService.save(boardId, periodDays, savedBoard.workflow, savedBoard.metadata.boardName, savedBoard.metadata.boardType, processedIssues);
+        setResult(boardResult);
       }
-
     } catch (error) {
       setResult({
         success: false,
@@ -154,9 +161,10 @@ export default function BoardMetricsPage() {
               <h1 className="text-3xl font-bold text-gray-900">
                 {boardConfig.boardName || `Board ${boardId}`}
               </h1>
-              <p className="text-gray-600 mt-1">
-                Using workflow: <span className="font-medium">{boardConfig.workflowName}</span>
-              </p>
+              {result && result.success && result.data && result.data.issues.length != 0 && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Last refreshed data from last <span className="font-bold">{result.data.metadata.periodDays}</span> days at: <span className="font-bold">{new Date(result.data.metadata.lastFetched).toDateString()}</span>
+                </p>)}
             </div>
             <Link
               href={`/boards/${boardId}/configure`}
@@ -169,18 +177,15 @@ export default function BoardMetricsPage() {
 
         {/* Query Input */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Analysis Period</h2>
+          <h2 className="text-lg font-semibold mb-4">Analysis Period (days)</h2>
 
           <div className="flex space-x-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Period (days):
-              </label>
               <input
                 type="number"
                 value={periodDays}
                 onChange={(e) => setPeriodDays(e.target.value)}
-                placeholder="30"
+
                 min="1"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -190,7 +195,7 @@ export default function BoardMetricsPage() {
               disabled={loading}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
             >
-              {loading ? 'Loading...' : 'Analyze Flow'}
+              {loading ? 'Loading...' : 'Load issues'}
             </button>
           </div>
 
@@ -208,26 +213,26 @@ export default function BoardMetricsPage() {
         )}
 
         {/* Results */}
-        {result && result.success && result.data && (
+        {result && result.success && result.data && result.data.issues.length != 0 && (
           <>
             {/* Process health*/}
             <CollapsibleSection title="Aging Chart">
               <AgingScatterplot issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
-            <CollapsibleSection title={`Cumulative Flow Diagram (Last ${periodDays} Days)`}>
-              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} periodDays={parseInt(periodDays)} />
+            <CollapsibleSection title={`Cumulative Flow Diagram (Last ${result.data.metadata.periodDays} Days)`}>
+              <CumulativeFlowDiagram issues={result.data.issues} workflow={result.data.workflow} periodDays={parseInt(result.data.metadata.periodDays)} />
             </CollapsibleSection>
             {/* Single-item forecast*/}
-            <CollapsibleSection title={`Cycle Time Scatterplot (Last ${periodDays} Days)`}>
-              <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(periodDays)} />
+            <CollapsibleSection title={`Cycle Time Scatterplot (Last ${result.data.metadata.periodDays} Days)`}>
+              <CycleTimeScatterplot issues={result.data.issues} periodDays={parseInt(result.data.metadata.periodDays)} />
             </CollapsibleSection>
 
             {/*Multi-item forecasts */}
             <CollapsibleSection title={`Forecast - Number of Items Completed`}>
-              <MonteCarloHowManyChart issues={result.data.issues} periodDays={parseInt(periodDays)} />
+              <MonteCarloHowManyChart issues={result.data.issues} periodDays={parseInt(result.data.metadata.periodDays)} />
             </CollapsibleSection>
             <CollapsibleSection title={`Forecast - Days Required to Complete Next X Items`}>
-              <MonteCarloWhenChart issues={result.data.issues} periodDays={parseInt(periodDays)} />
+              <MonteCarloWhenChart issues={result.data.issues} periodDays={parseInt(result.data.metadata.periodDays)} />
             </CollapsibleSection>
 
             {/* Full issue list*/}
@@ -238,7 +243,7 @@ export default function BoardMetricsPage() {
         )}
 
         {/* Empty State */}
-        {!result && (
+        {(!result || result.success && result.data && result.data.issues.length === 0) && (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <div className="text-gray-400 mb-4">
               <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -249,7 +254,7 @@ export default function BoardMetricsPage() {
               Ready to Analyze
             </h3>
             <p className="text-gray-500">
-              Set the analysis period above and click "Analyze Flow" to see your metrics
+              Set the analysis period above and click "Load Data" to see your metrics
             </p>
           </div>
         )}

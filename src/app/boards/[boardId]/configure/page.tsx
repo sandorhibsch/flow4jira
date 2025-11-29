@@ -10,6 +10,7 @@ type BoardInfo = {
   id: string;
   name: string;
   type: string;
+  periodDays: string;
 };
 
 type FetchBoardResult = {
@@ -45,6 +46,7 @@ export default function ConfigurePage() {
 
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
+  const [periodDays, setPeriodDays] = useState('');
   const [stages, setStages] = useState<WorkflowStage[]>([
     {
       key: 'backlog',
@@ -77,11 +79,13 @@ export default function ConfigurePage() {
       const workflowConfig = WorkflowConfigService.loadWithMetadata(boardId);
       if (workflowConfig) {
         setWorkflowName(workflowConfig.workflow.name);
+        setPeriodDays(workflowConfig.metadata.periodDays);
 
         const boardInfo: BoardInfo = {
           id: workflowConfig.metadata.boardId,
           name: workflowConfig.metadata.boardName || 'Workflow',
-          type: workflowConfig.metadata.boardType || 'unknown'
+          type: workflowConfig.metadata.boardType || 'unknown',
+          periodDays: workflowConfig.metadata.periodDays
         }
 
         setBoardInfo(boardInfo);
@@ -100,6 +104,7 @@ export default function ConfigurePage() {
 
         setBoardInfo(data.data!.board);
         setWorkflowName(`${data.data!.board.name} Workflow`);
+        setPeriodDays(data.data!.board.periodDays);
 
       }
     } catch (error) {
@@ -159,6 +164,10 @@ export default function ConfigurePage() {
       return 'Workflow name is required';
     }
 
+    if (!periodDays) {
+      return 'Default period is required';
+    }
+
     if (stages.length === 0) {
       return 'At least one stage is required';
     }
@@ -197,7 +206,7 @@ export default function ConfigurePage() {
       stages: stages,
     };
 
-    const success = WorkflowConfigService.save(boardId, workflow, boardInfo?.name);
+    const success = WorkflowConfigService.save(boardId, periodDays, workflow, boardInfo?.name, boardInfo?.type, []);
 
     if (success) {
       setSaveStatus({ type: 'success', message: 'Workflow saved successfully!' });
@@ -249,7 +258,7 @@ export default function ConfigurePage() {
             />
             <button
               onClick={fetchBoardInfo}
-              disabled={loading || !!boardIdFromUrl}
+              disabled={loading}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
             >
               {loading ? 'Loading...' : 'Fetch Board'}
@@ -295,10 +304,22 @@ export default function ConfigurePage() {
               />
             </div>
 
+            {/*Default period */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">3. Specify analysis period (days):</h2>
+              <input
+                type="text"
+                value={periodDays}
+                onChange={(e) => setPeriodDays(e.target.value)}
+                placeholder="Analysis period"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Stages Configuration */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">3. Configure Stages</h2>
+                <h2 className="text-xl font-semibold">4. Configure Stages</h2>
               </div>
 
               <div className="space-y-6">
@@ -480,7 +501,7 @@ export default function ConfigurePage() {
 
             {/* Save Section */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">4. Save Configuration</h2>
+              <h2 className="text-xl font-semibold mb-4">5. Save Configuration</h2>
 
               {saveStatus && (
                 <div className={`mb-4 p-4 rounded ${saveStatus.type === 'success'

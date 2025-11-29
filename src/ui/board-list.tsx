@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { WorkflowConfigWithMetadata } from '@/lib/services/workflow-config-service';
+import { BoardConfigWithMetadata } from '@/lib/services/workflow-config-service';
 
 export default function BoardList() {
-  const [configs, setConfigs] = useState<WorkflowConfigWithMetadata[]>([]);
+  const [configs, setConfigs] = useState<BoardConfigWithMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function BoardList() {
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   {config.workflow.stages.length} stages •
-                  Last modified: {new Date(config.metadata.lastModified).toLocaleDateString()}
+                  Last modified: {new Date(config.metadata.lastFetched).toLocaleDateString()}
                 </p>
               </div>
               <div className="flex space-x-2">

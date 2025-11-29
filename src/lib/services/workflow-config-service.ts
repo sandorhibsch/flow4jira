@@ -5,15 +5,16 @@ import { WorkflowDefinition } from '../jira/workflow-config';
 
 const STORAGE_PREFIX = 'workflow:board:';
 
-export type WorkflowConfigMetadata = {
+export type BoardConfigMetadata = {
   boardId: string;
+  periodDays: string;
+  lastFetched: string;
   boardName?: string;
   boardType?: string;
-  lastModified: string;
 };
 
-export type WorkflowConfigWithMetadata = {
-  metadata: WorkflowConfigMetadata;
+export type BoardConfigWithMetadata = {
+  metadata: BoardConfigMetadata;
   workflow: WorkflowDefinition;
   processedIssues?: ProcessedFlowIssue[]
 };
@@ -28,6 +29,7 @@ export class WorkflowConfigService {
    */
   static save(
     boardId: string,
+    periodDays: string,
     workflow: WorkflowDefinition,
     boardName?: string,
     boardType?: string,
@@ -35,12 +37,14 @@ export class WorkflowConfigService {
   ): boolean {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
-      const config: WorkflowConfigWithMetadata = {
+      const config: BoardConfigWithMetadata = {
         metadata: {
           boardId,
+          lastFetched: new Date().toISOString(),
+          periodDays: periodDays,
           boardName,
           boardType,
-          lastModified: new Date().toISOString(),
+
         },
         workflow,
         processedIssues
@@ -66,7 +70,7 @@ export class WorkflowConfigService {
         return null;
       }
 
-      const config: WorkflowConfigWithMetadata = JSON.parse(data);
+      const config: BoardConfigWithMetadata = JSON.parse(data);
       return config.workflow;
     } catch (error) {
       console.error('Failed to load workflow config:', error);
@@ -79,7 +83,7 @@ export class WorkflowConfigService {
    */
   static loadWithMetadata(
     boardId: string
-  ): WorkflowConfigWithMetadata | null {
+  ): BoardConfigWithMetadata | null {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
       const data = localStorage.getItem(key);
@@ -98,9 +102,9 @@ export class WorkflowConfigService {
   /**
    * List all configured boards
    */
-  static listAll(): WorkflowConfigWithMetadata[] {
+  static listAll(): BoardConfigWithMetadata[] {
     try {
-      const configs: WorkflowConfigWithMetadata[] = [];
+      const configs: BoardConfigWithMetadata[] = [];
 
       // Iterate through all localStorage keys
       for (let i = 0; i < localStorage.length; i++) {
@@ -121,8 +125,8 @@ export class WorkflowConfigService {
       // Sort by lastModified descending
       return configs.sort(
         (a, b) =>
-          new Date(b.metadata.lastModified).getTime() -
-          new Date(a.metadata.lastModified).getTime()
+          new Date(b.metadata.lastFetched).getTime() -
+          new Date(a.metadata.lastFetched).getTime()
       );
     } catch (error) {
       console.error('Failed to list workflow configs:', error);

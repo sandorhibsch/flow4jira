@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { WorkflowConfigService, WorkflowConfigWithMetadata } from '@/lib/services/workflow-config-service';
+import { WorkflowConfigService, BoardConfigWithMetadata } from '@/lib/services/workflow-config-service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const router = useRouter();
-  const [configs, setConfigs] = useState<WorkflowConfigWithMetadata[]>([]);
+  const [configs, setConfigs] = useState<BoardConfigWithMetadata[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function HomePage() {
                     </p>
                     <p className="text-sm text-gray-500">
                       {config.workflow.stages.length} stages •
-                      Last modified: {new Date(config.metadata.lastModified).toLocaleDateString()}
+                      Last modified: {new Date(config.metadata.lastFetched).toLocaleDateString()}
                     </p>
 
                     {/* Stage Pills */}

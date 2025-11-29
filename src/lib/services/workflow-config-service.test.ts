@@ -44,7 +44,7 @@ describe('WorkflowConfigService', () => {
   describe('save', () => {
     it('should save workflow configuration with metadata', () => {
       const issues = createProcessedIssues();
-      const result = WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
+      const result = WorkflowConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
 
       expect(result).toBe(true);
 
@@ -55,13 +55,14 @@ describe('WorkflowConfigService', () => {
       const savedData = JSON.parse(saved!);
       expect(savedData.metadata.boardId).toBe('123');
       expect(savedData.metadata.boardName).toBe('Test Board');
-      expect(savedData.metadata.lastModified).toBeDefined();
+      expect(savedData.metadata.periodDays).toBe('30');
+      expect(savedData.metadata.lastFetched).toBeDefined();
       expect(savedData.workflow).toEqual(TEST_WORKFLOW);
       expect(savedData.processedIssues.length).toBe(5);
     });
 
     it('should save without board name', () => {
-      const result = WorkflowConfigService.save('123', TEST_WORKFLOW);
+      const result = WorkflowConfigService.save('123', '30', TEST_WORKFLOW);
 
       expect(result).toBe(true);
 
@@ -73,7 +74,7 @@ describe('WorkflowConfigService', () => {
 
   describe('load', () => {
     it('should load workflow configuration', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board');
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board');
 
       const result = WorkflowConfigService.load('123');
 
@@ -82,7 +83,7 @@ describe('WorkflowConfigService', () => {
 
     it('should load issues from workflow configuration', () => {
       const issues = createProcessedIssues();
-      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board', 'scrum', issues);
 
       const result = WorkflowConfigService.loadWithMetadata('123');
 
@@ -107,7 +108,7 @@ describe('WorkflowConfigService', () => {
 
   describe('loadWithMetadata', () => {
     it('should load full config with metadata', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Test Board', 'scrum');
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board', 'scrum');
 
       const result = WorkflowConfigService.loadWithMetadata('123');
 
@@ -127,12 +128,12 @@ describe('WorkflowConfigService', () => {
 
   describe('listAll', () => {
     it('should list all workflow configurations', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW, 'Board 1');
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW, 'Board 1');
 
       // Wait a tiny bit to ensure different timestamps
       const later = new Date(Date.now() + 1000).toISOString();
       localStorage.setItem('workflow:board:456', JSON.stringify({
-        metadata: { boardId: '456', boardName: 'Board 2', lastModified: later },
+        metadata: { boardId: '456', periodDays: 30, boardName: 'Board 2', lastFetched: later },
         workflow: TEST_WORKFLOW,
       }));
 
@@ -152,7 +153,7 @@ describe('WorkflowConfigService', () => {
 
     it('should ignore non-workflow keys', () => {
       localStorage.setItem('other:key', 'some data');
-      WorkflowConfigService.save('123', TEST_WORKFLOW);
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW);
 
       const result = WorkflowConfigService.listAll();
 
@@ -160,7 +161,7 @@ describe('WorkflowConfigService', () => {
     });
 
     it('should skip invalid JSON entries', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW);
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW);
       localStorage.setItem('workflow:board:456', 'invalid json');
 
       const result = WorkflowConfigService.listAll();
@@ -172,7 +173,7 @@ describe('WorkflowConfigService', () => {
 
   describe('delete', () => {
     it('should delete workflow configuration', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW);
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW);
 
       const result = WorkflowConfigService.delete('123');
 
@@ -189,7 +190,7 @@ describe('WorkflowConfigService', () => {
 
   describe('exists', () => {
     it('should return true if config exists', () => {
-      WorkflowConfigService.save('123', TEST_WORKFLOW);
+      WorkflowConfigService.save('123', '30', TEST_WORKFLOW);
 
       const result = WorkflowConfigService.exists('123');
 
