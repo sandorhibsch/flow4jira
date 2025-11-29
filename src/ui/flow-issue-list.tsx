@@ -35,11 +35,6 @@ const FlowIssueList = ({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Status
                 </th>
-                {workflow.stages.map((stage) => (
-                  <th key={stage.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    {stage.name}
-                  </th>
-                ))}
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Age
                 </th>
@@ -49,6 +44,11 @@ const FlowIssueList = ({
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Cycle Time
                 </th>
+                {workflow.stages.map((stage) => (
+                  <th key={stage.key} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    {stage.name}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -71,20 +71,21 @@ const FlowIssueList = ({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-500">{issue.currentStatus}</span>
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{issue.ageDays === 0 ? '' : issue.ageDays}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{issue.leadTimeDays === 0 ? '' : issue.leadTimeDays}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{issue.cycleTimeDays === 0 ? '' : issue.cycleTimeDays}</span>
+                  </td>
                   {workflow.stages.map((stage) => (
                     <td key={`${issue.key}-${stage.key}`} className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toString()}</span>
+                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toDateString()}</span>
                     </td>
                   ))}
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{issue.ageDays}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{issue.leadTimeDays}</span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{issue.cycleTimeDays}</span>
-                  </td>
+
                 </tr>
               ))}
             </tbody>
