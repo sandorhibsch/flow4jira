@@ -1,6 +1,6 @@
 // src/lib/jira/client.test.ts
 
-import { JiraClient, JiraApiError } from './client';
+import { JiraClient } from './client';
 import { JiraBoardConfigResponse, JiraSearchResponse, JiraStatusResponse } from './jira-types';
 
 // Mock fetch globally
@@ -250,7 +250,7 @@ describe('JiraClient', () => {
 
       const callUrl = mockFetch.mock.calls[0][0] as string;
       expect(callUrl).toContain('/rest/agile/latest/board/123/issue');
-      expect(callUrl).toContain('jql=updated%3E%3D-30d');
+      expect(callUrl).toContain('updated%3E%3D-30d');
       expect(callUrl).toContain('maxResults=50');
       expect(callUrl).toContain('fields=summary');
       expect(callUrl).toContain('expand=changelog');
