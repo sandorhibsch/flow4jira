@@ -1,7 +1,7 @@
 'use client';
 
 import { ProcessedFlowIssue } from "@/lib/flow/flow-types";
-import React from "react";
+import React, { useState } from "react";
 import {
   ScatterChart,
   Scatter,
@@ -22,7 +22,8 @@ type ScatterPlotPoint = {
   url?: string;
 };
 
-function prepareData(issues: ProcessedFlowIssue[], dateMin: number): ScatterPlotPoint[] {
+function prepareData(issues: ProcessedFlowIssue[], dateMax: number, period: number): ScatterPlotPoint[] {
+  const dateMin = dateMax - (period * 24 * 60 * 60 * 1000);
   return issues
     .filter(i => i.done && new Date(i.done).getTime() >= dateMin)
     .map((i) => {
@@ -93,13 +94,25 @@ export default function CycleTimeScatterplot({
   issues: ProcessedFlowIssue[];
   periodDays: number;
 }) {
+  const [period, setPeriod] = useState(periodDays);
+
   const dateMax = new Date().setHours(23, 59, 59, 999);
-  const dateMin = dateMax - (periodDays * 24 * 60 * 60 * 1000);
-  const data = React.useMemo(() => prepareData(issues, dateMin), [issues]);
+  const data = React.useMemo(() => prepareData(issues, dateMax, period), [issues, period]);
   const percentiles = React.useMemo(() => computePercentiles(data), [data]);
 
   return (
     <div style={{ width: "100%" }}>
+      <p className="text-sm font-bold text-gray-900 mb-1">Analysis period: last {period} days</p>
+
+      <input
+        type="range"
+        min={5}
+        max={periodDays}
+        step={1}
+        value={period}
+        onChange={e => setPeriod(Number(e.target.value))}
+        style={{ width: '100%', marginBottom: 16, overflow: "hidden", backgroundColor: "#82ca9d" }}
+      />
       <div className="flex flex-row">
         <div className="gap-4 mb-6 mt-6">
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
@@ -126,7 +139,7 @@ export default function CycleTimeScatterplot({
               name="Completed"
               type="number"
               domain={[
-                dateMin,
+                dateMax - (period * 24 * 60 * 60 * 1000),
                 dateMax]
               }
               tickFormatter={(v) => new Date(v).toLocaleDateString()}
