@@ -14,6 +14,10 @@ export function processJiraIssue(
   issue: JiraIssue,
   changelog?: JiraChangelogResponse
 ): ProcessedFlowIssue {
+
+  const url = new URL(issue.self);
+  const issueUrl = `${url.origin}/browse/${issue.key}`;
+
   const created = new Date(issue.fields.created);
   const currentStatus = issue.fields.status.name;
   const currentStage = findStageByStatus(workflow, currentStatus);
@@ -40,6 +44,7 @@ export function processJiraIssue(
     currentStage: currentStage,
     currentStatus: currentStatus,
     done: doneDate,
+    url: issueUrl,
     leadTimeDays: leadTime,
     cycleTimeDays: cycleTime,
     ageDays: daysOld

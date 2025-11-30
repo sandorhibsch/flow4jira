@@ -60,7 +60,7 @@ const FlowIssueList = ({
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: issue.currentStage.color || '#6b7280' }} title={issue.currentStage.name} />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm font-medium text-blue-600">{issue.key}</span>
+                    <span className="text-sm font-medium text-blue-600"><a href={issue.url ? issue.url : ''} target='_blank'>{issue.key}</a></span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-500">{issue.issueType}</span>

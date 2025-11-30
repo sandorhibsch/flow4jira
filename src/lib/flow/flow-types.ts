@@ -10,6 +10,7 @@ export interface ProcessedFlowIssue {
   currentStage: WorkflowStage;
   currentStatus: string;
   done?: Date;
+  url?: string;
 
   // Calculated metrics
   leadTimeDays: number; // Total time from creation to done (days)
