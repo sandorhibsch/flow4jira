@@ -2,6 +2,8 @@ import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import FlowIssueSummary from './flow-issue-summary';
 import { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
+import { format } from 'date-fns';
+
 const FlowIssueList = ({
   issues,
   workflow }: {
@@ -82,7 +84,7 @@ const FlowIssueList = ({
                   </td>
                   {workflow.stages.map((stage) => (
                     <td key={`${issue.key}-${stage.key}`} className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toString()}</span>
+                      <span className="text-sm text-gray-500">{format(issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt || new Date(), "d MMM yyyy hh:mm")}</span>
                     </td>
                   ))}
 
