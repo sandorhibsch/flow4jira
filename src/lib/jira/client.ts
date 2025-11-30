@@ -35,7 +35,7 @@ export class JiraClient {
   }
 
   async getIssuesForBoard(boardId: string, periodDays: string, maxResults: number = 50, fields: string, expand: string): Promise<JiraSearchResponse> {
-    const jql = `updated>=-${periodDays}d`
+    const jql = `type in standardIssueTypes() and type not in (Epic) and updated>=-${periodDays}d`
     const params = {
       jql,
       maxResults: maxResults.toString(),
