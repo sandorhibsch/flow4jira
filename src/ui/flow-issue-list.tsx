@@ -82,7 +82,7 @@ const FlowIssueList = ({
                   </td>
                   {workflow.stages.map((stage) => (
                     <td key={`${issue.key}-${stage.key}`} className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toDateString()}</span>
+                      <span className="text-sm text-gray-500">{issue.flowHistory.find(item => item.stage.key === stage.key)?.enteredAt?.toString()}</span>
                     </td>
                   ))}
 
