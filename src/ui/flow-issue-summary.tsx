@@ -14,7 +14,7 @@ const FlowIssueSummary = ({ issues }: { issues: ProcessedFlowIssue[] }) => {
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow">
-          <div className="text-sm text-gray-500">WIP</div>
+          <div className="text-sm text-gray-500">Current WIP</div>
           <div className="text-2xl font-bold text-blue-600">{calculatedMetrics.workInProgress}</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow">
