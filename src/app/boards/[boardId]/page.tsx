@@ -18,6 +18,7 @@ import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
 import { JiraIssue } from '@/lib/jira/jira-types';
 import { MonteCarloHowManyChart } from '@/ui/montecarlo-howmany';
 import { MonteCarloWhenChart } from '@/ui/montecarlo-when';
+import FlowIssueTable from '@/ui/flow-issue-table';
 
 type IssueListResult = {
   success: boolean;
@@ -163,7 +164,7 @@ export default function BoardMetricsPage() {
               </h1>
               {result && result.success && result.data && result.data.issues.length != 0 && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Last refreshed data from last <span className="font-bold">{result.data.metadata.periodDays}</span> days at: <span className="font-bold">{new Date(result.data.metadata.lastFetched).toDateString()}</span>
+                  Last refreshed data from last <span className="font-bold">{result.data.metadata.periodDays}</span> days on <span className="font-bold">{new Date(result.data.metadata.lastFetched).toDateString()}</span>
                 </p>)}
             </div>
             <Link
@@ -236,8 +237,8 @@ export default function BoardMetricsPage() {
             </CollapsibleSection>
 
             {/* Full issue list*/}
-            <CollapsibleSection title="Issue List">
-              <FlowIssueList issues={result.data.issues} workflow={result.data.workflow} />
+            <CollapsibleSection title="Issues">
+              <FlowIssueTable issues={result.data.issues} workflow={result.data.workflow} />
             </CollapsibleSection>
           </>
         )}
