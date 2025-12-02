@@ -19,12 +19,13 @@ export async function GET(request: NextRequest) {
   }
 
   const periodDays = searchParams.get('periodDays') || '1';
+  const additionalJql = searchParams.get('additionalJql') || '';
 
   const result = await handleFlowRequest(
     async (client) => {
       const fields = 'summary,issuetype,status,created,resolutiondate';
       const expand = 'changelog';
-      return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand);
+      return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand, additionalJql);
     },
     `Board ${boardId}, last ${periodDays} days`
   );

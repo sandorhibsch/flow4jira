@@ -43,6 +43,7 @@ export default function BoardMetricsPage() {
   const boardId = params?.boardId as string;
 
   const [periodDays, setPeriodDays] = useState('');
+  const [additionalJql, setAdditionalJql] = useState('');
   const [result, setResult] = useState<BoardResult>();
   const [loading, setLoading] = useState(false);
   const [boardConfig, setBoardConfig] = useState<{ boardName?: string; boardType?: string; workflowName?: string; lastFetchedAt?: string; lastFetchedPeriod?: string }>();
@@ -94,7 +95,7 @@ export default function BoardMetricsPage() {
     setLoading(true);
 
     try {
-      const url = `/api/flow/board?boardId=${encodeURIComponent(boardId)}&periodDays=${encodeURIComponent(periodDays)}`;
+      const url = `/api/flow/board?boardId=${encodeURIComponent(boardId)}&periodDays=${encodeURIComponent(periodDays)}&additionalJql=${encodeURIComponent(additionalJql)}`;
 
       const response = await fetch(url, {
         method: 'GET',
@@ -188,6 +189,16 @@ export default function BoardMetricsPage() {
                 onChange={(e) => setPeriodDays(e.target.value)}
 
                 min="1"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder='Enter additional filter (valid JQL expression)'
+                value={additionalJql}
+                onChange={(e) => setAdditionalJql(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
