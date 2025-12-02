@@ -71,6 +71,7 @@ describe('Workflow config CRUD operations', () => {
 
       const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
+        periodDays: '60',
         workflow: TEST_WORKFLOW,
         boardName: 'Test Board',
       });
@@ -83,6 +84,7 @@ describe('Workflow config CRUD operations', () => {
       expect(data.message).toContain('saved successfully');
       expect(mockWorkflowService.save).toHaveBeenCalledWith(
         '123',
+        '60',
         TEST_WORKFLOW,
         'Test Board'
       );
@@ -102,9 +104,25 @@ describe('Workflow config CRUD operations', () => {
 
     });
 
+    it('should throw error if period is missing', async () => {
+      const request = createMockRequest(baseUrl, {}, {
+        boardId: '123',
+        workflow: TEST_WORKFLOW
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Period is required');
+
+    });
+
     it('should throw error if workflow is missing', async () => {
       const request = createMockRequest(baseUrl, {}, {
-        boardId: '123'
+        boardId: '123',
+        periodDays: '60'
       });
 
       const response = await POST(request);
@@ -120,6 +138,7 @@ describe('Workflow config CRUD operations', () => {
       const BAD_WORKFLOW = {}
       const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
+        periodDays: '60',
         workflow: BAD_WORKFLOW,
         boardName: 'This is not a board'
       });
@@ -138,6 +157,7 @@ describe('Workflow config CRUD operations', () => {
 
       const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
+        periodDays: '60',
         workflow: TEST_WORKFLOW,
       });
 
@@ -160,6 +180,7 @@ describe('Workflow config CRUD operations', () => {
       }
       const request = createMockRequest(baseUrl, {}, {
         boardId: '123',
+        periodDays: '60',
         workflow: updatedWorkflow,
         boardName: 'Test Board'
       });
@@ -172,6 +193,7 @@ describe('Workflow config CRUD operations', () => {
       expect(data.message).toContain('saved successfully');
       expect(mockWorkflowService.save).toHaveBeenCalledWith(
         '123',
+        '60',
         updatedWorkflow,
         'Test Board'
       );

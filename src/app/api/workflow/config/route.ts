@@ -53,6 +53,10 @@ export async function POST(request: NextRequest) {
       return workflowConfigRequiredError();
     }
 
+    if (!periodDays) {
+      return periodDaysRequiredError();
+    }
+
     // Validate workflow structure
     if (!workflow.key || !workflow.name || !Array.isArray(workflow.stages)) {
       return invalidWorkflowConfigError();
@@ -149,5 +153,12 @@ function deleteConfigError() {
   return NextResponse.json(
     { success: false, error: 'Failed to delete configuration' },
     { status: 500 }
+  );
+}
+
+function periodDaysRequiredError() {
+  return NextResponse.json(
+    { success: false, error: 'Period is required' },
+    { status: 400 }
   );
 }
