@@ -42,7 +42,7 @@ export default function ConfigurePage() {
   const [boardId, setBoardId] = useState(boardIdFromUrl || '');
   const [loading, setLoading] = useState(false);
   const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null);
-  const [boardColumns, setBoardColumns] = useState<Array<{ name: string; statusCount: number }>>([]);
+  const [boardColumns] = useState<Array<{ name: string; statusCount: number }>>([]);
 
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
@@ -520,10 +520,10 @@ export default function ConfigurePage() {
               </button>
 
               <div className="mt-4 text-sm text-gray-600">
-                <p>This will save the workflow configuration to your browser's local storage.</p>
+                <p>This will save the workflow configuration to the browser&apos;s local storage.</p>
                 {boardIdFromUrl && (
                   <p className="mt-2">
-                    After saving, you'll be redirected to the board metrics page.
+                    After saving, you&apos;ll be redirected to the board metrics page.
                   </p>
                 )}
               </div>

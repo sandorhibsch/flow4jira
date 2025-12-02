@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Fetch changelogs for all issues
     const changelogPromises = issueKeys.map(async (key: string) => {
       try {
-        const changelog = await jiraClient.getIssueChangelog(key);
+        const changelog = await jiraClient.getIssueWithChangelog(key);
         return { issueKey: key, changelog };
       } catch (error) {
         console.error(`Failed to get changelog for ${key}:`, error);

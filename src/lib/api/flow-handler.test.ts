@@ -1,7 +1,7 @@
 // src/lib/api/flow-handler.test.ts
 
 import { handleFlowRequest } from './flow-handler';
-import { JiraClient, JiraApiError } from '@/lib/jira/client';
+import { JiraClient } from '@/lib/jira/client';
 import { JiraSearchResponse } from '@/lib/jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
 

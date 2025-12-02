@@ -1,6 +1,6 @@
 // src/lib/jira/client.ts
 
-import { JiraConfig, JiraSearchResponse, JiraChangelogResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
+import { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
 
 export class JiraApiError extends Error {
   constructor(
@@ -122,7 +122,6 @@ export class JiraClient {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       throw new JiraApiError(
         `Jira API request failed: ${response.status} ${response.statusText}`,
         response.status,
@@ -139,7 +138,7 @@ export class JiraClient {
       await this.makeRequest(new URL(`${this.config.baseUrl}/rest/api/latest/myself`));
       return true;
     } catch (error) {
-      //console.error('Jira connection test failed:', error);
+      console.error('Jira connection test failed:', error);
       return false;
     }
   }

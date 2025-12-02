@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { boardId, workflow, boardName } = body;
+    const { boardId, periodDays, workflow, boardName } = body;
 
     if (!boardId) {
       return boardIDRequiredError();
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
 
     const success = WorkflowConfigService.save(
       boardId,
+      periodDays,
       workflow as WorkflowDefinition,
       boardName
     );

@@ -156,6 +156,7 @@ export class WorkflowConfigService {
       const key = `${STORAGE_PREFIX}${boardId}`;
       return localStorage.getItem(key) !== null;
     } catch (error) {
+      console.error('Unknown error retrieving board:', error);
       return false;
     }
   }

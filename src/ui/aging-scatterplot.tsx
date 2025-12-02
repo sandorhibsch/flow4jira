@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { DEFAULT_WORKFLOW, WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
+import { WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
 
 type Point = {
   key: string;

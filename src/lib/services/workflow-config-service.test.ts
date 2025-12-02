@@ -1,7 +1,6 @@
 // src/lib/services/workflow-config-service.test.ts
 
 import { WorkflowConfigService } from './workflow-config-service';
-import { WorkflowDefinition } from '../jira/workflow-config';
 import { TEST_WORKFLOW, createProcessedIssues } from '../testutils/create-mocks';
 
 // Mock localStorage

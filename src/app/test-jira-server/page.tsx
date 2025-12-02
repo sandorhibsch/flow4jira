@@ -54,6 +54,7 @@ export default function JiraServerTest() {
         success: false,
         error: "Failed to authenticate",
       });
+      console.error("Failed to authenticate: ", error);
     } finally {
       setLoading(false);
     }

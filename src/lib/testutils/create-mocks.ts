@@ -5,7 +5,7 @@ import { WorkflowDefinition } from "../jira/workflow-config";
 export function createMockRequest(
   baseUrl: string,
   searchParams: Record<string, string> = {},
-  body?: any
+  body?: object
 ): NextRequest {
   const url = new URL(baseUrl);
   Object.entries(searchParams).forEach(([key, value]) => {

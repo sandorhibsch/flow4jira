@@ -97,7 +97,7 @@ export default function CycleTimeScatterplot({
   const [period, setPeriod] = useState(periodDays);
 
   const dateMax = new Date().setHours(23, 59, 59, 999);
-  const data = React.useMemo(() => prepareData(issues, dateMax, period), [issues, period]);
+  const data = React.useMemo(() => prepareData(issues, dateMax, period), [issues, dateMax, period]);
   const percentiles = React.useMemo(() => computePercentiles(data), [data]);
 
   return (

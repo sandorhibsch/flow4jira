@@ -7,11 +7,10 @@ import Link from 'next/link';
 
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { processJiraIssue } from '@/lib/flow/processor';
-import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
+import { WorkflowDefinition } from '@/lib/jira/workflow-config';
 import { BoardConfigMetadata, BoardConfigWithMetadata, WorkflowConfigService } from '@/lib/services/workflow-config-service';
 
 import CollapsibleSection from '@/ui/collapsible-section';
-import FlowIssueList from '@/ui/flow-issue-list';
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
@@ -132,6 +131,7 @@ export default function BoardMetricsPage() {
         success: false,
         error: "Failed to fetch flow metrics"
       });
+      console.error('Failed to fetch flow metrics: ', error);
     } finally {
       setLoading(false);
     }
@@ -255,7 +255,7 @@ export default function BoardMetricsPage() {
               Ready to Analyze
             </h3>
             <p className="text-gray-500">
-              Set the analysis period above and click "Load Data" to see your metrics
+              Set the analysis period above and click &quot;Load Data&quot; to see your metrics
             </p>
           </div>
         )}

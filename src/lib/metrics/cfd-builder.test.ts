@@ -1,4 +1,3 @@
-import { SequentialStageEntry } from "../flow/sequential-flow-builder";
 import { createMockProcessedIssue, createProcessedIssues, TEST_WORKFLOW } from "../testutils/create-mocks";
 import { buildCumulativeFlowData } from "./cfd-builder";
 import { addDays, setHours, setMinutes } from "date-fns";
@@ -201,7 +200,6 @@ describe('Cumulative flow data builder - single issues', () => {
   });
 
   it("should not count issues in backlog", () => {
-    const doneBeforeStart = addDays(now, -20);
     const periodDays = 10;
 
     const issue = createMockProcessedIssue({

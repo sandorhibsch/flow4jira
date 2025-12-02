@@ -1,5 +1,4 @@
 
-import { WorkflowDefinition } from "../jira/workflow-config";
 import { buildSequentialFlow, SequentialStageEntry } from "./sequential-flow-builder";
 import { StatusChange } from "./history-builder";
 import { TEST_WORKFLOW } from "../testutils/create-mocks";

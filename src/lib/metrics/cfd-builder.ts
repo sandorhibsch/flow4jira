@@ -41,7 +41,7 @@ export function buildCumulativeFlowData(
 
 
 
-        let inStage =
+        const inStage =
           (isAfter(date, entered)) &&
           (!left || isBefore(date, left));
 

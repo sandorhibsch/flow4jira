@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { DELETE, GET, POST } from "./route";
 import { WorkflowConfigService } from "@/lib/services/workflow-config-service";
 import { WorkflowDefinition } from "@/lib/jira/workflow-config";
@@ -14,7 +13,8 @@ const TEST_CONFIG_WITH_METADATA = {
   metadata: {
     boardId: '123',
     boardName: 'Test Board',
-    lastModified: '2024-01-01T00:00:00.000Z',
+    lastFetched: '2024-01-01T00:00:00.000Z',
+    periodDays: '60'
   },
   workflow: TEST_WORKFLOW,
 };
@@ -38,7 +38,7 @@ describe('Workflow config CRUD operations', () => {
     });
 
     it('should return error if boardId doesnt exist', async () => {
-      const mockResolvedValue = mockWorkflowService.loadWithMetadata.mockReturnValue(null);
+      mockWorkflowService.loadWithMetadata.mockReturnValue(null);
 
       const request = createMockRequest(baseUrl, { boardId: '999' });
 
@@ -52,7 +52,7 @@ describe('Workflow config CRUD operations', () => {
     });
 
     it('should return board config for board ID', async () => {
-      const mockConfig = mockWorkflowService.loadWithMetadata.mockReturnValue(TEST_CONFIG_WITH_METADATA);
+      mockWorkflowService.loadWithMetadata.mockReturnValue(TEST_CONFIG_WITH_METADATA);
 
       const request = createMockRequest(baseUrl, { boardId: '123' });
 

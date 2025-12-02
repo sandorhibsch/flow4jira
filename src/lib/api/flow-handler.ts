@@ -1,8 +1,6 @@
 // src/lib/api/flow-handler.ts
 
 import { JiraClient } from '@/lib/jira/client';
-import { processJiraIssue } from '@/lib/flow/processor';
-import { DEFAULT_WORKFLOW, WorkflowDefinition } from '@/lib/jira/workflow-config';
 import { JiraIssue, JiraSearchResponse } from '@/lib/jira/jira-types';
 
 export type FlowHandlerResult = {
