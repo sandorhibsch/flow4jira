@@ -42,3 +42,6 @@ next-env.d.ts
 
 # sample data
 src/data/*
+
+# vscode
+.vscode
