@@ -46,7 +46,7 @@ export default function ConfigurePage() {
 
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
-  const [periodDays, setPeriodDays] = useState('');
+  const [periodDays, setPeriodDays] = useState('60');
   const [stages, setStages] = useState<WorkflowStage[]>([
     {
       key: 'backlog',
@@ -106,8 +106,6 @@ export default function ConfigurePage() {
 
         setBoardInfo(data.data!.board);
         setWorkflowName(`${data.data!.board.name} Workflow`);
-        setPeriodDays(data.data!.board.periodDays);
-
       }
     } catch (error) {
       alert('Failed to fetch board information');
@@ -310,9 +308,10 @@ export default function ConfigurePage() {
             <div className="bg-white rounded-lg shadow p-6 mb-6">
               <h2 className="text-xl font-semibold mb-4">3. Specify analysis period (days):</h2>
               <input
-                type="text"
+                type="number"
                 value={periodDays}
                 onChange={(e) => setPeriodDays(e.target.value)}
+                min="1"
                 placeholder="Analysis period"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
