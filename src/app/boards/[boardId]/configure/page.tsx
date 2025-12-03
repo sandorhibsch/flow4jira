@@ -58,13 +58,15 @@ export default function ConfigurePage() {
   ]);
 
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Auto-load board if boardId is in URL
   useEffect(() => {
-    if (boardIdFromUrl) {
+    if (boardIdFromUrl && !hasInitialized) {
+      setHasInitialized(true);
       fetchBoardInfo();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [boardIdFromUrl, hasInitialized]);
 
   const fetchBoardInfo = async () => {
     if (!boardId) {
