@@ -44,25 +44,18 @@ export default function BoardMetricsPage() {
 
   const [periodDays, setPeriodDays] = useState('');
   const [additionalJql, setAdditionalJql] = useState('');
+
   const [result, setResult] = useState<BoardResult>();
+  const [boardConfig, setBoardConfig] = useState<BoardConfigMetadata>();
+  const [boardWorkflow, setBoardWorkflow] = useState<WorkflowDefinition>();
+
   const [loading, setLoading] = useState(false);
-  const [boardConfig, setBoardConfig] = useState<{ boardName?: string; boardType?: string; workflowName?: string; lastFetchedAt?: string; lastFetchedPeriod?: string }>();
 
   useEffect(() => {
     // Load board config metadata
     const savedBoard: BoardConfigWithMetadata | null = WorkflowConfigService.loadWithMetadata(boardId);
+
     if (savedBoard) {
-
-      setBoardConfig({
-        boardName: savedBoard.metadata.boardName,
-        boardType: savedBoard.metadata.boardType,
-        workflowName: savedBoard.workflow.name,
-        lastFetchedAt: savedBoard.metadata.lastFetched,
-        lastFetchedPeriod: savedBoard.metadata.periodDays
-      });
-
-      setPeriodDays(savedBoard.metadata.periodDays);
-
       const boardResult: BoardResult = {
         success: true,
         data: {
@@ -73,6 +66,9 @@ export default function BoardMetricsPage() {
       }
 
       setResult(boardResult);
+      setPeriodDays(savedBoard.metadata.periodDays);
+      setBoardConfig(savedBoard.metadata);
+      setBoardWorkflow(savedBoard.workflow);
     } else {
       // No config found - redirect to configure
       const shouldConfigure = window.confirm(
@@ -104,28 +100,31 @@ export default function BoardMetricsPage() {
         },
       });
 
-      const data: IssueListResult = await response.json();
-
-      const savedBoard: BoardConfigWithMetadata | null = WorkflowConfigService.loadWithMetadata(boardId);
+      const issueListResult: IssueListResult = await response.json();
 
       // Load and process issues
-      if (data.success && data.data && savedBoard) {
-        const processedIssues = data.data?.issues.map(issue => {
-          const issueWithChangelog = issue as any;
+      if (issueListResult.success && issueListResult.data && boardConfig && boardWorkflow) {
+        const processedIssues = issueListResult.data?.issues.map(issue => {
+          const issueWithChangelog = issue as JiraIssue;
           const changelog = issueWithChangelog.changelog;
-          return processJiraIssue(savedBoard.workflow, issue, changelog);
+          return processJiraIssue(boardWorkflow, issue, changelog);
         });
 
         const boardResult: BoardResult = {
           success: true,
           data: {
-            metadata: savedBoard.metadata,
-            workflow: savedBoard.workflow,
+            metadata: {
+              ...boardConfig,
+              periodDays: periodDays,
+              lastFetched: Date.now().toString()
+            },
+            workflow: boardWorkflow,
             issues: processedIssues,
           }
         }
-        WorkflowConfigService.save(boardId, periodDays, savedBoard.workflow, savedBoard.metadata.boardName, savedBoard.metadata.boardType, processedIssues);
+        WorkflowConfigService.save(boardId, periodDays, boardWorkflow, boardConfig.boardName, boardConfig.boardType, processedIssues);
         setResult(boardResult);
+        setBoardConfig(boardResult.data?.metadata);
       }
     } catch (error) {
       setResult({
@@ -138,7 +137,7 @@ export default function BoardMetricsPage() {
     }
   };
 
-  if (!boardConfig) {
+  if (!result?.data?.metadata) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-6xl mx-auto">
@@ -151,70 +150,77 @@ export default function BoardMetricsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
+
         {/* Header with Navigation */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
-            <Link href="/" className="hover:text-blue-600">Boards</Link>
-            <span>/</span>
-            <span className="text-gray-900">{boardConfig.boardName || `Board ${boardId}`}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {boardConfig.boardName || `Board ${boardId}`}
-              </h1>
-              {result && result.success && result.data && result.data.issues.length != 0 && (
-                <p className="text-sm text-gray-600 mt-1">
-                  Last refreshed data from last <span className="font-bold">{result.data.metadata.periodDays}</span> days on <span className="font-bold">{new Date(result.data.metadata.lastFetched).toDateString()}</span>
-                </p>)}
+        {result && result.success && result.data && (
+          <div className="mb-8">
+            <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+              <Link href="/" className="hover:text-blue-600">Boards</Link>
+              <span>/</span>
+              <span className="text-gray-900">{result.data.metadata.boardName || `Board ${boardId}`}</span>
             </div>
-            <Link
-              href={`/boards/${boardId}/configure`}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded"
-            >
-              ⚙️ Configure Workflow
-            </Link>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {result.data.metadata.boardName || `Board ${boardId}`}
+                </h1>
+                {result.data.issues.length != 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Last refreshed data from last <span className="font-bold">{result.data.metadata.periodDays}</span> days on <span className="font-bold">{new Date(result.data.metadata.lastFetched).toDateString()}</span>
+                  </p>
+                )}
+
+              </div>
+              <Link
+                href={`/boards/${boardId}/configure`}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded"
+              >
+                ⚙️ Configure Workflow
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Query Input */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">Analysis Period (days)</h2>
+        {result && result.success && result.data && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Analysis Period (days)</h2>
 
-          <div className="flex space-x-4 items-end">
-            <div className="flex-1">
-              <input
-                type="number"
-                value={periodDays}
-                onChange={(e) => setPeriodDays(e.target.value)}
+            <div className="flex space-x-4 items-end">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={periodDays}
+                  onChange={(e) => setPeriodDays(e.target.value)}
 
-                min="1"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                  min="1"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex-1">
+                <input
+                  type="text"
+                  placeholder='Enter additional filter (valid JQL expression)'
+                  value={additionalJql}
+                  onChange={(e) => setAdditionalJql(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <button
+                onClick={processIssuesWithWorkflow}
+                disabled={loading}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
+              >
+                {loading ? 'Loading...' : 'Load issues'}
+              </button>
             </div>
 
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder='Enter additional filter (valid JQL expression)'
-                value={additionalJql}
-                onChange={(e) => setAdditionalJql(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <button
-              onClick={processIssuesWithWorkflow}
-              disabled={loading}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
-            >
-              {loading ? 'Loading...' : 'Load issues'}
-            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              Analyze issues updated in the last N days
+            </p>
           </div>
-
-          <p className="text-xs text-gray-500 mt-2">
-            Analyze issues updated in the last N days
-          </p>
-        </div>
+        )}
 
         {/* Error Display */}
         {result && !result.success && (
@@ -266,7 +272,7 @@ export default function BoardMetricsPage() {
               Ready to Analyze
             </h3>
             <p className="text-gray-500">
-              Set the analysis period above and click &quot;Load Data&quot; to see your metrics
+              Set the analysis period above and click &quot;Load Issues&quot; to see your metrics
             </p>
           </div>
         )}
