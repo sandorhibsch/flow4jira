@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { useMonteCarloWhen } from '@/lib/metrics/mc-when-simulator';
@@ -13,6 +13,11 @@ export function MonteCarloWhenChart({
   periodDays?: number;
 }) {
   const [targetItems, setTargetItems] = useState(issues.length);
+
+  useEffect(() => {
+    setTargetItems(issues.length);
+  }, [issues.length]);
+
   const { distribution, p50, p85, p95 } =
     useMonteCarloWhen(issues, periodDays, targetItems);
 

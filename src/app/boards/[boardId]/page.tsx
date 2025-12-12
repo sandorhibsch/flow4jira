@@ -110,22 +110,28 @@ export default function BoardMetricsPage() {
           return processJiraIssue(boardWorkflow, issue, changelog);
         });
 
+        WorkflowConfigService.save(boardId, periodDays, boardWorkflow, boardConfig.boardName, boardConfig.boardType, processedIssues);
+      }
+
+
+      const savedBoard: BoardConfigWithMetadata | null = WorkflowConfigService.loadWithMetadata(boardId);
+
+      if (savedBoard) {
         const boardResult: BoardResult = {
           success: true,
           data: {
-            metadata: {
-              ...boardConfig,
-              periodDays: periodDays,
-              lastFetched: Date.now().toString()
-            },
-            workflow: boardWorkflow,
-            issues: processedIssues,
+            metadata: savedBoard.metadata,
+            workflow: savedBoard.workflow,
+            issues: savedBoard.processedIssues || []
           }
         }
-        WorkflowConfigService.save(boardId, periodDays, boardWorkflow, boardConfig.boardName, boardConfig.boardType, processedIssues);
+
         setResult(boardResult);
-        setBoardConfig(boardResult.data?.metadata);
+        setPeriodDays(savedBoard.metadata.periodDays);
+        setBoardConfig(savedBoard.metadata);
+        setBoardWorkflow(savedBoard.workflow);
       }
+
     } catch (error) {
       setResult({
         success: false,

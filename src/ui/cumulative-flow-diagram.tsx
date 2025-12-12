@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AreaChart,
   Area,
@@ -27,7 +27,12 @@ export default function CumulativeFlowDiagram(
       periodDays: number
     }) {
 
-  const [period, setPeriod] = useState(periodDays)
+  const [period, setPeriod] = useState(periodDays);
+
+  useEffect(() => {
+    setPeriod(periodDays);
+  }, [periodDays]);
+
   const data = React.useMemo(() => buildCumulativeFlowData(issues, workflow, period), [issues, workflow, period]);
 
   const stages = workflow.stages.filter(s => s.stageType != 'new');

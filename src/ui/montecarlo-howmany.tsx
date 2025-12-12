@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { useMonteCarloHowMany } from '@/lib/metrics/mc-howmany-simulator';
@@ -13,6 +13,10 @@ export function MonteCarloHowManyChart({
   periodDays?: number;
 }) {
   const [forecastDays, setForecastDays] = useState(periodDays);
+
+  useEffect(() => {
+    setForecastDays(periodDays);
+  }, [periodDays]);
 
   const { distribution, p50, p85, p95 } =
     useMonteCarloHowMany(issues, periodDays, forecastDays);

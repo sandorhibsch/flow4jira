@@ -1,7 +1,7 @@
 'use client';
 
 import { ProcessedFlowIssue } from "@/lib/flow/flow-types";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScatterChart,
   Scatter,
@@ -95,6 +95,10 @@ export default function CycleTimeScatterplot({
   periodDays: number;
 }) {
   const [period, setPeriod] = useState(periodDays);
+
+  useEffect(() => {
+    setPeriod(periodDays);
+  }, [periodDays]);
 
   const dateMax = new Date().setHours(23, 59, 59, 999);
   const data = React.useMemo(() => prepareData(issues, dateMax, period), [issues, dateMax, period]);
