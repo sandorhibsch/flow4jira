@@ -1,7 +1,7 @@
 // src/app/api/jira/board/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { JiraClient } from '@/lib/jira/client';
+import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
 
 /**
  * GET /api/jira/board?boardId={id}
@@ -21,20 +21,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const jiraBaseUrl = process.env.JIRA_BASE_URL;
-    const jiraBearerToken = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
-
-    if (!jiraBaseUrl || !jiraBearerToken) {
-      return NextResponse.json(
-        { success: false, error: 'Missing Jira configuration' },
-        { status: 500 }
-      );
-    }
-
-    const jiraClient = new JiraClient({
-      baseUrl: jiraBaseUrl,
-      bearerToken: jiraBearerToken,
-    });
+    const config = JiraClientFactory.createConfigFromEnv();
+    const jiraClient = JiraClientFactory.create(config);
 
     // Fetch board configuration
     const boardConfig = await jiraClient.getBoardConfiguration(boardId);

@@ -12,6 +12,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   // Reset console.log to avoid noise in tests
   jest.spyOn(console, 'log').mockImplementation();
+  jest.spyOn(console, 'error').mockImplementation();
 });
 
 afterEach(() => {
@@ -19,6 +20,7 @@ afterEach(() => {
 });
 
 const TEST_CONFIG = {
+  instanceType: 'server',
   baseUrl: 'https://jira.example.com',
   bearerToken: 'test-token-123'
 };

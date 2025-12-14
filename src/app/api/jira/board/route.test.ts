@@ -6,7 +6,7 @@ import { JiraClient } from '@/lib/jira/client';
 import { createMockRequest } from '@/lib/testutils/create-mocks';
 
 // Mock the JiraClient class
-jest.mock('@/lib/jira/client');
+jest.mock('@/lib/jira/jira-server-client');
 
 // Mock environment variables
 const originalEnv = process.env;
@@ -15,14 +15,19 @@ beforeEach(() => {
   jest.resetModules();
   process.env = {
     ...originalEnv,
+    JIRA_INSTANCE_TYPE: 'server',
     JIRA_BASE_URL: 'https://jira.example.com',
     JIRA_PERSONAL_ACCESS_TOKEN: 'test-token-123'
   };
   jest.clearAllMocks();
+
+  //suppress console.error during tests
+  jest.spyOn(console, 'error').mockImplementation();
 });
 
 afterEach(() => {
   process.env = originalEnv;
+  jest.restoreAllMocks(); // restore console.error
 });
 
 const baseUrl = 'http://localhost/api/jira/board';
@@ -80,7 +85,7 @@ describe('Board Info API Route', () => {
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Missing Jira configuration');
+      expect(data.error).toContain('JIRA_BASE_URL environment variable is required');
     });
 
     it('should return error if JIRA_PERSONAL_ACCESS_TOKEN is missing', async () => {
@@ -93,7 +98,7 @@ describe('Board Info API Route', () => {
 
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('Missing Jira configuration');
+      expect(data.error).toContain('JIRA_PERSONAL_ACCESS_TOKEN environment variable is required for Jira Server');
     });
 
     it('should fetch board config and return column info without status names', async () => {

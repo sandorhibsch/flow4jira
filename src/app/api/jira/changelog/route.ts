@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { JiraClient } from '@/lib/jira/client';
-
-const jiraConfig = {
-  baseUrl: process.env.JIRA_BASE_URL!,
-  bearerToken: process.env.JIRA_PERSONAL_ACCESS_TOKEN!,
-};
+import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +12,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const jiraClient = new JiraClient(jiraConfig);
+    const config = JiraClientFactory.createConfigFromEnv();
+    const jiraClient = JiraClientFactory.create(config);
 
     // Fetch changelogs for all issues
     const changelogPromises = issueKeys.map(async (key: string) => {
