@@ -5,7 +5,7 @@ import { JiraClient } from '@/lib/jira/client';
 import { JiraSearchResponse } from '@/lib/jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
 
-jest.mock('@/lib/jira/client');
+//jest.mock('@/lib/jira/client');
 
 const originalEnv = process.env;
 
@@ -13,6 +13,7 @@ beforeEach(() => {
   jest.resetModules();
   process.env = {
     ...originalEnv,
+    JIRA_INSTANCE_TYPE: 'server',
     JIRA_BASE_URL: 'https://jira.example.com',
     JIRA_PERSONAL_ACCESS_TOKEN: 'test-token-123'
   };
@@ -32,7 +33,7 @@ describe('Flow Handler', () => {
       const result = await handleFlowRequest(mockFetch);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Missing Jira configuration');
+      expect(result.error).toContain('Failed to fetch flow issues: JIRA_BASE_URL environment variable is required');
       expect(result.status).toBe(500);
       expect(mockFetch).not.toHaveBeenCalled();
     });
@@ -44,7 +45,7 @@ describe('Flow Handler', () => {
       const result = await handleFlowRequest(mockFetch);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Missing Jira configuration');
+      expect(result.error).toContain('Failed to fetch flow issues: JIRA_PERSONAL_ACCESS_TOKEN environment variable is required for Jira Server');
       expect(result.status).toBe(500);
       expect(mockFetch).not.toHaveBeenCalled();
     });

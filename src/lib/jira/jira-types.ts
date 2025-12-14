@@ -1,6 +1,16 @@
+export type JiraInstanceType = 'server' | 'cloud';
+
+export interface JiraBasicAuth {
+  email: string;
+  apiToken: string;
+}
+
 export interface JiraConfig {
+  instanceType: JiraInstanceType;
   baseUrl: string;
-  bearerToken: string;
+
+  bearerToken?: string;
+  basicAuth?: JiraBasicAuth;
 }
 
 export interface JiraIssue {

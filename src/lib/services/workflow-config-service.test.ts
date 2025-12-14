@@ -37,6 +37,12 @@ beforeAll(() => {
 
 beforeEach(() => {
   localStorageMock.clear();
+  // suppress console.error in tests
+  jest.spyOn(console, 'error').mockImplementation();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe('WorkflowConfigService', () => {

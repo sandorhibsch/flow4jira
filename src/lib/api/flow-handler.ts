@@ -1,6 +1,7 @@
 // src/lib/api/flow-handler.ts
 
-import { JiraClient } from '@/lib/jira/client';
+import { JiraClientBase } from '@/lib/jira/jira-client-base';
+import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
 import { JiraIssue, JiraSearchResponse } from '@/lib/jira/jira-types';
 
 export type FlowHandlerResult = {
@@ -22,23 +23,8 @@ export async function handleFlowRequest(
   queryDescription?: string
 ): Promise<FlowHandlerResult> {
   try {
-    // Validate environment variables
-    const jiraBaseUrl = process.env.JIRA_BASE_URL;
-    const jiraBearerToken = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
-
-    if (!jiraBaseUrl || !jiraBearerToken) {
-      return {
-        success: false,
-        error: 'Missing Jira configuration. Check your environment variables',
-        status: 500
-      };
-    }
-
-    // Create Jira client
-    const jiraClient = new JiraClient({
-      baseUrl: jiraBaseUrl,
-      bearerToken: jiraBearerToken
-    });
+    const config = JiraClientFactory.createConfigFromEnv();
+    const jiraClient = JiraClientFactory.create(config);
 
     // Fetch issues using the provided function
     const jiraResponse = await fetchIssues(jiraClient);
