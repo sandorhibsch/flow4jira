@@ -24,7 +24,7 @@ export class JiraCloudClient extends JiraClientBase {
   }
 
   protected buildSearchUrl(): string {
-    return `${this.config.baseUrl}/rest/api/3/search`;
+    return `${this.config.baseUrl}/rest/api/3/search/jql`;
   }
 
   protected buildBoardUrl(boardId: string): string {
