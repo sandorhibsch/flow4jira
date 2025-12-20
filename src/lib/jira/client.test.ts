@@ -1,7 +1,7 @@
 // src/lib/jira/client.test.ts
 
 import { JiraClient } from './client';
-import { JiraBoardConfigResponse, JiraSearchResponse, JiraStatusResponse } from './jira-types';
+import { JiraBoardConfigResponse, JiraConfig, JiraSearchResponse, JiraStatusResponse } from './jira-types';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -19,7 +19,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const TEST_CONFIG = {
+const TEST_CONFIG: JiraConfig = {
   instanceType: 'server',
   baseUrl: 'https://jira.example.com',
   bearerToken: 'test-token-123'
