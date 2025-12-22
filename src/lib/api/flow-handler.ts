@@ -19,7 +19,7 @@ export type FlowHandlerResult = {
 };
 
 export async function handleFlowRequest(
-  fetchIssues: (client: JiraClient) => Promise<JiraSearchResponse>,
+  fetchIssues: (client: JiraClientBase) => Promise<JiraSearchResponse>,
   queryDescription?: string
 ): Promise<FlowHandlerResult> {
   try {
