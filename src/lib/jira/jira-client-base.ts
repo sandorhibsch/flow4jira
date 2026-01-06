@@ -1,4 +1,4 @@
-import { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types.ts';
+import { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
 
 export class JiraApiError extends Error {
   constructor(
@@ -43,10 +43,10 @@ export abstract class JiraClientBase {
         startAt: startAt.toString(),
       };
 
-    const batch = await this.makeRequest<JiraSearchResponse>(url, pagination);
-    allIssues = allIssues.concat(batch.issues);
-    total = batch.total;
-    startAt += pageSize;
+      const batch = await this.makeRequest<JiraSearchResponse>(url, pagination);
+      allIssues = allIssues.concat(batch.issues);
+      total = batch.total;
+      startAt += pageSize;
     } while (allIssues.length < total);
 
     return {
