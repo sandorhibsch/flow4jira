@@ -1,0 +1,7 @@
+{
+  "jiraUrl": "https://yourcompany.atlassian.net",
+  "jiraEmail": "your-email@company.com",
+  "jiraPersonalAccessToken": "your-pat-here",
+  "jiraApiToken": "your-api-token-here",
+  "instanceType": "cloud"
+}
