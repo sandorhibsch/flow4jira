@@ -46,10 +46,8 @@ export class JiraClientFactory {
       try {
         if (fs.existsSync(configPath)) {
           const content = fs.readFileSync(configPath, 'utf8');
-          console.warn(process.env.HOME);
           const config = JSON.parse(content);
 
-          console.warn(`Config is found! ${configPath}`);
 
           if (config.jiraUrl) {
             return {
@@ -76,10 +74,8 @@ export class JiraClientFactory {
    * @throws Error if required environment variables are missing
    */
   static createConfigFromEnv(): JiraConfig {
-    console.warn("HELLO");
     const fileConfig = this.loadConfigFromFile();
 
-    console.warn(fileConfig);
     const instanceType = (process.env.JIRA_INSTANCE_TYPE || fileConfig?.instanceType || 'server') as JiraInstanceType;
     const baseUrl = process.env.JIRA_BASE_URL || fileConfig?.baseUrl;
 
