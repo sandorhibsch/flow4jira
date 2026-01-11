@@ -4,11 +4,17 @@ import { useEffect, useState } from 'react';
 import { WorkflowConfigService, BoardConfigWithMetadata } from '@/lib/services/workflow-config-service';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
 
 export default function HomePage() {
   const router = useRouter();
   const [configs, setConfigs] = useState<BoardConfigWithMetadata[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Dialog states
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ boardId: string; boardName?: string } | null>(null);
 
   useEffect(() => {
     loadConfigs();
@@ -26,25 +32,30 @@ export default function HomePage() {
   };
 
   const handleDelete = (boardId: string, boardName?: string) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the configuration for ${boardName || `Board ${boardId}`}?`
-    );
+    setDeleteTarget({ boardId, boardName });
+    setConfirmOpen(true);
+  };
 
-    if (confirmed) {
-      const success = WorkflowConfigService.delete(boardId);
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      const success = WorkflowConfigService.delete(deleteTarget.boardId);
       if (success) {
         loadConfigs(); // Refresh list
       } else {
         alert('Failed to delete configuration');
       }
     }
+    setConfirmOpen(false);
+    setDeleteTarget(null);
   };
 
   const handleCreateNew = () => {
-    const boardId = prompt('Enter Board ID to configure:');
-    if (boardId && boardId.trim()) {
-      router.push(`/boards/${boardId.trim()}/configure`);
-    }
+    setPromptOpen(true);
+  };
+
+  const submitBoardId = (boardId: string) => {
+    setPromptOpen(false);
+    router.push(`/boards/${boardId}/configure`);
   };
 
   if (loading) {
@@ -152,6 +163,27 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* Dialogs */}
+      <PromptDialog
+        isOpen={promptOpen}
+        title="Configure New Board"
+        message="Enter Board ID to configure:"
+        placeholder="e.g. 123"
+        onSubmit={submitBoardId}
+        onCancel={() => setPromptOpen(false)}
+      />
+      
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        title="Delete Board Configuration"
+        message={`Are you sure you want to delete the configuration for ${deleteTarget?.boardName || `Board ${deleteTarget?.boardId}`}?`}
+        onConfirm={confirmDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setDeleteTarget(null);
+        }}
+      />
     </div>
   );
 }

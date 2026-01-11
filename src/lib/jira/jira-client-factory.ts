@@ -46,9 +46,12 @@ export class JiraClientFactory {
       try {
         if (fs.existsSync(configPath)) {
           const content = fs.readFileSync(configPath, 'utf8');
+          console.warn(process.env.HOME);
           const config = JSON.parse(content);
 
-          if (config.jiraUrl || config.jiraBaseUrl) {
+          console.warn(`Config is found! ${configPath}`);
+
+          if (config.jiraUrl) {
             return {
               baseUrl: config.jiraUrl || config.jiraBaseUrl,
               instanceType: config.instanceType || (config.jiraEmail ? 'cloud' : 'server'),
@@ -73,8 +76,10 @@ export class JiraClientFactory {
    * @throws Error if required environment variables are missing
    */
   static createConfigFromEnv(): JiraConfig {
+    console.warn("HELLO");
     const fileConfig = this.loadConfigFromFile();
 
+    console.warn(fileConfig);
     const instanceType = (process.env.JIRA_INSTANCE_TYPE || fileConfig?.instanceType || 'server') as JiraInstanceType;
     const baseUrl = process.env.JIRA_BASE_URL || fileConfig?.baseUrl;
 
@@ -83,7 +88,7 @@ export class JiraClientFactory {
     }
 
     if (instanceType === 'server') {
-      const bearerToken = process.env.JIRA_PERSONAL_ACCESS_TOKEN;
+      const bearerToken = (process.env.JIRA_PERSONAL_ACCESS_TOKEN || fileConfig?.bearerToken);
 
       if (!bearerToken) {
         throw new Error('JIRA_PERSONAL_ACCESS_TOKEN environment variable is required for Jira Server');
@@ -95,8 +100,8 @@ export class JiraClientFactory {
         bearerToken,
       };
     } else if (instanceType === 'cloud') {
-      const email = process.env.JIRA_EMAIL;
-      const apiToken = process.env.JIRA_API_TOKEN;
+      const email = (process.env.JIRA_EMAIL || fileConfig?.basicAuth?.email);
+      const apiToken = (process.env.JIRA_API_TOKEN || fileConfig?.basicAuth?.apiToken);
 
       if (!email || !apiToken) {
         throw new Error('JIRA_EMAIL and JIRA_API_TOKEN environment variables are required for Jira Cloud');

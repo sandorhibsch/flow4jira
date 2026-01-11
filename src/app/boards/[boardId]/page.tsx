@@ -18,6 +18,7 @@ import { JiraIssue } from '@/lib/jira/jira-types';
 import { MonteCarloHowManyChart } from '@/ui/montecarlo-howmany';
 import { MonteCarloWhenChart } from '@/ui/montecarlo-when';
 import FlowIssueTable from '@/ui/flow-issue-table';
+import { ConfirmDialog } from '@/components/ui/dialog';
 
 type IssueListResult = {
   success: boolean;
@@ -50,6 +51,9 @@ export default function BoardMetricsPage() {
   const [boardWorkflow, setBoardWorkflow] = useState<WorkflowDefinition>();
 
   const [loading, setLoading] = useState(false);
+  
+  // Dialog state
+  const [confirmConfigOpen, setConfirmConfigOpen] = useState(false);
 
   useEffect(() => {
     // Load board config metadata
@@ -70,15 +74,8 @@ export default function BoardMetricsPage() {
       setBoardConfig(savedBoard.metadata);
       setBoardWorkflow(savedBoard.workflow);
     } else {
-      // No config found - redirect to configure
-      const shouldConfigure = window.confirm(
-        `No workflow configuration found for board ${boardId}. Would you like to configure it now?`
-      );
-      if (shouldConfigure) {
-        router.push(`/boards/${boardId}/configure`);
-      } else {
-        router.push('/');
-      }
+      // No config found - show dialog to configure
+      setConfirmConfigOpen(true);
     }
   }, [boardId, router]);
 
@@ -283,6 +280,21 @@ export default function BoardMetricsPage() {
           </div>
         )}
       </div>
+
+      {/* Config dialog */}
+      <ConfirmDialog
+        isOpen={confirmConfigOpen}
+        title="No Configuration Found"
+        message={`No workflow configuration found for board ${boardId}. Would you like to configure it now?`}
+        onConfirm={() => {
+          setConfirmConfigOpen(false);
+          router.push(`/boards/${boardId}/configure`);
+        }}
+        onCancel={() => {
+          setConfirmConfigOpen(false);
+          router.push('/');
+        }}
+      />
     </div>
   );
 }

@@ -54,7 +54,7 @@
       "src/",
       "public/",
       "package.json",
-      "next.config.ts",
+      "next.config.js",
       "tsconfig.json",
       "postcss.config.mjs",
       "components.json",
