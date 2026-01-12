@@ -1,0 +1,24 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model BoardConfig {
+  id              String   @id @default(cuid())
+  boardId         String   @unique
+  boardName       String?
+  boardType       String?
+  periodDays      Int      @default(90)
+  workflow        String   // JSON string of WorkflowDefinition
+  processedIssues String?  // JSON string of ProcessedFlowIssue[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([boardId])
+}

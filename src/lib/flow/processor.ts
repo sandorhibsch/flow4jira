@@ -28,7 +28,7 @@ export function processJiraIssue(
 
   // set done date from flow history
   const doneTransitionIndex = flowHistory.findIndex(e => e.stage.isCycleEnd);
-  const doneDate = doneTransitionIndex == -1 ? undefined : flowHistory[doneTransitionIndex].enteredAt;
+  const doneDate = doneTransitionIndex === -1 ? undefined : flowHistory[doneTransitionIndex]?.enteredAt;
 
   // Calculate metrics
   const leadTime = calculateLeadTime(created, flowHistory);

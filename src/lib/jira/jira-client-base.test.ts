@@ -35,7 +35,7 @@ describe('Jira base client - issue pagination', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
 
-    const secondCallUrl = mockFetch.mock.calls[1][0] as string;
+    const secondCallUrl = mockFetch.mock.calls[1]?.[0] as string;
     expect(secondCallUrl).toContain('startAt=2');
     expect((secondCallUrl.match(/startAt=/g) || []).length).toBe(1);
 
@@ -48,9 +48,11 @@ describe('Jira base client - issue pagination', () => {
 });
 
 function createIssueWithChangelog(key: string, total: number, changelogCount: number): JiraIssue {
+  const keyParts = key.split('-');
+  const issueId = keyParts[1] ?? '0';
   return {
     key,
-    id: key.split('-')[1],
+    id: issueId,
     self: `https://jira.example.com/rest/api/2/issue/${key}`,
     fields: {
       summary: 'Test',

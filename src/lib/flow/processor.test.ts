@@ -124,7 +124,8 @@ describe('Flow Processor', () => {
         }
       });
 
-      const expected = (now - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+      // msToDays uses Math.ceil, so we need to match that expectation
+      const expected = Math.ceil((now - createdDate.getTime()) / (1000 * 60 * 60 * 24));
       const result = processJiraIssue(TEST_WORKFLOW, issue);
       expect(result.ageDays).toBe(expected);
     });

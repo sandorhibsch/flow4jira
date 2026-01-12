@@ -1,19 +1,21 @@
-export type WorkflowStage = {
+export type StageType = 'new' | 'ready' | 'in-progress' | 'done';
+
+export interface WorkflowStage {
   key: string;
   name: string;
   jiraStatuses: string[];
   isAddedToSprint?: boolean;
   isCycleStart?: boolean;
   isCycleEnd?: boolean;
-  stageType: 'new' | 'ready' | 'in-progress' | 'done';
+  stageType: StageType;
   color?: string;
-};
+}
 
-export type WorkflowDefinition = {
+export interface WorkflowDefinition {
   key: string;
   name: string;
   stages: WorkflowStage[];
-};
+}
 
 // Example: generic software dev flow
 export const DEFAULT_WORKFLOW: WorkflowDefinition = {
@@ -35,8 +37,12 @@ export function findStageByStatus(
   workflow: WorkflowDefinition,
   jiraStatus: string | undefined | null
 ): WorkflowStage {
-  if (!jiraStatus) return workflow.stages[0];
-  return workflow.stages.find(s => s.jiraStatuses.includes(jiraStatus)) ?? workflow.stages[0];
+  const firstStage = workflow.stages[0];
+  if (!firstStage) {
+    throw new Error('Workflow must have at least one stage');
+  }
+  if (!jiraStatus) return firstStage;
+  return workflow.stages.find(s => s.jiraStatuses.includes(jiraStatus)) ?? firstStage;
 }
 
 export function getBacklogStage(workflow: WorkflowDefinition): WorkflowStage | undefined {

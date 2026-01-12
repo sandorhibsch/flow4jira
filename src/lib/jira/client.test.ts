@@ -70,12 +70,14 @@ describe('JiraClient', () => {
 
       // Debug: log what we're actually getting
       const fetchCall = mockFetch.mock.calls[0];
-      console.log('Fetch called with:', fetchCall);
-      console.log('First arg:', fetchCall[0]);
-      console.log('First arg type:', typeof fetchCall[0]);
+      if (fetchCall) {
+        console.log('Fetch called with:', fetchCall);
+        console.log('First arg:', fetchCall[0]);
+        console.log('First arg type:', typeof fetchCall[0]);
+      }
 
       // fetch is called with a string URL as first argument
-      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const callUrl = mockFetch.mock.calls[0]?.[0] as string;
       console.log('Call URL:', callUrl);
 
       // fetch is called with a string URL as first argument
@@ -88,7 +90,7 @@ describe('JiraClient', () => {
       expect(callUrl).toContain('startAt=0');
 
       expect(result.issues).toHaveLength(1);
-      expect(result.issues[0].key).toBe('TEST-1');
+      expect(result.issues?.[0].key).toBe('TEST-1');
     });
 
     it('should handle pagination correctly without duplicates', async () => {
@@ -194,9 +196,9 @@ describe('JiraClient', () => {
       expect(mockFetch).toHaveBeenCalledTimes(3);
 
       // Check that each request has the correct startAt parameter
-      const firstCallUrl = mockFetch.mock.calls[0][0] as string;
-      const secondCallUrl = mockFetch.mock.calls[1][0] as string;
-      const thirdCallUrl = mockFetch.mock.calls[2][0] as string;
+      const firstCallUrl = mockFetch.mock.calls[0]?.[0] as string;
+      const secondCallUrl = mockFetch.mock.calls[1]?.[0] as string;
+      const thirdCallUrl = mockFetch.mock.calls[2]?.[0] as string;
 
       expect(firstCallUrl).toContain('startAt=0');
       expect(secondCallUrl).toContain('startAt=2');
@@ -250,7 +252,7 @@ describe('JiraClient', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const callUrl = mockFetch.mock.calls[0]?.[0] as string;
       expect(callUrl).toContain('/rest/agile/latest/board/123/issue');
       expect(callUrl).toContain('updated%3E%3D-30d');
       expect(callUrl).toContain('maxResults=50');
@@ -291,7 +293,7 @@ describe('JiraClient', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
 
-      const secondCallUrl = mockFetch.mock.calls[1][0] as string;
+      const secondCallUrl = mockFetch.mock.calls[1]?.[0] as string;
       expect(secondCallUrl).toContain('startAt=2');
       expect((secondCallUrl.match(/startAt=/g) || []).length).toBe(1);
 
@@ -325,8 +327,8 @@ describe('JiraClient', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
       expect(result.name).toBe('Test Board');
-      expect(result.columnConfig.columns[0].name).toBe('To Do');
-      expect(result.columnConfig.columns[0].statuses[0].id).toBe('1');
+      expect(result.columnConfig.columns[0]?.name).toBe('To Do');
+      expect(result.columnConfig.columns[0]?.statuses[0]?.id).toBe('1');
 
     })
   });
@@ -383,7 +385,7 @@ describe('JiraClient', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const callUrl = mockFetch.mock.calls[0]?.[0] as string;
       expect(callUrl).toContain('/rest/api/latest/issue/TEST-1');
       expect(callUrl).toContain('expand=changelog');
 
@@ -423,7 +425,7 @@ describe('JiraClient', () => {
 
       expect(result).toBe(true);
 
-      const callUrl = mockFetch.mock.calls[0][0] as string;
+      const callUrl = mockFetch.mock.calls[0]?.[0] as string;
       expect(callUrl).toContain('/rest/api/latest/myself');
     });
 

@@ -14,14 +14,27 @@ export function useMonteCarloWhen(
     }
 
     const throughput = calculateThroughput(issues, periodDays);
+    
+    // Guard against empty throughput or all-zero values (would cause infinite loop)
+    if (throughput.length === 0) {
+      return { distribution: [], p50: 0, p85: 0, p95: 0 };
+    }
+    
+    const hasPositiveThroughput = throughput.some(t => t > 0);
+    if (!hasPositiveThroughput) {
+      return { distribution: [], p50: 0, p85: 0, p95: 0 };
+    }
+
     const results: number[] = [];
 
     for (let i = 0; i < simulations; i++) {
       let remaining = targetItems;
       let days = 0;
+      const maxDays = 365 * 2; // Safety limit: 2 years
 
-      while (remaining > 0) {
-        remaining -= throughput[Math.floor(Math.random() * throughput.length)];
+      while (remaining > 0 && days < maxDays) {
+        const randomIndex = Math.floor(Math.random() * throughput.length);
+        remaining -= throughput[randomIndex] ?? 0;
         days++;
       }
 

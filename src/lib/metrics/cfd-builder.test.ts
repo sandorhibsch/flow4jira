@@ -20,12 +20,12 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -10),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: threeDaysAgo,
           jiraStatus: "In Progress",
         },
@@ -62,12 +62,12 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // dev
+          stage: TEST_WORKFLOW.stages[1]!, // dev
           enteredAt: addDays(now, -25),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[6], // done
+          stage: TEST_WORKFLOW.stages[6]!, // done
           enteredAt: doneBeforeStart,
           jiraStatus: "Done",
         },
@@ -90,12 +90,12 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: addDays(now, -25),
           jiraStatus: "Dev",
         },
         {
-          stage: TEST_WORKFLOW.stages[6], // done
+          stage: TEST_WORKFLOW.stages[6]!, // done
           enteredAt: threeDaysAgo,
           jiraStatus: "Done",
         },
@@ -126,12 +126,12 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: addDays(now, -10),
           jiraStatus: "In Progress",
         },
         {
-          stage: TEST_WORKFLOW.stages[4], // test
+          stage: TEST_WORKFLOW.stages[4]!, // test
           enteredAt: threeDaysAgo,
           jiraStatus: "Test",
         },
@@ -168,7 +168,7 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: addDays(now, -10),
           jiraStatus: "In Progress",
         }
@@ -206,7 +206,7 @@ describe('Cumulative flow data builder - single issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[0], // new
+          stage: TEST_WORKFLOW.stages[0]!, // new
           enteredAt: addDays(now, -25),
           jiraStatus: "Backlog",
         },
@@ -235,7 +235,7 @@ describe('Cumulative flow data builder - multiple issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -10),
           jiraStatus: "To Do",
         },
@@ -246,7 +246,7 @@ describe('Cumulative flow data builder - multiple issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: addDays(now, -10),
           jiraStatus: "In Progress",
         },
@@ -269,12 +269,12 @@ describe('Cumulative flow data builder - multiple issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -10),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: addDays(now, -3),
           jiraStatus: "In Progress",
         },
@@ -285,12 +285,12 @@ describe('Cumulative flow data builder - multiple issues', () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -8),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[6], // done
+          stage: TEST_WORKFLOW.stages[6]!, // done
           enteredAt: addDays(now, -1),
           jiraStatus: "Done",
         },
@@ -341,17 +341,17 @@ describe("buildCumulativeFlowData - same day transitions", () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -10),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: setMinutes(setHours(dayMinus3, 9), 0),
           jiraStatus: "In Progress",
         },
         {
-          stage: TEST_WORKFLOW.stages[4], // test
+          stage: TEST_WORKFLOW.stages[4]!, // test
           enteredAt: setMinutes(setHours(dayMinus3, 15), 30),
           jiraStatus: "Test",
         },
@@ -363,12 +363,12 @@ describe("buildCumulativeFlowData - same day transitions", () => {
       ...createMockProcessedIssue(),
       flowHistory: [
         {
-          stage: TEST_WORKFLOW.stages[1], // ready
+          stage: TEST_WORKFLOW.stages[1]!, // ready
           enteredAt: addDays(now, -5),
           jiraStatus: "To Do",
         },
         {
-          stage: TEST_WORKFLOW.stages[2], // dev
+          stage: TEST_WORKFLOW.stages[2]!, // dev
           enteredAt: setMinutes(setHours(dayMinus3, 11), 45),
           jiraStatus: "In Progress",
         },

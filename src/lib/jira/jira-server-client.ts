@@ -1,5 +1,6 @@
 import { JiraClientBase } from './jira-client-base';
-import { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
+import type { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
+import { logger } from '../logger';
 
 /**
  * Jira Server implementation
@@ -94,7 +95,7 @@ Promise<JiraSearchResponse> {
       await this.makeRequest(new URL(`${this.config.baseUrl}/rest/api/latest/myself`));
       return true;
     } catch (error) {
-      console.error('Jira connection test failed:', error);
+      logger.error('Jira Server connection test failed', error);
       return false;
     }
   }

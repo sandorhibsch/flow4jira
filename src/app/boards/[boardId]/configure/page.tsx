@@ -1,27 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
-import { WorkflowConfigService } from '@/lib/services/workflow-config-service';
+import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
+import { boardConfigClient } from '@/lib/api/board-config.client';
 
-type BoardInfo = {
+interface BoardInfo {
   id: string;
   name: string;
   type: string;
-  periodDays: string;
-};
+  periodDays: number;
+}
 
-type FetchBoardResult = {
+interface JiraBoardColumn {
+  name: string;
+  statuses?: { id: string; self: string }[];
+}
+
+interface FetchBoardResult {
   success: boolean;
   data?: {
     board: BoardInfo;
     statuses: string[];
-    columns: any[];
+    columns: JiraBoardColumn[];
   };
   error?: string;
-};
+}
 
 const STAGE_COLORS = [
   '#bab0ac', // gray
@@ -39,14 +44,13 @@ export default function ConfigurePage() {
   const router = useRouter();
   const boardIdFromUrl = params?.boardId as string | undefined;
 
-  const [boardId, setBoardId] = useState(boardIdFromUrl || '');
+  const [boardId, setBoardId] = useState(boardIdFromUrl ?? '');
   const [loading, setLoading] = useState(false);
   const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null);
-  const [boardColumns] = useState<Array<{ name: string; statusCount: number }>>([]);
 
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
-  const [periodDays, setPeriodDays] = useState('60');
+  const [periodDays, setPeriodDays] = useState<number>(60);
   const [stages, setStages] = useState<WorkflowStage[]>([
     {
       key: 'backlog',
@@ -60,15 +64,7 @@ export default function ConfigurePage() {
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Auto-load board if boardId is in URL
-  useEffect(() => {
-    if (boardIdFromUrl && !hasInitialized) {
-      setHasInitialized(true);
-      fetchBoardInfo();
-    }
-  }, [boardIdFromUrl, hasInitialized]);
-
-  const fetchBoardInfo = async () => {
+  const fetchBoardInfo = useCallback(async () => {
     if (!boardId) {
       alert('Please enter a Board ID');
       return;
@@ -78,34 +74,36 @@ export default function ConfigurePage() {
     setSaveStatus(null);
 
     try {
-      const workflowConfig = WorkflowConfigService.loadWithMetadata(boardId);
-      if (workflowConfig) {
-        setWorkflowName(workflowConfig.workflow.name);
-        setPeriodDays(workflowConfig.metadata.periodDays);
+      // Try to load existing config from API (async)
+      const configResult = await boardConfigClient.get(boardId);
+      
+      if (configResult.success && configResult.data) {
+        const config = configResult.data;
+        setWorkflowName(config.workflow.name);
+        setPeriodDays(config.metadata.periodDays);
 
-        const boardInfo: BoardInfo = {
-          id: workflowConfig.metadata.boardId,
-          name: workflowConfig.metadata.boardName || 'Workflow',
-          type: workflowConfig.metadata.boardType || 'unknown',
-          periodDays: workflowConfig.metadata.periodDays
-        }
+        const loadedBoardInfo: BoardInfo = {
+          id: config.metadata.boardId,
+          name: config.metadata.boardName ?? 'Workflow',
+          type: config.metadata.boardType ?? 'unknown',
+          periodDays: config.metadata.periodDays
+        };
 
-        setBoardInfo(boardInfo);
-
-        setStages(workflowConfig.workflow.stages);
+        setBoardInfo(loadedBoardInfo);
+        setStages(config.workflow.stages);
         setSaveStatus({ type: 'success', message: 'Loaded existing configuration' });
       } else {
-
+        // No existing config - fetch from Jira API
         const response = await fetch(`/api/jira/board?boardId=${encodeURIComponent(boardId)}`);
         const data: FetchBoardResult = await response.json();
 
-        if (!data.success) {
-          alert(`Error: ${data.error}`);
+        if (!data.success || !data.data) {
+          alert(`Error: ${data.error ?? 'Unknown error'}`);
           return;
         }
 
-        setBoardInfo(data.data!.board);
-        setWorkflowName(`${data.data!.board.name} Workflow`);
+        setBoardInfo(data.data.board);
+        setWorkflowName(`${data.data.board.name} Workflow`);
       }
     } catch (error) {
       alert('Failed to fetch board information');
@@ -113,7 +111,15 @@ export default function ConfigurePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [boardId]);
+
+  // Auto-load board if boardId is in URL
+  useEffect(() => {
+    if (boardIdFromUrl && !hasInitialized) {
+      setHasInitialized(true);
+      fetchBoardInfo();
+    }
+  }, [boardIdFromUrl, hasInitialized, fetchBoardInfo]);
 
   const addStage = () => {
     const stageNumber = stages.length + 1;
@@ -137,15 +143,18 @@ export default function ConfigurePage() {
 
   const updateStage = (index: number, updates: Partial<WorkflowStage>) => {
     const newStages = [...stages];
-    newStages[index] = { ...newStages[index], ...updates };
-    setStages(newStages);
+    const currentStage = newStages[index];
+    if (currentStage) {
+      newStages[index] = { ...currentStage, ...updates };
+      setStages(newStages);
+    }
   };
 
   const addStatusToStage = (stageIndex: number, statusName: string) => {
     if (!statusName.trim()) return;
 
     const stage = stages[stageIndex];
-    if (stage.jiraStatuses.includes(statusName)) return; // Already exists
+    if (!stage || stage.jiraStatuses.includes(statusName)) return; // Already exists
 
     updateStage(stageIndex, {
       jiraStatuses: [...stage.jiraStatuses, statusName]
@@ -154,6 +163,8 @@ export default function ConfigurePage() {
 
   const removeStatusFromStage = (stageIndex: number, statusName: string) => {
     const stage = stages[stageIndex];
+    if (!stage) return;
+    
     updateStage(stageIndex, {
       jiraStatuses: stage.jiraStatuses.filter(s => s !== statusName)
     });
@@ -164,7 +175,7 @@ export default function ConfigurePage() {
       return 'Workflow name is required';
     }
 
-    if (!periodDays) {
+    if (!periodDays || periodDays <= 0) {
       return 'Default period is required';
     }
 
@@ -174,7 +185,7 @@ export default function ConfigurePage() {
 
     // Check that stages have statuses except with Scrum board
     const stagesWithoutStatuses = stages.filter(s => s.jiraStatuses.length === 0);
-    if (stagesWithoutStatuses.length > 0 && boardInfo?.type != 'scrum') {
+    if (stagesWithoutStatuses.length > 0 && boardInfo?.type !== 'scrum') {
       return `Some stages have no statuses: ${stagesWithoutStatuses.map(s => s.name).join(', ')}`;
     }
 
@@ -200,133 +211,147 @@ export default function ConfigurePage() {
       return;
     }
 
+    setLoading(true);
+
     const workflow: WorkflowDefinition = {
       key: `board-${boardId}`,
       name: workflowName,
       stages: stages,
     };
 
-    const success = WorkflowConfigService.save(boardId, periodDays, workflow, boardInfo?.name, boardInfo?.type, []);
+    // Save via API (async)
+    const result = await boardConfigClient.save(boardId, {
+      periodDays,
+      workflow,
+      boardName: boardInfo?.name,
+      boardType: boardInfo?.type,
+    });
 
-    if (success) {
-      setSaveStatus({ type: 'success', message: 'Workflow saved successfully!' });
-
-      // Redirect to board metrics after 1 second
-      setTimeout(() => {
-        router.push(`/boards/${boardId}`);
-      }, 1000);
+    if (result.success) {
+      setSaveStatus({ type: 'success', message: 'Configuration saved successfully!' });
+      
+      // Redirect to board page if we came from URL
+      if (boardIdFromUrl) {
+        setTimeout(() => {
+          router.push(`/boards/${boardId}`);
+        }, 1000);
+      }
     } else {
-      setSaveStatus({ type: 'error', message: 'Failed to save workflow' });
+      // Show detailed validation errors if available
+      let errorMessage = result.error;
+      if ('details' in result && result.details && result.details.length > 0) {
+        const detailMessages = result.details.map(d => `${d.field}: ${d.message}`).join(', ');
+        errorMessage = `${result.error}: ${detailMessages}`;
+      }
+      setSaveStatus({ type: 'error', message: errorMessage });
     }
+
+    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header with Navigation */}
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-2 text-sm text-gray-500 mb-2">
             <Link href="/" className="hover:text-blue-600">Boards</Link>
-            {boardIdFromUrl && (
-              <>
-                <span>/</span>
-                <Link href={`/boards/${boardIdFromUrl}`} className="hover:text-blue-600">
-                  {boardInfo?.name || `Board ${boardIdFromUrl}`}
-                </Link>
-              </>
-            )}
             <span>/</span>
-            <span className="text-gray-900">Configure</span>
+            <span className="text-gray-900">Configure Workflow</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900">
             Configure Workflow
           </h1>
         </div>
 
-        {/* Board Selection */}
+        {/* Board ID Input */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">1. Select Board</h2>
-
-          <div className="flex space-x-2">
+          <h2 className="text-xl font-semibold mb-4">1. Enter Board ID</h2>
+          <div className="flex space-x-4">
             <input
               type="text"
               value={boardId}
               onChange={(e) => setBoardId(e.target.value)}
-              placeholder="Enter Board ID (e.g., 123)"
-              disabled={!!boardIdFromUrl} // Disable if coming from URL
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              placeholder="Enter Jira Board ID (e.g., 123)"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               onClick={fetchBoardInfo}
               disabled={loading}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
             >
-              {loading ? 'Loading...' : 'Fetch Board'}
+              {loading ? 'Loading...' : 'Load Board'}
             </button>
           </div>
-
-          {boardInfo && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
-              <p className="font-medium text-green-800">
-                Board: {boardInfo.name} (ID: {boardInfo.id})
-              </p>
-              {boardColumns.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm text-green-700 font-medium">Board Columns:</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {boardColumns.map((col, idx) => (
-                      <span key={idx} className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                        {col.name} ({col.statusCount} {col.statusCount === 1 ? 'status' : 'statuses'})
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-xs text-green-600 mt-2">
-                    💡 Use these column names as a guide when adding statuses to your workflow stages below
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Workflow Builder */}
+        {/* Board Info */}
         {boardInfo && (
           <>
-            {/* Workflow Name */}
             <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">2. Name Your Workflow</h2>
-              <input
-                type="text"
-                value={workflowName}
-                onChange={(e) => setWorkflowName(e.target.value)}
-                placeholder="Workflow Name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/*Default period */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <h2 className="text-xl font-semibold mb-4">3. Specify analysis period (days):</h2>
-              <input
-                type="number"
-                value={periodDays}
-                onChange={(e) => setPeriodDays(e.target.value)}
-                min="1"
-                placeholder="Analysis period"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Stages Configuration */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">4. Configure Stages</h2>
+              <h2 className="text-xl font-semibold mb-4">2. Board Information</h2>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <span className="text-gray-500 text-sm">Board ID</span>
+                  <p className="font-medium">{boardInfo.id}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">Name</span>
+                  <p className="font-medium">{boardInfo.name}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-sm">Type</span>
+                  <p className="font-medium capitalize">{boardInfo.type}</p>
+                </div>
               </div>
+            </div>
 
-              <div className="space-y-6">
+            {/* Workflow Settings */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">3. Workflow Settings</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Workflow Name
+                  </label>
+                  <input
+                    type="text"
+                    value={workflowName}
+                    onChange={(e) => setWorkflowName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Analysis Period (days)
+                  </label>
+                  <input
+                    type="number"
+                    value={periodDays}
+                    onChange={(e) => setPeriodDays(parseInt(e.target.value, 10) || 60)}
+                    min="1"
+                    max="365"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stages */}
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">4. Define Workflow Stages</h2>
+              <p className="text-gray-600 mb-4">
+                Define the stages in your workflow and map Jira statuses to each stage.
+              </p>
+
+              <div className="space-y-6 mb-6">
                 {stages.map((stage, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4"
+                    style={{ borderLeftWidth: '4px', borderLeftColor: stage.color }}
+                  >
+                    <div className="grid grid-cols-4 gap-4 mb-4">
                       {/* Stage Name */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -360,7 +385,7 @@ export default function ConfigurePage() {
                         </label>
                         <select
                           value={stage.stageType}
-                          onChange={(e) => updateStage(index, { stageType: e.target.value as any })}
+                          onChange={(e) => updateStage(index, { stageType: e.target.value as StageType })}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md"
                         >
                           <option value="new">New (Backlog)</option>
@@ -377,7 +402,7 @@ export default function ConfigurePage() {
                         </label>
                         <input
                           type="color"
-                          value={stage.color || STAGE_COLORS[0]}
+                          value={stage.color ?? STAGE_COLORS[0]}
                           onChange={(e) => updateStage(index, { color: e.target.value })}
                           className="w-full h-10 border border-gray-300 rounded-md"
                         />
@@ -390,7 +415,7 @@ export default function ConfigurePage() {
                         <label className="flex items-center">
                           <input
                             type="checkbox"
-                            checked={stage.isAddedToSprint || false}
+                            checked={stage.isAddedToSprint ?? false}
                             onChange={(e) => updateStage(index, { isAddedToSprint: e.target.checked })}
                             className="mr-2"
                           />
@@ -400,7 +425,7 @@ export default function ConfigurePage() {
                       <label className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={stage.isCycleStart || false}
+                          checked={stage.isCycleStart ?? false}
                           onChange={(e) => updateStage(index, { isCycleStart: e.target.checked })}
                           className="mr-2"
                         />
@@ -409,13 +434,12 @@ export default function ConfigurePage() {
                       <label className="flex items-center">
                         <input
                           type="checkbox"
-                          checked={stage.isCycleEnd || false}
+                          checked={stage.isCycleEnd ?? false}
                           onChange={(e) => updateStage(index, { isCycleEnd: e.target.checked })}
                           className="mr-2"
                         />
                         <span className="text-sm">Cycle End</span>
                       </label>
-
                     </div>
 
                     {/* Status Management */}
@@ -473,7 +497,7 @@ export default function ConfigurePage() {
                       <p className="text-xs text-gray-500 mt-2">
                         Add status names exactly as they appear in Jira (case-sensitive)
                       </p>
-                      {boardInfo.type != 'scrum' && stage.jiraStatuses.length === 0 && (
+                      {boardInfo.type !== 'scrum' && stage.jiraStatuses.length === 0 && (
                         <p className="text-xs text-red-600 mt-1">
                           ⚠️ At least one status is required
                         </p>
@@ -515,13 +539,14 @@ export default function ConfigurePage() {
 
               <button
                 onClick={saveWorkflow}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded text-lg"
+                disabled={loading}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded text-lg disabled:opacity-50"
               >
-                Save Workflow Configuration
+                {loading ? 'Saving...' : 'Save Workflow Configuration'}
               </button>
 
               <div className="mt-4 text-sm text-gray-600">
-                <p>This will save the workflow configuration to the browser&apos;s local storage.</p>
+                <p>This will save the workflow configuration to the database.</p>
                 {boardIdFromUrl && (
                   <p className="mt-2">
                     After saving, you&apos;ll be redirected to the board metrics page.

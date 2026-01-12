@@ -1,10 +1,10 @@
 // src/lib/api/flow-handler.ts
 
-import { JiraClientBase } from '@/lib/jira/jira-client-base';
+import type { JiraClientBase } from '@/lib/jira/jira-client-base';
 import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
-import { JiraIssue, JiraSearchResponse } from '@/lib/jira/jira-types';
+import type { JiraIssue, JiraSearchResponse } from '@/lib/jira/jira-types';
 
-export type FlowHandlerResult = {
+export interface FlowHandlerResult {
   success: boolean;
   data?: {
     issues: JiraIssue[];
@@ -14,9 +14,12 @@ export type FlowHandlerResult = {
     query?: string;
   };
   error?: string;
-  details?: any;
+  details?: {
+    status: number;
+    response?: unknown;
+  };
   status: number;
-};
+}
 
 export async function handleFlowRequest(
   fetchIssues: (client: JiraClientBase) => Promise<JiraSearchResponse>,
@@ -42,12 +45,10 @@ export async function handleFlowRequest(
     };
 
   } catch (error) {
-    //console.error('Flow API error:', error);
-
     // Check for JiraApiError by properties instead of instanceof
     // This is more robust and works better with Jest mocks
     if (error && typeof error === 'object' && 'status' in error && 'name' in error && error.name === 'JiraApiError') {
-      const jiraError = error as unknown as { message: string; status: number; response?: any };
+      const jiraError = error as unknown as { message: string; status: number; response?: unknown };
       return {
         success: false,
         error: `Jira API Error: ${jiraError.message}`,
@@ -59,7 +60,7 @@ export async function handleFlowRequest(
       };
     }
 
-    //handle generic errors
+    // Handle generic errors
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return {
       success: false,

@@ -11,8 +11,8 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, emptyChanges);
 
     expect(result.length).toBe(1);
-    expect(result[0].enteredAt).toBe(createdDate);
-    expect(result[0].stage).toBe(TEST_WORKFLOW.stages[0]);
+    expect(result[0]?.enteredAt).toBe(createdDate);
+    expect(result[0]?.stage).toBe(TEST_WORKFLOW.stages[0]);
   });
 
   it('should return all stage changes including backlog', () => {
@@ -26,10 +26,10 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[0].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'backlog'));
-    expect(result[1].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'ready'));
-    expect(result[2].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
-    expect(result[3].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'done'));
+    expect(result[0]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'backlog'));
+    expect(result[1]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'ready'));
+    expect(result[2]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
+    expect(result[3]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'done'));
   });
 
   it('should only count first occurrence of stage changes', () => {
@@ -47,10 +47,10 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[0].enteredAt).toStrictEqual(createdDate);
-    expect(result[1].enteredAt).toStrictEqual(firstToDoDate);
-    expect(result[2].enteredAt).toStrictEqual(firstDevDate);
-    expect(result[3].enteredAt).toStrictEqual(new Date('2025-01-18T11:12:00'));
+    expect(result[0]?.enteredAt).toStrictEqual(createdDate);
+    expect(result[1]?.enteredAt).toStrictEqual(firstToDoDate);
+    expect(result[2]?.enteredAt).toStrictEqual(firstDevDate);
+    expect(result[3]?.enteredAt).toStrictEqual(new Date('2025-01-18T11:12:00'));
   });
 
   it('should count addition to sprint as stage change to ready', () => {
@@ -64,7 +64,7 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[1].stage.stageType).toBe('ready');
+    expect(result[1]?.stage.stageType).toBe('ready');
   });
 
   it('should return stage changes in workflow order', () => {
@@ -78,10 +78,10 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[0].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'backlog'));
-    expect(result[1].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'ready'));
-    expect(result[2].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
-    expect(result[3].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'done'));
+    expect(result[0]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'backlog'));
+    expect(result[1]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'ready'));
+    expect(result[2]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
+    expect(result[3]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'done'));
   });
 
   it('should find actual cycle start when default', () => {
@@ -96,8 +96,8 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(5);
-    expect(result[2].stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
-    expect(result[2].isActualCycleStart).toBe(true);
+    expect(result[2]?.stage).toBe(TEST_WORKFLOW.stages.find(s => s.key === 'dev'));
+    expect(result[2]?.isActualCycleStart).toBe(true);
   });
 
   it('should find actual cycle start when went from to do to testing', () => {
@@ -111,7 +111,7 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[1].isActualCycleStart).toBe(true);
+    expect(result[1]?.isActualCycleStart).toBe(true);
   });
 
   it('should find actual cycle start when went from new to testing', () => {
@@ -124,7 +124,7 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(3);
-    expect(result[0].isActualCycleStart).toBe(true);
+    expect(result[0]?.isActualCycleStart).toBe(true);
   });
 
   it('should count addition to sprint as stage change to ready', () => {
@@ -138,9 +138,9 @@ describe('Sequential flow test', () => {
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
-    expect(result[1].stage.stageType).toBe('ready');
-    expect(result[1].isActualCycleStart).toBe(true);
-    expect(result[0].isActualCycleStart).toBe(undefined);
+    expect(result[1]?.stage.stageType).toBe('ready');
+    expect(result[1]?.isActualCycleStart).toBe(true);
+    expect(result[0]?.isActualCycleStart).toBe(undefined);
   });
 
 });
