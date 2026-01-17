@@ -101,8 +101,8 @@ describe('Status history builder', () => {
       const result: StatusChange[] = filterStatusChanges(issue, changelog);
 
       expect(result.length).toBe(1);
-      expect(result[0].to).toBe('Work in Progress');
-      expect(result[0].enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
+      expect(result[0]?.to).toBe('Work in Progress');
+      expect(result[0]?.enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
     });
 
     it('should return status change when issue added to sprint', () => {
@@ -114,9 +114,9 @@ describe('Status history builder', () => {
       const result: StatusChange[] = filterStatusChanges(issue, changelog);
 
       expect(result.length).toBe(1);
-      expect(result[0].to).toBe('Sprint 1');
-      expect(result[0].enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
-      expect(result[0].isAddedToSprint).toBe(true);
+      expect(result[0]?.to).toBe('Sprint 1');
+      expect(result[0]?.enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
+      expect(result[0]?.isAddedToSprint).toBe(true);
     });
 
     it('should return false for sprint when change is status', () => {
@@ -128,9 +128,9 @@ describe('Status history builder', () => {
       const result: StatusChange[] = filterStatusChanges(issue, changelog);
 
       expect(result.length).toBe(1);
-      expect(result[0].to).toBe('Work in Progress');
-      expect(result[0].enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
-      expect(result[0].isAddedToSprint).toBe(false);
+      expect(result[0]?.to).toBe('Work in Progress');
+      expect(result[0]?.enteredAt.toISOString()).toBe(new Date('2024-01-03T10:00:00').toISOString());
+      expect(result[0]?.isAddedToSprint).toBe(false);
     });
 
     it('should return only status changes', () => {

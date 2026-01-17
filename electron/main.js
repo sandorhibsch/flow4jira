@@ -2,6 +2,7 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { startNextServer } = require('./server');
+const { initializeDatabase } = require('./db-setup');
 
 let mainWindow;
 let serverInstance;
@@ -12,13 +13,21 @@ function ensureConfig() {
     const defaultConfig = {
       jiraUrl: "",
       jiraEmail: "",
-      jiraApiToken: "" 
+      jiraApiToken: ""
     };
     fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 2));
   }
 }
 
 async function createWindow() {
+  // Initialize database before starting the server
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    // Continue anyway - might still work if db is partially set up
+  }
+
   ensureConfig();
   if (!process.env.ELECTRON_START_URL) {
     console.log('Starting Next.js server...');

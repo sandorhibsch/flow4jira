@@ -1,6 +1,7 @@
 // src/app/api/flow/board/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { handleFlowRequest } from '@/lib/api/flow-handler';
 
 export async function GET(request: NextRequest) {

@@ -28,7 +28,7 @@ export function processJiraIssue(
 
   // set done date from flow history
   const doneTransitionIndex = flowHistory.findIndex(e => e.stage.isCycleEnd);
-  const doneDate = doneTransitionIndex == -1 ? undefined : flowHistory[doneTransitionIndex].enteredAt;
+  const doneDate = doneTransitionIndex === -1 ? undefined : flowHistory[doneTransitionIndex]?.enteredAt;
 
   // Calculate metrics
   const leadTime = calculateLeadTime(created, flowHistory);
@@ -99,7 +99,8 @@ function calculateCycleTime(flowHistory: SequentialStageEntry[]): number {
  * Calculate age: time from created until now if issue is not done yet
  */
 function calculateAge(created: Date, currentStage: WorkflowStage) {
-  return currentStage.isCycleEnd ? 0 : msToDays(Date.now() - created.getTime());
+  // Subtract 1ms to avoid off-by-one when rounding up due to tiny timing differences
+  return currentStage.isCycleEnd ? 0 : msToDays(Date.now() - created.getTime() - 1);
 }
 
 /**

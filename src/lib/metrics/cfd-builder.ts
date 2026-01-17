@@ -29,6 +29,8 @@ export function buildCumulativeFlowData(
 
       for (let i = 0; i < entries.length; i++) {
         const current = entries[i];
+        if (!current) continue;
+        
         const entered = current.enteredAt;
 
         //do not count backlog 

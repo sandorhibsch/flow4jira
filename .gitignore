@@ -46,3 +46,7 @@ src/data/*
 
 # vscode
 .vscode
+
+#prisma db
+data/*
+prisma/*

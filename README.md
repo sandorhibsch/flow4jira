@@ -1,42 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flow4Jira
 
-## Getting Started
+Flow metrics and forecasting for Jira Boards 
 
-First, run the development server:
+## 🎯 Features
+
+- **Aging Chart** – Age of items currently in the process, categorized by status. 
+- **Cumulative Flow Diagram (CFD)** – Visualization of workflow over time
+- **Cycle Time Scatterplot** – Cycle time of items over time and single item forecasting using percentiles
+- **Monte Carlo Forecasting** – Probabilistic forecasts
+  - "How many items are we going to finish in the next X days?"
+  - "When can we finish X items?"
+- **Configurable workflows** – Map Jira statuses in your board to workflow stages
+
+## 📋 Requirements
+
+- **Node.js** 20+ (LTS)
+- **pnpm** (recommended) or npm
+- **Jira Server** or **Jira Cloud** access
+
+## 🚀 Quick Start
+
+### 1. Clone repo or download and unpack
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+unzip flow4jira.zip
+cd flow4jira
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Set up environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Create environment file
+cp .env.example .env
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# .Edit the environment and enter your Jira credentials.
+```
 
-## Learn More
+**For Jira Server:**
+```env
+JIRA_INSTANCE_TYPE=server
+JIRA_BASE_URL=https://jira.your-company.com
+JIRA_PERSONAL_ACCESS_TOKEN=your-token-here
+DATABASE_URL="file:./data/flow4jira.db"
+```
 
-To learn more about Next.js, take a look at the following resources:
+**For Jira Cloud:**
+```env
+JIRA_INSTANCE_TYPE=cloud
+JIRA_BASE_URL=https://your-domain.atlassian.net
+JIRA_EMAIL=your-email@example.com
+JIRA_API_TOKEN=your-api-token
+DATABASE_URL="file:./data/flow4jira.db"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Install dependencies
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm install
+```
 
-## Deploy on Vercel
+### 4. Initialize database
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# Generate Prisma Client and create database
+npx prisma db push
+```
 
 ## Run the Electron app 
 - Fill with you configuration the config.json.example and rename it to config.json
 - Copy the config.json next to your application (for Mac, copy it to the /Users/your-user-name/Library/Application Support/Flow4Jira folder.)
 - Make sure the configuration only uses either the jiraApiToken (basic auth) or the jiraPersonalAccessToken (Bearer token)
-- The configuration is local; Jira4Flow doesn't store it anywhere.
+- The configuration is local; Flow4Jira doesn't store it anywhere.

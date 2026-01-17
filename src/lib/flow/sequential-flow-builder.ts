@@ -18,11 +18,19 @@ export function buildSequentialFlow(
 
   const allTransitions: SequentialStageEntry[] = [];
 
-  const initialStage = getBacklogStage(workflow) || workflow.stages[0];
+  const backlogStage = getBacklogStage(workflow);
+  const firstStage = workflow.stages[0];
+  const initialStage = backlogStage ?? firstStage;
+  
+  if (!initialStage) {
+    throw new Error('Workflow must have at least one stage');
+  }
+
+  const initialStatus = initialStage.jiraStatuses[0] ?? 'Unknown';
 
   allTransitions.push({
     stage: initialStage,
-    jiraStatus: initialStage.jiraStatuses[0],
+    jiraStatus: initialStatus,
     enteredAt: issueCreatedDate,
   });
 
@@ -73,7 +81,9 @@ export function buildSequentialFlow(
     // If missing, look backward in the workflow
     if (!actualStart) {
       for (let i = definedStartIdx - 1; i >= 0; i--) {
-        const prevKey = workflow.stages[i].key;
+        const prevStage = workflow.stages[i];
+        if (!prevStage) continue;
+        const prevKey = prevStage.key;
         const candidate = sequentialFlow.find(e => e.stage.key === prevKey);
         if (candidate) {
           actualStart = candidate;
@@ -84,7 +94,10 @@ export function buildSequentialFlow(
 
     // If still missing, fall back to the first recorded stage
     if (!actualStart && sequentialFlow.length > 0) {
-      actualStart = sequentialFlow[0];
+      const first = sequentialFlow[0];
+      if (first) {
+        actualStart = first;
+      }
     }
 
     if (actualStart) {
@@ -100,6 +113,11 @@ function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: Work
     workflow.stages.find(s => s.isAddedToSprint) :
     findStageByStatus(workflow, event.to);
 
-  return calculatedStage ?? workflow.stages[0];
+  const firstStage = workflow.stages[0];
+  if (!firstStage) {
+    throw new Error('Workflow must have at least one stage');
+  }
+  
+  return calculatedStage ?? firstStage;
 }
 

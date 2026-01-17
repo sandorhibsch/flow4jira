@@ -1,28 +1,44 @@
 {
   "name": "flow4jira",
-  "version": "0.1.0",
+  "version": "1.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json}\"",
+    "test": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest",
+    "test:watch": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --watch",
+    "test:coverage": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --coverage",
+    "test:ci": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --silent",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "postinstall": "prisma generate",
+    "prepare": "husky || true",
     "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cross-env ELECTRON_START_URL=http://localhost:3000 electron .\"",
-    "electron:build": "npm run build && npx electron-builder",
-    "lint": "eslint",
-    "test": "jest"
+    "electron:build": "npm run build && npx electron-builder"
   },
   "dependencies": {
+    "@prisma/client": "^6.9.0",
     "@radix-ui/react-slot": "^1.2.4",
     "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.553.0",
+    "pino": "^9.6.0",
     "next": "^15.5.9",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "recharts": "^3.3.0",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -37,7 +53,11 @@
     "electron-builder": "^26.4.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.7",
+    "husky": "^9.1.0",
     "jest": "^30.2.0",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.4.0",
+    "prisma": "^6.9.0",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
@@ -51,14 +71,30 @@
     "files": [
       "electron/",
       ".next/**/*",
-      "src/",
       "public/",
       "package.json",
       "next.config.js",
-      "tsconfig.json",
-      "postcss.config.mjs",
-      "components.json",
+      "!src/**/*",
+      "!dist/**/*",
       "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/.prisma/client",
+        "to": "node_modules/.prisma/client"
+      },
+      {
+        "from": "node_modules/@prisma/client",
+        "to": "node_modules/@prisma/client"
+      },
+      {
+        "from": "prisma/schema.prisma",
+        "to": "prisma/schema.prisma"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/.prisma/**/*",
+      "node_modules/@prisma/**/*"
     ],
     "appId": "com.nothing.flow4jira",
     "productName": "Flow4Jira",
@@ -76,6 +112,22 @@
     "linux": {
       "target": "AppImage",
       "category": "Development"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.7",
+      "@types/react-dom": "19.2.3"
     }
   }
 }

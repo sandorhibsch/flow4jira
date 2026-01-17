@@ -67,13 +67,18 @@ export const TEST_WORKFLOW: WorkflowDefinition = {
  * Test helper: Create mock processed issue
  */
 export function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): ProcessedFlowIssue {
+  const firstStage = TEST_WORKFLOW.stages[0];
+  if (!firstStage) {
+    throw new Error('TEST_WORKFLOW must have at least one stage');
+  }
+  
   const baseIssue: ProcessedFlowIssue = {
     key: "PROJ-123",
     summary: "Take out the garbage",
     issueType: "Story",
     created: new Date('2024-01-01'),
     flowHistory: [],
-    currentStage: TEST_WORKFLOW.stages[0],
+    currentStage: firstStage,
     currentStatus: 'Backlog',
     leadTimeDays: 0,
     cycleTimeDays: 0,

@@ -1,7 +1,9 @@
 // src/app/api/jira/board/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
+import type { JiraColumn } from '@/lib/jira/jira-types';
 
 /**
  * GET /api/jira/board?boardId={id}
@@ -31,7 +33,7 @@ export async function GET(request: NextRequest) {
     const columns: Array<{ name: string; statusCount: number }> = [];
 
     if (boardConfig.columnConfig?.columns) {
-      boardConfig.columnConfig.columns.forEach((column: any) => {
+      boardConfig.columnConfig.columns.forEach((column: JiraColumn) => {
         columns.push({
           name: column.name,
           statusCount: column.statuses?.length || 0,

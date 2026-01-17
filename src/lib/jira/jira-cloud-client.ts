@@ -1,5 +1,6 @@
 import { JiraClientBase } from './jira-client-base';
-import { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
+import type { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
+import { logger } from '../logger';
 
 /**
  * Jira Cloud implementation
@@ -97,7 +98,7 @@ string): Promise<JiraSearchResponse> {
       await this.makeRequest(new URL(`${this.config.baseUrl}/rest/api/3/myself`));
       return true;
     } catch (error) {
-      console.error('Jira connection test failed:', error);
+      logger.error('Jira Cloud connection test failed', error);
       return false;
     }
   }
