@@ -1,6 +1,6 @@
-import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
+import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import FlowIssueSummary from './flow-issue-summary';
-import { WorkflowDefinition } from '@/lib/jira/workflow-config';
+import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
 import { format } from 'date-fns';
 

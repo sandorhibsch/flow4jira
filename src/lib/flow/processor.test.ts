@@ -1,7 +1,7 @@
 // src/lib/flow/processor.test.ts
 
 import { processJiraIssue, msToDays } from './processor';
-import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
+import type { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
 import { TEST_WORKFLOW } from '../testutils/create-mocks';
 
 /**

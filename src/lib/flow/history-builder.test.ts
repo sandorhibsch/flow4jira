@@ -1,5 +1,6 @@
-import { JiraChangelogResponse, JiraIssue } from "../jira/jira-types";
-import { filterStatusChanges, StatusChange } from "./history-builder";
+import type { JiraChangelogResponse, JiraIssue } from "../jira/jira-types";
+import type { StatusChange } from "./history-builder";
+import { filterStatusChanges } from "./history-builder";
 
 function createMockIssue(overrides: Partial<JiraIssue> = {}): JiraIssue {
   const baseIssue: JiraIssue = {

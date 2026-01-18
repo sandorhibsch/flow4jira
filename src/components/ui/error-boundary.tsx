@@ -1,6 +1,7 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
 
 interface Props {
   children: ReactNode;

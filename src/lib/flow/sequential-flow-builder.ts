@@ -1,6 +1,7 @@
 // buildSequentialFlow.ts
-import { WorkflowDefinition, WorkflowStage, findStageByStatus, getBacklogStage } from '../jira/workflow-config';
-import { StatusChange } from './history-builder';
+import type { WorkflowDefinition, WorkflowStage} from '../jira/workflow-config';
+import { findStageByStatus, getBacklogStage } from '../jira/workflow-config';
+import type { StatusChange } from './history-builder';
 
 export type SequentialStageEntry = {
   stage: WorkflowStage;

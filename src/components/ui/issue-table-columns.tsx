@@ -1,5 +1,5 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { ProcessedFlowIssue } from "@/lib/flow/flow-types";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { ProcessedFlowIssue } from "@/lib/flow/flow-types";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "./button";
 

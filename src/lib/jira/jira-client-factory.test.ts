@@ -1,7 +1,7 @@
 import { JiraClientFactory } from "./jira-client-factory";
 import { JiraCloudClient } from "./jira-cloud-client";
 import { JiraServerClient } from "./jira-server-client";
-import { JiraConfig } from "./jira-types";
+import type { JiraConfig } from "./jira-types";
 
 const JIRA_SERVER_CONFIG: JiraConfig = {
   instanceType: 'server',

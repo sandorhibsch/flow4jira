@@ -1,10 +1,12 @@
 // src/lib/flow/processor.ts
 
-import { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
-import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
-import { findStageByStatus, WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
+import type { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
+import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
+import type { WorkflowDefinition, WorkflowStage } from '@/lib/jira/workflow-config';
+import { findStageByStatus } from '@/lib/jira/workflow-config';
 import { filterStatusChanges } from './history-builder';
-import { buildSequentialFlow, SequentialStageEntry } from './sequential-flow-builder';
+import type { SequentialStageEntry } from './sequential-flow-builder';
+import { buildSequentialFlow } from './sequential-flow-builder';
 
 /**
  * Transform raw Jira issue + changelog into ProcessedFlowIssue

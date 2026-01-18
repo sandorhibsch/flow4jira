@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ProcessedFlowIssue } from '../flow/flow-types';
+import type { ProcessedFlowIssue } from '../flow/flow-types';
 import { calculateThroughput } from './calculate-throughput';
 
 export function useMonteCarloWhen(

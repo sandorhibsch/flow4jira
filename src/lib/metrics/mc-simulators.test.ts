@@ -3,7 +3,7 @@
 // Since the hooks use useMemo, we need to test the underlying logic
 // by extracting the simulation logic or testing via the hooks in a simpler way
 
-import { ProcessedFlowIssue } from '../flow/flow-types';
+import type { ProcessedFlowIssue } from '../flow/flow-types';
 
 // Test helper to create mock issues
 function createMockIssues(count: number): ProcessedFlowIssue[] {

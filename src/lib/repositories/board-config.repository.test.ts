@@ -1,8 +1,8 @@
 // src/lib/repositories/board-config.repository.test.ts
 
 import { BoardConfigMockRepository } from './board-config.mock.repository';
-import { BoardConfigInput } from './board-config.types';
-import { WorkflowDefinition } from '../jira/workflow-config';
+import type { BoardConfigInput } from './board-config.types';
+import type { WorkflowDefinition } from '../jira/workflow-config';
 
 const TEST_WORKFLOW: WorkflowDefinition = {
   key: 'test',

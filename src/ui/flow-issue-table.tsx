@@ -1,8 +1,8 @@
 import { issueTableColumns } from "@/components/ui/issue-table-columns"
-import { ProcessedFlowIssue } from "@/lib/flow/flow-types"
+import type { ProcessedFlowIssue } from "@/lib/flow/flow-types"
 import { DataTable } from "./issue-table";
-import { WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
-import { ColumnDef } from "@tanstack/react-table";
+import type { WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
+import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown } from "lucide-react";

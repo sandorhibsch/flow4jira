@@ -1,6 +1,7 @@
 
-import { buildSequentialFlow, SequentialStageEntry } from "./sequential-flow-builder";
-import { StatusChange } from "./history-builder";
+import type { SequentialStageEntry } from "./sequential-flow-builder";
+import { buildSequentialFlow } from "./sequential-flow-builder";
+import type { StatusChange } from "./history-builder";
 import { TEST_WORKFLOW } from "../testutils/create-mocks";
 
 describe('Sequential flow test', () => {

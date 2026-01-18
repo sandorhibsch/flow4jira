@@ -3,7 +3,7 @@
 import { BoardConfigService } from './board-config.service';
 import { BoardConfigMockRepository } from '../repositories/board-config.mock.repository';
 import { setBoardConfigRepository, resetBoardConfigRepository } from '../repositories';
-import { WorkflowDefinition } from '../jira/workflow-config';
+import type { WorkflowDefinition } from '../jira/workflow-config';
 
 const TEST_WORKFLOW: WorkflowDefinition = {
   key: 'test',

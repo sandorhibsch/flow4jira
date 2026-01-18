@@ -1,7 +1,7 @@
 import { addDays, eachDayOfInterval, isAfter, isBefore } from "date-fns";
 
-import { WorkflowDefinition } from "../jira/workflow-config";
-import { ProcessedFlowIssue } from "../flow/flow-types";
+import type { WorkflowDefinition } from "../jira/workflow-config";
+import type { ProcessedFlowIssue } from "../flow/flow-types";
 
 export function buildCumulativeFlowData(
   issues: ProcessedFlowIssue[],

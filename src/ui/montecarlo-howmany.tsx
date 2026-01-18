@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { ProcessedFlowIssue } from '@/lib/flow/flow-types';
+import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import { useMonteCarloHowMany } from '@/lib/metrics/mc-howmany-simulator';
 
 export function MonteCarloHowManyChart({

@@ -14,7 +14,7 @@ export interface ValidationError {
 /**
  * Format Zod errors into a readable format
  */
-import { ZodError } from 'zod';
+import type { ZodError } from 'zod';
 
 export function formatZodErrors(error: ZodError): ValidationError[] {
   return error.errors.map((err) => ({

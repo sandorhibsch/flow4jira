@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { ProcessedFlowIssue } from "../flow/flow-types";
-import { WorkflowDefinition } from "../jira/workflow-config";
+import type { ProcessedFlowIssue } from "../flow/flow-types";
+import type { WorkflowDefinition } from "../jira/workflow-config";
 
 export function createMockRequest(
   baseUrl: string,

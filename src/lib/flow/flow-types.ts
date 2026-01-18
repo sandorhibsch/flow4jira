@@ -1,5 +1,5 @@
-import { WorkflowStage } from "../jira/workflow-config";
-import { SequentialStageEntry } from "./sequential-flow-builder";
+import type { WorkflowStage } from "../jira/workflow-config";
+import type { SequentialStageEntry } from "./sequential-flow-builder";
 
 export interface ProcessedFlowIssue {
   key: string;

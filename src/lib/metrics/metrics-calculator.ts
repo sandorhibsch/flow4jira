@@ -1,4 +1,4 @@
-import { FlowIssueCalculatedMetrics, ProcessedFlowIssue } from "../flow/flow-types";
+import type { FlowIssueCalculatedMetrics, ProcessedFlowIssue } from "../flow/flow-types";
 
 export function calculateSummary(issues: ProcessedFlowIssue[]): FlowIssueCalculatedMetrics {
   const total = issues.length;

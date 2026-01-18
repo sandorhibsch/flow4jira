@@ -1,7 +1,7 @@
 // src/lib/jira/client.test.ts
 
 import { JiraClient } from './client';
-import { JiraBoardConfigResponse, JiraConfig, JiraSearchResponse, JiraStatusResponse } from './jira-types';
+import type { JiraBoardConfigResponse, JiraConfig, JiraSearchResponse, JiraStatusResponse } from './jira-types';
 
 // Mock fetch globally
 global.fetch = jest.fn();

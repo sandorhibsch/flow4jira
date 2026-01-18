@@ -1,5 +1,5 @@
 import { JiraClientFactory } from "./jira-client-factory";
-import { JiraSearchResponse, JiraChangelogResponse, JiraConfig, JiraIssue } from "./jira-types";
+import type { JiraSearchResponse, JiraChangelogResponse, JiraConfig, JiraIssue } from "./jira-types";
 
 //Mock fetch globally
 global.fetch = jest.fn();

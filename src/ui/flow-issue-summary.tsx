@@ -1,4 +1,4 @@
-import { FlowIssueCalculatedMetrics, ProcessedFlowIssue } from "@/lib/flow/flow-types";
+import type { FlowIssueCalculatedMetrics, ProcessedFlowIssue } from "@/lib/flow/flow-types";
 import { calculateSummary } from "@/lib/metrics/metrics-calculator";
 
 const FlowIssueSummary = ({ issues }: { issues: ProcessedFlowIssue[] }) => {

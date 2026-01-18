@@ -1,5 +1,5 @@
-import { JiraConfig, JiraInstanceType } from './jira-types';
-import { JiraClientBase } from './jira-client-base';
+import type { JiraConfig, JiraInstanceType } from './jira-types';
+import type { JiraClientBase } from './jira-client-base';
 import { JiraServerClient } from './jira-server-client';
 import { JiraCloudClient } from './jira-cloud-client';
 import * as fs from 'fs';

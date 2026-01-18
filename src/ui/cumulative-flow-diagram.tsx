@@ -13,9 +13,9 @@ import {
 } from "recharts";
 
 import { format } from "date-fns";
-import { WorkflowDefinition } from "@/lib/jira/workflow-config";
+import type { WorkflowDefinition } from "@/lib/jira/workflow-config";
 import { buildCumulativeFlowData } from "@/lib/metrics/cfd-builder";
-import { ProcessedFlowIssue } from "@/lib/flow/flow-types";
+import type { ProcessedFlowIssue } from "@/lib/flow/flow-types";
 
 export default function CumulativeFlowDiagram(
   {

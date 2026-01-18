@@ -5,7 +5,7 @@ export * from './board-config.repository';
 export * from './board-config.sqlite.repository';
 export * from './board-config.mock.repository';
 
-import { IBoardConfigRepository } from './board-config.repository';
+import type { IBoardConfigRepository } from './board-config.repository';
 
 // Singleton instance of the repository
 let boardConfigRepository: IBoardConfigRepository | null = null;

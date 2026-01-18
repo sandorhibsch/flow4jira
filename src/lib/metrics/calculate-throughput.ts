@@ -1,4 +1,4 @@
-import { ProcessedFlowIssue } from "../flow/flow-types";
+import type { ProcessedFlowIssue } from "../flow/flow-types";
 
 export function calculateThroughput(
   issues: ProcessedFlowIssue[],

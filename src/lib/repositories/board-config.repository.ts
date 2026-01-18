@@ -1,6 +1,6 @@
 // src/lib/repositories/board-config.repository.ts
 
-import {
+import type {
   BoardConfig,
   BoardConfigInput,
   BoardConfigMetadata,

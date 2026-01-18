@@ -1,6 +1,6 @@
 import { DELETE, GET, POST } from "./route";
 import { WorkflowConfigService } from "@/lib/services/workflow-config-service";
-import { WorkflowDefinition } from "@/lib/jira/workflow-config";
+import type { WorkflowDefinition } from "@/lib/jira/workflow-config";
 import { TEST_WORKFLOW, createMockRequest } from "@/lib/testutils/create-mocks";
 
 jest.mock('@/lib/services/workflow-config-service');

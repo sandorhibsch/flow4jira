@@ -1,8 +1,9 @@
 // src/app/api/workflow/config/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest} from 'next/server';
+import { NextResponse } from 'next/server';
 import { WorkflowConfigService } from '@/lib/services/workflow-config-service';
-import { WorkflowDefinition } from '@/lib/jira/workflow-config';
+import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
 /**
  * GET /api/workflow/config?boardId={id}

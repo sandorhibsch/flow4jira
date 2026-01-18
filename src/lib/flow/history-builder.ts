@@ -1,4 +1,4 @@
-import { JiraChangelogResponse, JiraIssue } from "../jira/jira-types"
+import type { JiraChangelogResponse, JiraIssue } from "../jira/jira-types"
 
 export type StatusChange = {
   to: string,

@@ -2,7 +2,7 @@
 
 import { handleFlowRequest } from './flow-handler';
 import { JiraClient } from '@/lib/jira/client';
-import { JiraSearchResponse } from '@/lib/jira/jira-types';
+import type { JiraSearchResponse } from '@/lib/jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
 
 //jest.mock('@/lib/jira/client');
