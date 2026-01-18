@@ -6,6 +6,7 @@ import { ZodError } from 'zod';
 import { BoardConfigService } from '@/lib/services/board-config.service';
 import { SaveBoardConfigSchema, BoardIdSchema, formatZodErrors } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 
 interface RouteParams {
   params: Promise<{ boardId: string }>;
@@ -74,8 +75,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!validationResult.success) {
       const errorDetails = formatZodErrors(validationResult.error);
-      logger.warn('Board config validation failed', { 
-        boardId, 
+      logger.warn('Board config validation failed', {
+        boardId,
         errors: errorDetails,
         receivedFields: Object.keys(body as object)
       });
@@ -92,7 +93,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { periodDays, workflow, boardName, boardType, processedIssues } = validationResult.data;
 
     // Cast processedIssues to correct type - Zod validation ensures runtime correctness
-    const typedProcessedIssues = processedIssues as import('@/lib/flow/flow-types').ProcessedFlowIssue[] | undefined;
+    const typedProcessedIssues = processedIssues as ProcessedFlowIssue[] | undefined;
 
     const result = await BoardConfigService.save(
       boardIdResult.data,

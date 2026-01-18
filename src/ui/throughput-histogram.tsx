@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProcessedFlowIssue } from "@/lib/flow/flow-types";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -13,8 +13,6 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
-
-type TimeUnit = 'week' | 'day';
 
 interface WeeklyData {
   label: string;

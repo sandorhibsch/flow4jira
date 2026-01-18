@@ -12,7 +12,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Cell,
-  Legend,
 } from "recharts";
 import { IssueTypeColors, DefaultColors } from "@/components/ui/color-palettes";
 

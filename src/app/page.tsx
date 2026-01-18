@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { BoardConfig, BoardConfigMetadata } from '@/lib/repositories';
+import type { BoardConfigMetadata } from '@/lib/repositories';
 import { boardConfigClient } from '@/lib/api/board-config.client';
 import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
 

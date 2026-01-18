@@ -1,5 +1,5 @@
 import { JiraClientFactory } from "./jira-client-factory";
-import type { JiraSearchResponse, JiraChangelogResponse, JiraConfig, JiraIssue } from "./jira-types";
+import type { JiraSearchResponse, JiraConfig } from "./jira-types";
 
 //Mock fetch globally
 global.fetch = jest.fn();
@@ -47,36 +47,6 @@ describe('Jira base client - issue pagination', () => {
 
 });
 
-function createIssueWithChangelog(key: string, total: number, changelogCount: number): JiraIssue {
-  const keyParts = key.split('-');
-  const issueId = keyParts[1] ?? '0';
-  return {
-    key,
-    id: issueId,
-    self: `https://jira.example.com/rest/api/2/issue/${key}`,
-    fields: {
-      summary: 'Test',
-      created: '2024-01-01',
-      resolutiondate: null,
-      issuetype: { id: '1', name: 'Story', iconUrl: '' },
-      status: { id: '1', name: 'Open', statusCategory: { id: 1, key: 'new', colorName: 'blue', name: 'New' } }
-    },
-    changelog: {
-      self: '',
-      maxResults: changelogCount,
-      startAt: 0,
-      total,
-      isLast: changelogCount >= total,
-      histories: Array(changelogCount).fill({
-        id: '1',
-        created: '2024-01-01T00:00:00.000Z',
-        author: { displayName: 'User', emailAddress: 'user@test.com' },
-        items: [{ field: 'status', fieldtype: 'jira', fieldId: 'status', from: '1', fromString: 'Open', to: '2', toString: 'Done' }]
-      })
-    }
-  };
-}
-
 function createMockSearchResponse(startAt: number, maxResults: number, total: number, keys: string[]): JiraSearchResponse {
   return {
     expand: '',
@@ -109,19 +79,4 @@ function createMockSearchResponse(startAt: number, maxResults: number, total: nu
       }
     }))
   };
-}
-
-function createMockChangelogResponse(startAt: number, maxResults: number, total: number): JiraChangelogResponse {
-  return {
-    self: '',
-    startAt,
-    maxResults,
-    total,
-    isLast: startAt + maxResults <= total,
-    histories: Array(maxResults).fill({
-      created: '2024-01-01T00:00:00.000Z',
-      author: { displayName: 'User', emailAddress: 'user@test.com' },
-      items: [{ field: 'status', fieldtype: 'jira', fieldId: 'status', from: '1', fromString: 'Open', to: '2', toString: 'Done' }]
-    })
-  }
 }

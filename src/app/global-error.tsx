@@ -34,6 +34,12 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             <p className="text-gray-600 mb-6">
               A critical error occurred. Please refresh the page or try again later.
             </p>
+            <p>
+              Error message: {error.message}
+            </p>
+            <p>
+              Error digest: {error.digest}
+            </p>
             <button
               onClick={reset}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
