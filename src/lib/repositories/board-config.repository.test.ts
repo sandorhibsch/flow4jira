@@ -2,17 +2,7 @@
 
 import { BoardConfigMockRepository } from './board-config.mock.repository';
 import type { BoardConfigInput } from './board-config.types';
-import type { WorkflowDefinition } from '../jira/workflow-config';
-
-const TEST_WORKFLOW: WorkflowDefinition = {
-  key: 'test',
-  name: 'Test Workflow',
-  stages: [
-    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New'], stageType: 'new' },
-    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
-    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
-  ],
-};
+import { TEST_WORKFLOW } from '../testutils/create-mocks';
 
 function createInput(overrides: Partial<BoardConfigInput> = {}): BoardConfigInput {
   return {

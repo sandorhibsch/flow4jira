@@ -6,25 +6,26 @@ import { BoardConfigMockRepository } from '@/lib/repositories/board-config.mock.
 import { setBoardConfigRepository, resetBoardConfigRepository } from '@/lib/repositories';
 import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 
-const TEST_WORKFLOW: WorkflowDefinition = {
-  key: 'test',
-  name: 'Test Workflow',
-  stages: [
-    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New'], stageType: 'new' },
-    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
-    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
-  ],
-};
+import { TEST_WORKFLOW } from '@/lib/testutils/create-mocks';
+// const TEST_WORKFLOW: WorkflowDefinition = {
+//   key: 'test',
+//   name: 'Test Workflow',
+//   stages: [
+//     { key: 'backlog', name: 'Backlog', jiraStatuses: ['New'], stageType: 'new' },
+//     { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
+//     { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
+//   ],
+// };
 
 function createMockRequest(method: string, body?: object): NextRequest {
   const url = 'http://localhost:3000/api/boards/123/config';
   const init: RequestInit = { method };
-  
+
   if (body) {
     init.body = JSON.stringify(body);
     init.headers = { 'Content-Type': 'application/json' };
   }
-  
+
   // Cast to bypass strict type checking for test utility
   return new NextRequest(url, init as ConstructorParameters<typeof NextRequest>[1]);
 }

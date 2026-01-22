@@ -3,17 +3,7 @@
 import { BoardConfigService } from './board-config.service';
 import { BoardConfigMockRepository } from '../repositories/board-config.mock.repository';
 import { setBoardConfigRepository, resetBoardConfigRepository } from '../repositories';
-import type { WorkflowDefinition } from '../jira/workflow-config';
-
-const TEST_WORKFLOW: WorkflowDefinition = {
-  key: 'test',
-  name: 'Test Workflow',
-  stages: [
-    { key: 'backlog', name: 'Backlog', jiraStatuses: ['New'], stageType: 'new' },
-    { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
-    { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
-  ],
-};
+import { TEST_WORKFLOW } from '../testutils/create-mocks';
 
 describe('BoardConfigService', () => {
   let mockRepository: BoardConfigMockRepository;
