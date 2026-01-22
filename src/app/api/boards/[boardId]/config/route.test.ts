@@ -4,18 +4,7 @@ import { NextRequest } from 'next/server';
 import { GET, PUT, DELETE } from './route';
 import { BoardConfigMockRepository } from '@/lib/repositories/board-config.mock.repository';
 import { setBoardConfigRepository, resetBoardConfigRepository } from '@/lib/repositories';
-import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
-
 import { TEST_WORKFLOW } from '@/lib/testutils/create-mocks';
-// const TEST_WORKFLOW: WorkflowDefinition = {
-//   key: 'test',
-//   name: 'Test Workflow',
-//   stages: [
-//     { key: 'backlog', name: 'Backlog', jiraStatuses: ['New'], stageType: 'new' },
-//     { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
-//     { key: 'done', name: 'Done', jiraStatuses: ['Done'], stageType: 'done', isCycleEnd: true },
-//   ],
-// };
 
 function createMockRequest(method: string, body?: object): NextRequest {
   const url = 'http://localhost:3000/api/boards/123/config';
