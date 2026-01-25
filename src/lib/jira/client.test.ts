@@ -90,11 +90,10 @@ describe('JiraClient', () => {
       expect(callUrl).toContain('startAt=0');
 
       expect(result.issues).toHaveLength(1);
-      expect(result.issues?.[0].key).toBe('TEST-1');
+      expect(result.issues?.[0]?.key).toBe('TEST-1');
     });
 
     it('should handle pagination correctly without duplicates', async () => {
-      // First page response
       const firstPageResponse: JiraSearchResponse = {
         expand: '',
         startAt: 0,
@@ -128,7 +127,6 @@ describe('JiraClient', () => {
         ]
       };
 
-      // Second page response
       const secondPageResponse: JiraSearchResponse = {
         expand: '',
         startAt: 2,
@@ -162,7 +160,6 @@ describe('JiraClient', () => {
         ]
       };
 
-      // Third page response
       const thirdPageResponse: JiraSearchResponse = {
         expand: '',
         startAt: 4,

@@ -146,8 +146,10 @@ describe('WorkflowConfigService', () => {
 
       expect(result).toHaveLength(2);
       // Should be sorted by lastModified descending
-      expect(result[0].metadata.boardId).toBe('456');
-      expect(result[1].metadata.boardId).toBe('123');
+      if (result[0] && result[1]) {
+        expect(result[0].metadata.boardId).toBe('456');
+        expect(result[1].metadata.boardId).toBe('123');
+      }
     });
 
     it('should return empty array if no configs found', () => {
@@ -172,7 +174,9 @@ describe('WorkflowConfigService', () => {
       const result = WorkflowConfigService.listAll();
 
       expect(result).toHaveLength(1);
-      expect(result[0].metadata.boardId).toBe('123');
+      if (result[0]) {
+        expect(result[0].metadata.boardId).toBe('123');
+      }
     });
   });
 

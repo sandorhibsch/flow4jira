@@ -7,7 +7,7 @@ import { TEST_WORKFLOW } from '../testutils/create-mocks';
 function createInput(overrides: Partial<BoardConfigInput> = {}): BoardConfigInput {
   return {
     boardId: '123',
-    periodDays: '30',
+    periodDays: 30,
     workflow: TEST_WORKFLOW,
     boardName: 'Test Board',
     boardType: 'scrum',
@@ -32,7 +32,7 @@ describe('BoardConfigRepository', () => {
       if (result.success) {
         expect(result.data.metadata.boardId).toBe('123');
         expect(result.data.metadata.boardName).toBe('Test Board');
-        expect(result.data.metadata.periodDays).toBe('30');
+        expect(result.data.metadata.periodDays).toBe(30);
         expect(result.data.workflow).toEqual(TEST_WORKFLOW);
         expect(result.data.metadata.createdAt).toBeInstanceOf(Date);
         expect(result.data.metadata.updatedAt).toBeInstanceOf(Date);
@@ -66,7 +66,7 @@ describe('BoardConfigRepository', () => {
           issueType: 'Story',
           created: new Date(),
           flowHistory: [],
-          currentStage: TEST_WORKFLOW.stages[0],
+          currentStage: TEST_WORKFLOW.stages[0]!,
           currentStatus: 'New',
           leadTimeDays: 0,
           cycleTimeDays: 0,
@@ -80,7 +80,7 @@ describe('BoardConfigRepository', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.processedIssues).toHaveLength(1);
-        expect(result.data.processedIssues?.[0].key).toBe('TEST-1');
+        expect(result.data.processedIssues?.[0]?.key).toBe('TEST-1');
       }
     });
   });
@@ -152,9 +152,9 @@ describe('BoardConfigRepository', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(3);
-        expect(result.data[0].boardId).toBe('3'); // Most recent first
-        expect(result.data[1].boardId).toBe('2');
-        expect(result.data[2].boardId).toBe('1');
+        expect(result.data[0]?.boardId).toBe('3'); // Most recent first
+        expect(result.data[1]?.boardId).toBe('2');
+        expect(result.data[2]?.boardId).toBe('1');
       }
     });
 
@@ -168,7 +168,7 @@ describe('BoardConfigRepository', () => {
               issueType: 'Story',
               created: new Date(),
               flowHistory: [],
-              currentStage: TEST_WORKFLOW.stages[0],
+              currentStage: TEST_WORKFLOW.stages[0]!,
               currentStatus: 'New',
               leadTimeDays: 0,
               cycleTimeDays: 0,
@@ -181,7 +181,7 @@ describe('BoardConfigRepository', () => {
       const result = await repository.findAll();
 
       expect(result.success).toBe(true);
-      if (result.success) {
+      if (result.success && result.data && result.data[0]) {
         // Metadata should not have processedIssues property
         expect('processedIssues' in result.data[0]).toBe(false);
       }

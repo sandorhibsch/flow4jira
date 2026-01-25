@@ -256,10 +256,11 @@ describe('Cumulative flow data builder - multiple issues', () => {
     const result = buildCumulativeFlowData([issueA, issueB], TEST_WORKFLOW, periodDays);
 
     const firstDay = result[0];
-    expect(firstDay.ready).toBe(1);
-    expect(firstDay.dev).toBe(1);
-    expect(firstDay.test).toBe(0);
-    expect(firstDay.done).toBe(0);
+    expect(firstDay).toBeDefined();
+    expect(firstDay?.ready).toBe(1);
+    expect(firstDay?.dev).toBe(1);
+    expect(firstDay?.test).toBe(0);
+    expect(firstDay?.done).toBe(0);
   });
 
   it("tracks transitions for multiple issues over time", () => {

@@ -21,7 +21,7 @@ describe('BoardConfigService', () => {
     it('should save a board configuration', async () => {
       const result = await BoardConfigService.save(
         '123',
-        '30',
+        30,
         TEST_WORKFLOW,
         'Test Board',
         'scrum'
@@ -43,7 +43,7 @@ describe('BoardConfigService', () => {
           issueType: 'Story',
           created: new Date(),
           flowHistory: [],
-          currentStage: TEST_WORKFLOW.stages[0],
+          currentStage: TEST_WORKFLOW.stages[0]!,
           currentStatus: 'New',
           leadTimeDays: 0,
           cycleTimeDays: 0,
@@ -53,7 +53,7 @@ describe('BoardConfigService', () => {
 
       const result = await BoardConfigService.save(
         '123',
-        '30',
+        30,
         TEST_WORKFLOW,
         'Test Board',
         'scrum',
@@ -69,7 +69,7 @@ describe('BoardConfigService', () => {
 
   describe('load', () => {
     it('should load workflow for existing board', async () => {
-      await BoardConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board');
+      await BoardConfigService.save('123', 30, TEST_WORKFLOW, 'Test Board');
 
       const workflow = await BoardConfigService.load('123');
 
@@ -85,7 +85,7 @@ describe('BoardConfigService', () => {
 
   describe('loadWithMetadata', () => {
     it('should load full config for existing board', async () => {
-      await BoardConfigService.save('123', '30', TEST_WORKFLOW, 'Test Board', 'scrum');
+      await BoardConfigService.save('123', 30, TEST_WORKFLOW, 'Test Board', 'scrum');
 
       const config = await BoardConfigService.loadWithMetadata('123');
 
@@ -111,8 +111,8 @@ describe('BoardConfigService', () => {
     });
 
     it('should return all board metadata', async () => {
-      await BoardConfigService.save('1', '30', TEST_WORKFLOW, 'Board 1');
-      await BoardConfigService.save('2', '60', TEST_WORKFLOW, 'Board 2');
+      await BoardConfigService.save('1', 30, TEST_WORKFLOW, 'Board 1');
+      await BoardConfigService.save('2', 60, TEST_WORKFLOW, 'Board 2');
 
       const boards = await BoardConfigService.listAll();
 
@@ -122,7 +122,7 @@ describe('BoardConfigService', () => {
 
   describe('delete', () => {
     it('should delete existing board', async () => {
-      await BoardConfigService.save('123', '30', TEST_WORKFLOW);
+      await BoardConfigService.save('123', 30, TEST_WORKFLOW);
 
       const deleted = await BoardConfigService.delete('123');
 
@@ -141,7 +141,7 @@ describe('BoardConfigService', () => {
 
   describe('exists', () => {
     it('should return true for existing board', async () => {
-      await BoardConfigService.save('123', '30', TEST_WORKFLOW);
+      await BoardConfigService.save('123', 30, TEST_WORKFLOW);
 
       const exists = await BoardConfigService.exists('123');
 
