@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import type { ProcessedFlowIssue } from "../flow/flow-types";
 import type { WorkflowDefinition } from "../jira/workflow-config";
+import { JiraSearchResponse } from "../jira/jira-types";
 
 export function createMockRequest(
   baseUrl: string,
@@ -71,7 +72,7 @@ export function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> 
   if (!firstStage) {
     throw new Error('TEST_WORKFLOW must have at least one stage');
   }
-  
+
   const baseIssue: ProcessedFlowIssue = {
     key: "PROJ-123",
     summary: "Take out the garbage",
@@ -133,4 +134,38 @@ export function createProcessedIssues(): ProcessedFlowIssue[] {
     issueDone1,
     issueDone2
   ]
+}
+
+export function createMockSearchResponse(startAt: number, maxResults: number, total: number, keys: string[]): JiraSearchResponse {
+  return {
+    expand: '',
+    startAt,
+    maxResults,
+    total,
+    issues: keys.map((key, idx) => ({
+      id: (startAt + idx + 1).toString(),
+      key,
+      self: '',
+      fields: {
+        summary: 'Test 1',
+        created: '2025-01-01',
+        resolutiondate: null,
+        issuetype: {
+          id: '1',
+          iconUrl: '',
+          name: 'task'
+        },
+        status: {
+          name: 'todo',
+          id: '1',
+          statusCategory: {
+            id: 1,
+            key: '1',
+            colorName: '',
+            name: 'new'
+          }
+        }
+      }
+    }))
+  };
 }

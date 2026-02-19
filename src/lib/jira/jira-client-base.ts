@@ -1,5 +1,6 @@
 import type { JiraConfig, JiraSearchResponse, JiraIssue, JiraStatusResponse, JiraBoardConfigResponse } from './jira-types';
 import { logger } from '../logger';
+import { RequestThrottler } from './jira-request-throttler';
 
 export class JiraApiError extends Error {
   constructor(
@@ -22,37 +23,8 @@ const RETRY_CONFIG = {
   maxDelayMs: 10000,
 } as const;
 
-/**
- * Simple rate limiter to prevent concurrent requests
- * Jira Server often has very low rate limits (1 req/sec)
- */
-class RequestThrottler {
-  private lastRequestTime = 0;
-  private minIntervalMs: number;
-
-  constructor(minIntervalMs = 1100) {
-    this.minIntervalMs = minIntervalMs;
-  }
-
-  async throttle(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-    
-    if (timeSinceLastRequest < this.minIntervalMs) {
-      const waitTime = this.minIntervalMs - timeSinceLastRequest;
-      await this.sleep(waitTime);
-    }
-    
-    this.lastRequestTime = Date.now();
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-}
-
 // Global throttler instance (shared across all Jira clients)
-const globalThrottler = new RequestThrottler();
+const globalThrottler = new RequestThrottler(100);
 
 export abstract class JiraClientBase {
   protected config: JiraConfig;
@@ -101,77 +73,31 @@ export abstract class JiraClientBase {
     };
   }
 
-  /**
-   * Sleep for specified milliseconds
-   */
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  /**
-   * Calculate delay with exponential backoff
-   */
-  private getRetryDelay(attempt: number, retryAfterHeader?: string): number {
-    // If server provided retry-after, use that
-    if (retryAfterHeader) {
-      const retryAfterSeconds = parseInt(retryAfterHeader, 10);
-      if (!isNaN(retryAfterSeconds)) {
-        return (retryAfterSeconds + 1) * 1000; // Add 1 second buffer
-      }
-    }
-
-    // Exponential backoff: 1s, 2s, 4s, 8s... capped at maxDelayMs
-    const delay = Math.min(
-      RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt),
-      RETRY_CONFIG.maxDelayMs
-    );
-    
-    // Add jitter (±20%) to prevent thundering herd
-    const jitter = delay * 0.2 * (Math.random() - 0.5);
-    return Math.round(delay + jitter);
-  }
-
   protected async makeRequest<T>(url: URL, params?: Record<string, string>): Promise<T> {
-    const requestUrl = new URL(url.toString());
+    const requestUrl = this.buildRequestUrl(url, params);
 
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        requestUrl.searchParams.set(key, value);
-      });
-    }
-
-    // Throttle requests to avoid rate limiting
     await globalThrottler.throttle();
-
     let lastError: JiraApiError | null = null;
 
     for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
       try {
-        // Only log endpoint path in development, never full URL with potential tokens
-        logger.debug('Jira API request', { 
+        logger.debug('Jira API request', {
           endpoint: requestUrl.pathname,
           hasParams: !!params,
           attempt: attempt > 0 ? attempt : undefined
         });
 
-        const response = await fetch(requestUrl.toString(), {
-          method: 'GET',
-          headers: {
-            ...this.getAuthHeaders(),
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-        });
+        const response = await this.fetchRequestFromJira<T>(requestUrl);
 
         if (response.ok) {
           return response.json();
         }
 
-        // Handle rate limiting (429)
+        //Handle rate limiting
         if (response.status === 429) {
           const retryAfter = response.headers.get('retry-after');
           const delay = this.getRetryDelay(attempt, retryAfter ?? undefined);
-          
+
           if (attempt < RETRY_CONFIG.maxRetries) {
             logger.warn('Rate limited by Jira API, retrying', {
               endpoint: requestUrl.pathname,
@@ -181,8 +107,7 @@ export abstract class JiraClientBase {
             await this.sleep(delay);
             continue;
           }
-          
-          // Max retries exceeded
+
           throw new JiraApiError(
             `Jira API rate limit exceeded after ${RETRY_CONFIG.maxRetries} retries`,
             429,
@@ -191,33 +116,73 @@ export abstract class JiraClientBase {
           );
         }
 
-        // Other errors - don't retry
         throw new JiraApiError(
           `Jira API request failed: ${response.status} ${response.statusText}`,
           response.status,
-          response
+
         );
 
       } catch (error) {
         if (error instanceof JiraApiError) {
           lastError = error;
-          // Only retry on 429, throw immediately for other errors
           if (error.status !== 429) {
             throw error;
           }
         } else {
-          // Network error or other unexpected error
           throw error;
         }
       }
     }
 
-    // If we exhausted all retries, throw the last error
     if (lastError) {
       throw lastError;
     }
 
     // This should never happen, but TypeScript needs it
     throw new Error('Unexpected error in makeRequest');
+  }
+
+  private buildRequestUrl(url: URL, params: Record<string, string> | undefined) {
+    const requestUrl = new URL(url.toString());
+
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        requestUrl.searchParams.set(key, value);
+      });
+    }
+    return requestUrl;
+  }
+
+  private async fetchRequestFromJira<T>(requestUrl: URL) {
+    return await fetch(requestUrl.toString(), {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  protected sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  private getRetryDelay(attempt: number, retryAfterHeader?: string): number {
+    if (retryAfterHeader) {
+      const retryAfterSeconds = parseInt(retryAfterHeader, 10);
+      if (!isNaN(retryAfterSeconds)) {
+        return (retryAfterSeconds + 1) * 1000;
+      }
+    }
+
+    // Exponential backoff: 1s, 2s, 4s, 8s... capped at maxDelayMs
+    const delay = Math.min(
+      RETRY_CONFIG.baseDelayMs * Math.pow(2, attempt),
+      RETRY_CONFIG.maxDelayMs
+    );
+
+    // Add jitter (±20%) to prevent thundering herd
+    const jitter = delay * 0.2 * (Math.random() - 0.5);
+    return Math.round(delay + jitter);
   }
 }
