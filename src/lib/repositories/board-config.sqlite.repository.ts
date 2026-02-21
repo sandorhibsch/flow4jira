@@ -16,7 +16,7 @@ import { logger } from '../logger';
  * SQLite implementation of the BoardConfig repository using Prisma
  */
 export class BoardConfigSqliteRepository implements IBoardConfigRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   async save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
     try {
@@ -113,18 +113,16 @@ export class BoardConfigSqliteRepository implements IBoardConfigRepository {
           boardName: true,
           boardType: true,
           periodDays: true,
-          createdAt: true,
           updatedAt: true,
         },
         orderBy: { updatedAt: 'desc' },
       });
 
-      const metadata: BoardConfigMetadata[] = records.map((r: { boardId: string; boardName: string | null; boardType: string | null; periodDays: number; createdAt: Date; updatedAt: Date }) => ({
+      const metadata: BoardConfigMetadata[] = records.map((r: { boardId: string; boardName: string | null; boardType: string | null; periodDays: number; updatedAt: Date }) => ({
         boardId: r.boardId,
         boardName: r.boardName ?? undefined,
         boardType: r.boardType ?? undefined,
         periodDays: r.periodDays,
-        createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       }));
 
@@ -182,7 +180,6 @@ export class BoardConfigSqliteRepository implements IBoardConfigRepository {
     periodDays: number;
     workflow: string;
     processedIssues: string | null;
-    createdAt: Date;
     updatedAt: Date;
   }): BoardConfig {
     const workflow = JSON.parse(record.workflow) as WorkflowDefinition;
@@ -196,7 +193,6 @@ export class BoardConfigSqliteRepository implements IBoardConfigRepository {
         boardName: record.boardName ?? undefined,
         boardType: record.boardType ?? undefined,
         periodDays: record.periodDays,
-        createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       },
       workflow,
