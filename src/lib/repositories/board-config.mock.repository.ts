@@ -25,7 +25,6 @@ export class BoardConfigMockRepository implements IBoardConfigRepository {
         boardName: input.boardName,
         boardType: input.boardType,
         periodDays: input.periodDays,
-        createdAt: existing?.metadata.createdAt ?? now,
         updatedAt: now,
       },
       workflow: input.workflow,
