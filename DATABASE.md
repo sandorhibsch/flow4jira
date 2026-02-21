@@ -42,7 +42,6 @@ model BoardConfig {
   periodDays      String   @default("90")
   workflow        String   // JSON
   processedIssues String?  // JSON
-  createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
 ```

@@ -34,7 +34,6 @@ describe('BoardConfigRepository', () => {
         expect(result.data.metadata.boardName).toBe('Test Board');
         expect(result.data.metadata.periodDays).toBe(30);
         expect(result.data.workflow).toEqual(TEST_WORKFLOW);
-        expect(result.data.metadata.createdAt).toBeInstanceOf(Date);
         expect(result.data.metadata.updatedAt).toBeInstanceOf(Date);
       }
     });
@@ -52,9 +51,6 @@ describe('BoardConfigRepository', () => {
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data.metadata.boardName).toBe('Updated Board');
-        expect(result.data.metadata.updatedAt.getTime()).toBeGreaterThan(
-          result.data.metadata.createdAt.getTime()
-        );
       }
     });
 

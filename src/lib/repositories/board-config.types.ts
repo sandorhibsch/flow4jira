@@ -11,7 +11,6 @@ export interface BoardConfigMetadata {
   boardName?: string;
   boardType?: string;
   periodDays: number;
-  createdAt: Date;
   updatedAt: Date;
 }
 

@@ -19,7 +19,6 @@ model BoardConfig {
   periodDays      Int      @default(90)
   workflow        String   // JSON string of WorkflowDefinition
   processedIssues String?  // JSON string of ProcessedFlowIssue[]
-  createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([boardId])
