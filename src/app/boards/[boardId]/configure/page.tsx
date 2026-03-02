@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
-import { boardConfigClient } from '@/lib/api/board-config.client';
+
+import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
 
 interface BoardInfo {
   id: string;
@@ -44,6 +45,8 @@ export default function ConfigurePage() {
   const router = useRouter();
   const boardIdFromUrl = params?.boardId as string | undefined;
 
+  const repositoryLocalStorage = new BoardConfigLocalRepository();
+
   const [boardId, setBoardId] = useState(boardIdFromUrl ?? '');
   const [loading, setLoading] = useState(false);
   const [boardInfo, setBoardInfo] = useState<BoardInfo | null>(null);
@@ -75,7 +78,7 @@ export default function ConfigurePage() {
 
     try {
       // Try to load existing config from API (async)
-      const configResult = await boardConfigClient.get(boardId);
+      const configResult = await repositoryLocalStorage.findByBoardId(boardId); //await boardConfigClient.get(boardId);
 
       if (configResult.success && configResult.data) {
         const config = configResult.data;
@@ -220,12 +223,22 @@ export default function ConfigurePage() {
     };
 
     // Save via API (async)
-    const result = await boardConfigClient.save(boardId, {
+    const result = await repositoryLocalStorage.save({
+      boardId,
+      boardName: boardInfo?.name,
+      boardType: boardInfo?.type,
+      periodDays,
+      workflow,
+    });
+
+    /*
+    await boardConfigClient.save(boardId, {
       periodDays,
       workflow,
       boardName: boardInfo?.name,
       boardType: boardInfo?.type,
     });
+    */
 
     if (result.success) {
       setSaveStatus({ type: 'success', message: 'Configuration saved successfully!' });
@@ -239,10 +252,12 @@ export default function ConfigurePage() {
     } else {
       // Show detailed validation errors if available
       let errorMessage = result.error;
+      /*
       if ('details' in result && result.details && result.details.length > 0) {
         const detailMessages = result.details.map(d => `${d.field}: ${d.message}`).join(', ');
         errorMessage = `${result.error}: ${detailMessages}`;
       }
+        */
       setSaveStatus({ type: 'error', message: errorMessage });
     }
 

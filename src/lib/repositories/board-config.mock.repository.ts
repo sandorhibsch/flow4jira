@@ -48,7 +48,7 @@ export class BoardConfigMockRepository implements IBoardConfigRepository {
     return { success: true, data: config?.workflow ?? null };
   }
 
-  async findAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
+  async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
     const metadata = Array.from(this.store.values())
       .map((c) => c.metadata)
       .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());

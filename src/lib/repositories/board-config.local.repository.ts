@@ -3,7 +3,7 @@ import { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } 
 
 const STORAGE_PREFIX = 'workflow:board:';
 
-export class BoardConfigRepositoryLocalStorage implements IBoardConfigRepository {
+export class BoardConfigLocalRepository implements IBoardConfigRepository {
 
   async save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
     try {
@@ -69,7 +69,7 @@ export class BoardConfigRepositoryLocalStorage implements IBoardConfigRepository
     }
   }
 
-  async findAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
+  async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
     let configs: BoardConfigMetadata[] = [];
 
     for (let i = 0; i < localStorage.length; i++) {

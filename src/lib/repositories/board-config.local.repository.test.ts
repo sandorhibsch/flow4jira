@@ -1,11 +1,11 @@
 // src/lib/repositories/board-config.local.repository.test.ts
 
-import { BoardConfigRepositoryLocalStorage } from './board-config.local.repository';
+import { BoardConfigLocalRepository } from './board-config.local.repository';
 import type { BoardConfigInput } from './board-config.types';
 import { TEST_WORKFLOW, createProcessedIssues } from '../testutils/create-mocks';
 
 describe('BoardConfigRepositoryLocalStorage', () => {
-  let repository: BoardConfigRepositoryLocalStorage;
+  let repository: BoardConfigLocalRepository;
   let localStorageMock: Record<string, string>;
 
   function createInput(overrides: Partial<BoardConfigInput> = {}): BoardConfigInput {
@@ -44,7 +44,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    repository = new BoardConfigRepositoryLocalStorage();
+    repository = new BoardConfigLocalRepository();
   });
 
   describe('save', () => {
@@ -194,7 +194,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
 
   describe('findAll', () => {
     it('should return empty array when no boards exist', async () => {
-      const result = await repository.findAll();
+      const result = await repository.listAll();
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toEqual([]);
@@ -207,7 +207,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
       await repository.save(createInput({ boardId: '2', boardName: 'Board 2' }));
       await new Promise((r) => setTimeout(r, 10));
       await repository.save(createInput({ boardId: '3', boardName: 'Board 3' }));
-      const result = await repository.findAll();
+      const result = await repository.listAll();
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveLength(3);
@@ -221,7 +221,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
       await repository.save(
         createInput({ processedIssues: createProcessedIssues() })
       );
-      const result = await repository.findAll();
+      const result = await repository.listAll();
       expect(result.success).toBe(true);
       if (result.success && result.data && result.data[0]) {
         expect('processedIssues' in result.data[0]).toBe(false);
@@ -245,7 +245,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
 
       const errorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      const result = await repository.findAll();
+      const result = await repository.listAll();
       expect(result.success).toBe(true);
       if (result.success) {
         // Only two valid configs should be returned

@@ -126,9 +126,9 @@ describe('BoardConfigRepository', () => {
     });
   });
 
-  describe('findAll', () => {
+  describe('listAll', () => {
     it('should return empty array when no boards exist', async () => {
-      const result = await repository.findAll();
+      const result = await repository.listAll();
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -143,7 +143,7 @@ describe('BoardConfigRepository', () => {
       await new Promise((r) => setTimeout(r, 10));
       await repository.save(createInput({ boardId: '3', boardName: 'Board 3' }));
 
-      const result = await repository.findAll();
+      const result = await repository.listAll();
 
       expect(result.success).toBe(true);
       if (result.success) {
@@ -174,7 +174,7 @@ describe('BoardConfigRepository', () => {
         })
       );
 
-      const result = await repository.findAll();
+      const result = await repository.listAll();
 
       expect(result.success).toBe(true);
       if (result.success && result.data && result.data[0]) {

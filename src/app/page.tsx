@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { BoardConfigMetadata } from '@/lib/repositories';
-import { boardConfigClient } from '@/lib/api/board-config.client';
+
+import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
+import { BoardConfigMetadata } from '@/lib/repositories/board-config.types';
 import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
 
 export default function HomePage() {
@@ -18,12 +19,12 @@ export default function HomePage() {
   const [deleteTarget, setDeleteTarget] = useState<{ boardId: string; boardName?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const localStorageRepository = new BoardConfigLocalRepository();
   const loadConfigs = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const result = await boardConfigClient.listAll();
-
+    const result = await localStorageRepository.listAll();
     if (result.success) {
       setConfigs(result.data);
     } else {
@@ -44,7 +45,7 @@ export default function HomePage() {
 
   const confirmDelete = async () => {
     if (deleteTarget) {
-      const result = await boardConfigClient.delete(deleteTarget.boardId);
+      const result = await localStorageRepository.delete(deleteTarget.boardId);
       if (result.success) {
         loadConfigs(); // Refresh list
       } else {

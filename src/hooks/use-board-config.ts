@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
-import type { BoardConfig, BoardConfigMetadata } from '@/lib/repositories';
-import { boardConfigClient } from '@/lib/api/board-config.client';
+import type { BoardConfig, BoardConfigMetadata } from '@/lib/repositories/board-config.types';
+import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
 
 export interface UseBoardConfigState {
   /** Whether initial load is in progress */
@@ -50,6 +50,8 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<BoardConfig | null>(null);
 
+  const repositoryLocalStorage = new BoardConfigLocalRepository();
+
   // Load configuration on mount or when boardId changes
   const loadConfig = useCallback(async () => {
     if (!boardId) {
@@ -60,7 +62,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
     setIsLoading(true);
     setError(null);
 
-    const result = await boardConfigClient.get(boardId);
+    const result = await repositoryLocalStorage.findByBoardId(boardId);//await boardConfigClient.get(boardId);
 
     if (result.success) {
       setConfig(result.data);
@@ -97,12 +99,13 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
       setIsSaving(true);
       setError(null);
 
-      const result = await boardConfigClient.save(boardId, {
-        periodDays,
-        workflow,
+      const result = await repositoryLocalStorage.save({
+        boardId,
         boardName,
         boardType,
-        processedIssues,
+        periodDays,
+        workflow,
+        processedIssues
       });
 
       if (result.success) {

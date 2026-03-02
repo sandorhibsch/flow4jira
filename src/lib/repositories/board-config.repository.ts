@@ -30,7 +30,7 @@ export interface IBoardConfigRepository {
   /**
    * List all board configurations (metadata only, no processed issues)
    */
-  findAll(): Promise<RepositoryResult<BoardConfigMetadata[]>>;
+  listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>>;
 
   /**
    * Delete a board configuration

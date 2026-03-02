@@ -59,15 +59,5 @@ DATABASE_URL="file:./data/flow4jira.db"
 pnpm install
 ```
 
-### 4. Initialize database
 
-```bash
-# Generate Prisma Client and create database
-npx prisma db push
-```
 
-## Run the Electron app 
-- Fill with you configuration the config.json.example and rename it to config.json
-- Copy the config.json next to your application (for Mac, copy it to the /Users/your-user-name/Library/Application Support/Flow4Jira folder.)
-- Make sure the configuration only uses either the jiraApiToken (basic auth) or the jiraPersonalAccessToken (Bearer token)
-- The configuration is local; Flow4Jira doesn't store it anywhere.
