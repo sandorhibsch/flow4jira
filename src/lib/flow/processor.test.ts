@@ -1,81 +1,15 @@
 // src/lib/flow/processor.test.ts
 
 import { processJiraIssue, msToDays } from './processor';
-import type { JiraIssue, JiraChangelogResponse } from '@/lib/jira/jira-types';
-import { TEST_WORKFLOW } from '../testutils/create-mocks';
-
-/**
- * Test helper: Create a mock Jira issue
- */
-function createMockIssue(overrides: Partial<JiraIssue> = {}): JiraIssue {
-  const baseIssue: JiraIssue = {
-    key: 'PROJ-123',
-    id: '10000',
-    self: 'https://jira.example.com/rest/api/2/issue/10000',
-    fields: {
-      summary: 'Test issue',
-      created: new Date('2024-01-01').toISOString(),
-      issuetype: {
-        id: '10001',
-        name: 'User Story',
-        iconUrl: 'https://example.com/icon.png'
-      },
-      status: {
-        id: '10000',
-        name: 'Done',
-        statusCategory: {
-          id: 3,
-          key: 'done',
-          colorName: 'green',
-          name: 'Done'
-        }
-      },
-      resolutiondate: new Date('2024-01-15').toISOString()
-    }
-  };
-
-  return { ...baseIssue, ...overrides };
-}
-
-/**
- * Test helper: Create a mock changelog
- */
-function createMockChangelog(transitions: Array<{
-  timestamp: Date;
-  status: string;
-}>): JiraChangelogResponse {
-  return {
-    self: 'https://jira.example.com/rest/api/2/issue/10000',
-    maxResults: 50,
-    startAt: 0,
-    total: transitions.length,
-    isLast: true,
-    histories: transitions.map(({ timestamp, status }) => ({
-      id: Math.random().toString(),
-      created: timestamp.toISOString(),
-      author: {
-        displayName: 'Test User',
-        emailAddress: 'test@example.com'
-      },
-      items: [{
-        field: 'status',
-        fieldtype: 'jira',
-        fieldId: 'status',
-        from: null,
-        fromString: null,
-        to: status,
-        toString: status
-      }]
-    }))
-  };
-}
+import { createMockChangelog, createMockJiraIssue, createMockWorkflow, TEST_WORKFLOW } from '../testutils/create-mocks';
+import { WorkflowDefinition } from '../jira/workflow-config';
 
 describe('Flow Processor', () => {
   describe('processJiraIssue - without changelog', () => {
     it('should handle issue with no changelog', () => {
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
           status: {
             id: '10000',
             name: 'Done',
@@ -107,9 +41,9 @@ describe('Flow Processor', () => {
       const createdDate = new Date();
       createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
 
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
           status: {
             id: '10001',
             name: 'Work In Progress',
@@ -131,18 +65,72 @@ describe('Flow Processor', () => {
     });
 
     it('should return 0 for daysOld when issue is done', () => {
-      const createdDate = new Date();
-      createdDate.setDate(createdDate.getDate() - 5); // 5 days ago
+      const today = new Date();
+      const createdDate = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
+      const doneDate = new Date(today.getDate() - 3 * 24 * 60 * 60 * 1000);
 
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
 
           created: createdDate.toISOString()
         }
       });
 
-      const result = processJiraIssue(TEST_WORKFLOW, issue);
+      const changelog = createMockChangelog([
+        { timestamp: createdDate, status: 'In Progress' },
+        { timestamp: doneDate, status: 'Done' },
+      ]);
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+      expect(result.ageDays).toBe(0);
+    });
+
+    it('should return 0 for daysOld when issue done state before final state', () => {
+      const SPECIAL_WORKFLOW: WorkflowDefinition = createMockWorkflow({
+        stages: [
+          {
+            key: 'new',
+            name: 'New',
+            stageType: 'new',
+            jiraStatuses: ['New']
+          },
+          {
+            key: 'release',
+            name: 'Release',
+            stageType: 'done',
+            isCycleEnd: true,
+            jiraStatuses: ['Release']
+          },
+          {
+            key: 'closed',
+            name: 'Closed',
+            stageType: 'done',
+            jiraStatuses: ['Closed']
+          }
+        ]
+
+      });
+
+      const today = new Date();
+      const createdDate = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
+      const releasedDate = new Date(today.getDate() - 3 * 24 * 60 * 60 * 1000);
+
+      const issue = createMockJiraIssue({
+        fields: {
+          ...createMockJiraIssue().fields,
+
+          created: createdDate.toISOString()
+        }
+      });
+
+      const changelog = createMockChangelog([
+        { timestamp: createdDate, status: 'In Progress' },
+        { timestamp: releasedDate, status: 'Release' },
+        { timestamp: today, status: 'Closed' }
+      ]);
+
+      const result = processJiraIssue(SPECIAL_WORKFLOW, issue, changelog);
       expect(result.ageDays).toBe(0);
     });
 
@@ -150,9 +138,9 @@ describe('Flow Processor', () => {
       const createdDate = new Date('2024-01-01');
       const completedDate = new Date('2024-01-15');
 
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
           created: createdDate.toISOString(),
           status: {
             id: '10000',
@@ -183,9 +171,9 @@ describe('Flow Processor', () => {
       const inProgressDate = new Date('2024-01-03');
       const completedDate = new Date('2024-01-10');
 
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
           created: createdDate.toISOString(),
           status: {
             id: '10000',
@@ -212,7 +200,7 @@ describe('Flow Processor', () => {
     });
 
     it('should return lead time for cycle time if issue never went development', () => {
-      const issue = createMockIssue();
+      const issue = createMockJiraIssue();
 
       const changelog = createMockChangelog([
         { timestamp: new Date('2024-01-01T10:00:00'), status: 'Done' }
@@ -227,9 +215,9 @@ describe('Flow Processor', () => {
       const inProgressDate = new Date('2024-01-03');
       const completedDate = new Date('2024-01-10');
 
-      const issue = createMockIssue({
+      const issue = createMockJiraIssue({
         fields: {
-          ...createMockIssue().fields,
+          ...createMockJiraIssue().fields,
           created: createdDate.toISOString(),
           status: {
             id: '10000',

@@ -35,7 +35,7 @@ export function processJiraIssue(
   // Calculate metrics
   const leadTime = calculateLeadTime(created, flowHistory);
   const cycleTime = calculateCycleTime(flowHistory);
-  const daysOld = calculateAge(created, currentStage);
+  const daysOld = calculateAge(created, flowHistory);
 
   return {
     key: issue.key,
@@ -53,61 +53,39 @@ export function processJiraIssue(
   };
 }
 
-/**
- * Calculate lead time: time from creation to completion
- * Returns milliseconds, or 0 if not yet done
- */
 function calculateLeadTime(
   created: Date,
-  statusHistory: SequentialStageEntry[]
+  flowHistory: SequentialStageEntry[]
 ): number {
-  // Find when issue reached "done" stage
-  const doneTransition = statusHistory.find(t => t.stage.stageType === 'done');
+  const doneTransition = flowHistory.find(t => t.stage.isCycleEnd);
 
   if (doneTransition && doneTransition.enteredAt) {
-    // Lead time is from creation to when it entered "done"
     const leadTime = doneTransition.enteredAt.getTime() - created.getTime();
     return msToDays(leadTime);
   }
-
-  // Not yet done
   return 0;
 }
 
-/**
- * Calculate cycle time: time from first "development" to completion
- * Returns milliseconds, or 0 if not yet in progress
- */
 function calculateCycleTime(flowHistory: SequentialStageEntry[]): number {
-  // Find first development entry
   const firstInProgress = flowHistory.find(t => t.isActualCycleStart);
   if (!firstInProgress || !firstInProgress.enteredAt) {
     return 0;
   }
 
-  // Find when it reached done
   const doneTransition = flowHistory.find(t => t.stage.isCycleEnd);
   if (doneTransition && doneTransition.enteredAt) {
-    // Cycle time is from entering development to entering done
     const cycleTime = doneTransition.enteredAt.getTime() - firstInProgress.enteredAt.getTime();
     return msToDays(cycleTime);
   }
 
-  // Not yet done
   return 0;
 }
-
-/**
- * Calculate age: time from created until now if issue is not done yet
- */
-function calculateAge(created: Date, currentStage: WorkflowStage) {
+function calculateAge(created: Date, flowHistory: SequentialStageEntry[]) {
+  const doneTransition = flowHistory.find(t => t.stage.isCycleEnd);
   // Subtract 1ms to avoid off-by-one when rounding up due to tiny timing differences
-  return currentStage.isCycleEnd ? 0 : msToDays(Date.now() - created.getTime() - 1);
+  return doneTransition ? 0 : msToDays(Date.now() - created.getTime() - 1);
 }
 
-/**
- * Helper to convert milliseconds to days for readability
- */
 export function msToDays(ms: number): number {
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }

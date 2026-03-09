@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import type { ProcessedFlowIssue } from "../flow/flow-types";
 import type { WorkflowDefinition } from "../jira/workflow-config";
-import { JiraSearchResponse } from "../jira/jira-types";
+import { JiraChangelogResponse, JiraIssue, JiraSearchResponse } from "../jira/jira-types";
 
 export function createMockRequest(
   baseUrl: string,
@@ -64,9 +64,10 @@ export const TEST_WORKFLOW: WorkflowDefinition = {
   ],
 };
 
-/**
- * Test helper: Create mock processed issue
- */
+export function createMockWorkflow(overrides: Partial<WorkflowDefinition> = {}): WorkflowDefinition {
+  return { ...TEST_WORKFLOW, ...overrides };
+}
+
 export function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> = {}): ProcessedFlowIssue {
   const firstStage = TEST_WORKFLOW.stages[0];
   if (!firstStage) {
@@ -89,9 +90,6 @@ export function createMockProcessedIssue(overrides: Partial<ProcessedFlowIssue> 
   return { ...baseIssue, ...overrides };
 }
 
-/**
- * Test helper: create multiple issues for analysis
- */
 export function createProcessedIssues(): ProcessedFlowIssue[] {
   const issueOpen = createMockProcessedIssue({
     ...createMockProcessedIssue(),
@@ -166,6 +164,66 @@ export function createMockSearchResponse(startAt: number, maxResults: number, to
           }
         }
       }
+    }))
+  };
+}
+
+export function createMockJiraIssue(overrides: Partial<JiraIssue> = {}): JiraIssue {
+  const baseIssue: JiraIssue = {
+    key: 'PROJ-123',
+    id: '10000',
+    self: 'https://jira.example.com/rest/api/2/issue/10000',
+    fields: {
+      summary: 'Test issue',
+      created: new Date('2024-01-01').toISOString(),
+      issuetype: {
+        id: '10001',
+        name: 'User Story',
+        iconUrl: 'https://example.com/icon.png'
+      },
+      status: {
+        id: '10000',
+        name: 'Done',
+        statusCategory: {
+          id: 3,
+          key: 'done',
+          colorName: 'green',
+          name: 'Done'
+        }
+      },
+      resolutiondate: new Date('2024-01-15').toISOString()
+    }
+  };
+
+  return { ...baseIssue, ...overrides };
+}
+
+export function createMockChangelog(transitions: Array<{
+  timestamp: Date;
+  status: string;
+}>): JiraChangelogResponse {
+  return {
+    self: 'https://jira.example.com/rest/api/2/issue/10000',
+    maxResults: 50,
+    startAt: 0,
+    total: transitions.length,
+    isLast: true,
+    histories: transitions.map(({ timestamp, status }) => ({
+      id: Math.random().toString(),
+      created: timestamp.toISOString(),
+      author: {
+        displayName: 'Test User',
+        emailAddress: 'test@example.com'
+      },
+      items: [{
+        field: 'status',
+        fieldtype: 'jira',
+        fieldId: 'status',
+        from: null,
+        fromString: null,
+        to: status,
+        toString: status
+      }]
     }))
   };
 }
