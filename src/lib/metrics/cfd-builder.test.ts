@@ -1,8 +1,9 @@
+import { ProcessedFlowIssue } from "../flow/flow-types";
 import { createMockProcessedIssue, createProcessedIssues, TEST_WORKFLOW } from "../testutils/create-mocks";
-import { buildCumulativeFlowData } from "./cfd-builder";
+import { buildCumulativeFlowData, calculateAverageAge, calculateAverageCT, calculateAverageThroughput, calculateAverageWIP } from "./cfd-builder";
 import { addDays, setHours, setMinutes } from "date-fns";
 
-describe('Cumulative flow data builder - single issues', () => {
+describe('CFD builder - single issues', () => {
   const now = new Date();
 
   it('returns dates from set days ago to today', () => {
@@ -225,7 +226,7 @@ describe('Cumulative flow data builder - single issues', () => {
 
 });
 
-describe('Cumulative flow data builder - multiple issues', () => {
+describe('CFD builder - multiple issues', () => {
   const now = new Date();
 
   it("counts multiple issues across different stages on the same day", () => {
@@ -329,7 +330,7 @@ describe('Cumulative flow data builder - multiple issues', () => {
   });
 });
 
-describe("buildCumulativeFlowData - same day transitions", () => {
+describe("CFD builder - same day transitions", () => {
   const now = new Date();
 
   it("handles multiple transitions happening on the same day", () => {
@@ -408,6 +409,325 @@ describe("buildCumulativeFlowData - same day transitions", () => {
     expect(dayMinus2Record?.dev).toBe(1);
     expect(dayMinus2Record?.test).toBe(1);
     expect(dayMinus2Record?.done).toBe(0);
+  });
+
+});
+
+describe('CFD builder - average throughput', () => {
+
+  it('should return 0 for throughput if no issues', () => {
+    const issues: ProcessedFlowIssue[] = [];
+
+    const result = calculateAverageThroughput(issues, 30);
+
+    expect(result).toBe(0);
+  });
+
+  it('should return 0 for throughput if period is 0', () => {
+    const issues = createProcessedIssues();
+
+    const result = calculateAverageThroughput(issues, 0);
+
+    expect(result).toBe(0);
+  });
+
+  it('should calculate average for 2 issues done in 2 days correctly', () => {
+    const now = new Date();
+    const issueDone1 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000)
+    });
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 36 * 60 * 60 * 1000)
+    });
+    const issueDone3 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 40 * 60 * 60 * 1000)
+    });
+    const issueDone4 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 44 * 60 * 60 * 1000)
+    });
+
+    const result = calculateAverageThroughput([issueDone1, issueDone2, issueDone3, issueDone4], 2);
+
+    expect(result).toBe(2);
+  });
+
+  it('should not take issues done before period in account', () => {
+    const now = new Date();
+    const issueDone1 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000)
+    })
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2000)
+    })
+    const issueDone3 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)
+    })
+
+    const result = calculateAverageThroughput([issueDone1, issueDone2, issueDone3], 1);
+
+    expect(result).toBe(2);
+  })
+
+  it('should not count open issues', () => {
+    const now = new Date();
+    const issueDone = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000)
+    });
+    const issueNew = createMockProcessedIssue({
+      done: undefined,
+      currentStage: {
+        stageType: 'new',
+        name: 'new',
+        key: 'new',
+        jiraStatuses: []
+      }
+    });
+    const issueReady = createMockProcessedIssue({
+      done: undefined,
+      currentStage: {
+        stageType: 'ready',
+        name: 'ready',
+        key: 'ready',
+        jiraStatuses: []
+      }
+    });
+    const issueDev = createMockProcessedIssue({
+      done: undefined,
+      currentStage: {
+        stageType: 'in-progress',
+        name: 'dev',
+        key: 'dev',
+        jiraStatuses: []
+      }
+    });
+
+    const result = calculateAverageThroughput([issueNew, issueReady, issueDev, issueDone], 1);
+
+    expect(result).toBe(1);
+  });
+
+});
+
+describe('CFD builder - average cycletime', () => {
+
+  it('should return 0 for cycletime if no issues', () => {
+    const issues: ProcessedFlowIssue[] = [];
+
+    const result = calculateAverageCT(issues, 30);
+
+    expect(result).toBe(0);
+  });
+
+  it('should return 0 for cycletime if period is 0', () => {
+    const issues = createProcessedIssues();
+
+    const result = calculateAverageCT(issues, 0);
+
+    expect(result).toBe(0);
+  });
+
+  it('should calculate average for issues done in period correctly', () => {
+    const now = new Date();
+    const issueDone1 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000),
+      cycleTimeDays: 2
+    });
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2000),
+      cycleTimeDays: 4
+    });
+
+    const result = calculateAverageCT([issueDone1, issueDone2], 1);
+
+    expect(result).toBe(3);
+  });
+
+  it('should not include issue done before period', () => {
+    const now = new Date();
+    const issueDone1 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000),
+      cycleTimeDays: 2
+    });
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2000),
+      cycleTimeDays: 4
+    });
+    const issueDone3 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000),
+      cycleTimeDays: 4
+    });
+
+    const result = calculateAverageCT([issueDone1, issueDone2, issueDone3], 1);
+
+    expect(result).toBe(3);
+  });
+
+  it('should not include issue not done', () => {
+    const now = new Date();
+    const issueDone1 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 1000),
+      cycleTimeDays: 2
+    });
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(now.getTime() - 2000),
+      cycleTimeDays: 4
+    });
+    const issueDev = createMockProcessedIssue({
+      done: undefined,
+      cycleTimeDays: undefined
+    });
+
+    const result = calculateAverageCT([issueDone1, issueDone2, issueDev], 1);
+
+    expect(result).toBe(3);
+  });
+});
+
+describe('CFD builder - average WIP', () => {
+
+  it('should return 0 for WIP for no data', () => {
+    const data: Record<string, any>[] = [];
+    const stages = TEST_WORKFLOW.stages;
+
+    const result = calculateAverageWIP(data, stages);
+
+    expect(result).toBe(0);
+  });
+
+  it('should calculate average WIP correctly', () => {
+    const today = new Date;
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const data: Record<string, any>[] = [
+      {
+        date: today,
+        backlog: 0,
+        ready: 0,
+        dev: 1,
+        deploy: 2,
+        test: 3,
+        release: 2,
+        done: 0
+      },
+      {
+        date: yesterday,
+        backlog: 0,
+        ready: 0,
+        dev: 2,
+        deploy: 3,
+        test: 2,
+        release: 1,
+        done: 0
+      },
+    ];
+
+    const result = calculateAverageWIP(data, TEST_WORKFLOW.stages);
+
+    expect(result).toBe(8);
+  })
+
+  it('should not take new, ready and done into account', () => {
+    const today = new Date;
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const data: Record<string, any>[] = [
+      {
+        date: today,
+        backlog: 2,
+        ready: 2,
+        dev: 0,
+        deploy: 0,
+        test: 0,
+        release: 0,
+        done: 0
+      },
+      {
+        date: yesterday,
+        backlog: 2,
+        ready: 3,
+        dev: 0,
+        deploy: 0,
+        test: 0,
+        release: 0,
+        done: 1
+      },
+    ];
+
+    const result = calculateAverageWIP(data, TEST_WORKFLOW.stages);
+
+    expect(result).toBe(0);
+  });
+});
+
+describe('CFG builder - average age', () => {
+  it('should return 0 age for no data', () => {
+    const issues: ProcessedFlowIssue[] = [];
+
+    const result = calculateAverageAge(issues, 1);
+
+    expect(result).toBe(0);
+  });
+
+  it('should return 0 age if no aging issues', () => {
+    const today = Date.now();
+    const issueDone = createMockProcessedIssue({
+      done: new Date(today - (2 * 24 * 60 * 60 * 1000)),
+      created: new Date(today - (3 * 24 * 60 * 60 * 1000))
+    });
+    const issueDone2 = createMockProcessedIssue({
+      done: new Date(today - (3 * 24 * 60 * 60 * 1000)),
+      created: new Date(today - (6 * 24 * 60 * 60 * 1000))
+    });
+
+    const result = calculateAverageAge([issueDone, issueDone2], 1);
+
+    expect(result).toBe(0);
+  });
+
+  it('should calculate age for period correctly', () => {
+    const today = Date.now();
+    const issue1 = createMockProcessedIssue({
+      done: undefined,
+      created: new Date(today - (2 * 24 * 60 * 60 * 1000))
+    });
+    const issue2 = createMockProcessedIssue({
+      done: undefined,
+      created: new Date(today - (4 * 24 * 60 * 60 * 1000))
+    });
+
+    const result = calculateAverageAge([issue1, issue2], 1);
+
+    expect(result).toBe(3);
+  });
+
+  it('should include issues done within period in age calculation', () => {
+    const today = Date.now();
+    const issueOpen = createMockProcessedIssue({
+      done: undefined,
+      created: new Date(today - (2 * 24 * 60 * 60 * 1000))
+    });
+    const issueDone = createMockProcessedIssue({
+      done: new Date(today - (24 * 60 * 60 * 1000)),
+      created: new Date(today - (4 * 24 * 60 * 60 * 1000))
+    });
+
+    const result = calculateAverageAge([issueOpen, issueDone], 2);
+
+    expect(result).toBe(3);
+  });
+
+  it('should exclude issues done before period in age calculation', () => {
+    const today = Date.now();
+    const issueOpen = createMockProcessedIssue({
+      done: undefined,
+      created: new Date(today - (2 * 24 * 60 * 60 * 1000))
+    });
+    const issueDone = createMockProcessedIssue({
+      done: new Date(today - (3 * 24 * 60 * 60 * 1000)),
+      created: new Date(today - (4 * 24 * 60 * 60 * 1000))
+    });
+
+    const result = calculateAverageAge([issueOpen, issueDone], 2);
+
+    expect(result).toBe(2);
   });
 
 });
