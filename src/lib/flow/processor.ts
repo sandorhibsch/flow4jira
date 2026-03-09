@@ -53,10 +53,7 @@ export function processJiraIssue(
   };
 }
 
-function calculateLeadTime(
-  created: Date,
-  flowHistory: SequentialStageEntry[]
-): number {
+function calculateLeadTime(created: Date, flowHistory: SequentialStageEntry[]): number {
   const doneTransition = flowHistory.find(t => t.stage.isCycleEnd);
 
   if (doneTransition && doneTransition.enteredAt) {
@@ -80,10 +77,11 @@ function calculateCycleTime(flowHistory: SequentialStageEntry[]): number {
 
   return 0;
 }
-function calculateAge(created: Date, flowHistory: SequentialStageEntry[]) {
+export function calculateAge(created: Date, flowHistory: SequentialStageEntry[]): number {
   const doneTransition = flowHistory.find(t => t.stage.isCycleEnd);
+  if (doneTransition && doneTransition.enteredAt) return 0
   // Subtract 1ms to avoid off-by-one when rounding up due to tiny timing differences
-  return doneTransition ? 0 : msToDays(Date.now() - created.getTime() - 1);
+  return msToDays(Date.now() - created.getTime() - 1);
 }
 
 export function msToDays(ms: number): number {
