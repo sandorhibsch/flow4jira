@@ -262,7 +262,7 @@ export default function ConfigurePage() {
       }
     } else {
       // Show detailed validation errors if available
-      let errorMessage = result.error;
+      const errorMessage = result.error;
       /*
       if ('details' in result && result.details && result.details.length > 0) {
         const detailMessages = result.details.map(d => `${d.field}: ${d.message}`).join(', ');

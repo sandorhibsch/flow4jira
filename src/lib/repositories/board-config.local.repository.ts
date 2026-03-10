@@ -70,15 +70,15 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   }
 
   async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
-    let configs: BoardConfigMetadata[] = [];
+    const configs: BoardConfigMetadata[] = [];
 
     for (let i = 0; i < localStorage.length; i++) {
-      let key = localStorage.key(i);
+      const key = localStorage.key(i);
       if (key && key.startsWith(STORAGE_PREFIX)) {
         try {
           const data = localStorage.getItem(key);
           if (data) {
-            let boardConfig: BoardConfig = JSON.parse(data);
+            const boardConfig: BoardConfig = JSON.parse(data);
             configs.push(boardConfig.metadata);
           }
         } catch (error) {

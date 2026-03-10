@@ -20,6 +20,9 @@ const JIRA_CLOUD_CONFIG: JiraConfig = {
   }
 }
 
+jest.mock("../repositories/jira-config.local.repository");
+const mockGetJiraConfigFromLocalStorage = getJiraConfigFromLocalStorage as jest.MockedFunction<typeof getJiraConfigFromLocalStorage>;
+
 describe('JiraClientFactory - Create client from config', () => {
   it('should create client instance from server config', () => {
     const serverClient = JiraClientFactory.create(JIRA_SERVER_CONFIG);
@@ -74,9 +77,8 @@ describe('JiraClientFactory - Create server or cloud config from env variables',
 
 
 describe('JiraClientFactory - createConfigFromLocalStorage', () => {
-  let spy: jest.SpyInstance;
   afterEach(() => {
-    if (spy) spy.mockRestore();
+    jest.clearAllMocks();
   });
 
   it('should return config from localStorage if present and valid (server)', () => {
@@ -85,7 +87,7 @@ describe('JiraClientFactory - createConfigFromLocalStorage', () => {
       baseUrl: 'https://jira.example.com',
       bearerToken: 'token',
     };
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(config);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(config);
     const result = JiraClientFactory.createConfigFromLocalStorage();
     expect(result).toEqual(config);
   });
@@ -96,13 +98,13 @@ describe('JiraClientFactory - createConfigFromLocalStorage', () => {
       baseUrl: 'https://jira.example.com',
       basicAuth: { email: 'test@test.com', apiToken: "token" }
     };
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(config);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(config);
     const result = JiraClientFactory.createConfigFromLocalStorage();
     expect(result).toEqual(config);
   });
 
   it('should throw error if config is missing in localStorage', () => {
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(null);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(null);
     expect(() => JiraClientFactory.createConfigFromLocalStorage()).toThrow('Jira config not found in browser localStorage');
   });
 
@@ -111,7 +113,7 @@ describe('JiraClientFactory - createConfigFromLocalStorage', () => {
       instanceType: 'server',
       bearerToken: 'token',
     };
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(config as any);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(config as any);
     expect(() => JiraClientFactory.createConfigFromLocalStorage()).toThrow('Jira URL is required');
   });
 
@@ -120,7 +122,7 @@ describe('JiraClientFactory - createConfigFromLocalStorage', () => {
       instanceType: 'server',
       baseUrl: 'https://jira.example.com',
     };
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(config as any);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(config as any);
     expect(() => JiraClientFactory.createConfigFromLocalStorage()).toThrow('Personal Access Token is required for Jira Server');
   });
 
@@ -130,7 +132,7 @@ describe('JiraClientFactory - createConfigFromLocalStorage', () => {
       baseUrl: 'https://jira.example.com',
       basicAuth: { email: '', apiToken: '' },
     };
-    spy = jest.spyOn(require('../repositories/jira-config.local.repository'), 'getJiraConfigFromLocalStorage').mockReturnValue(config as any);
+    mockGetJiraConfigFromLocalStorage.mockReturnValue(config as any);
     expect(() => JiraClientFactory.createConfigFromLocalStorage()).toThrow('Email and API Token are required for Jira Cloud');
   });
 });

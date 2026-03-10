@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { BoardConfigMetadata } from '@/lib/repositories';
+import type { BoardConfigMetadata } from '@/lib/repositories/board-config.types';
 
 export default function BoardList() {
   const [configs, setConfigs] = useState<BoardConfigMetadata[]>([]);
