@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
 
 import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
+import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
 
 interface BoardInfo {
   id: string;
@@ -77,8 +78,8 @@ export default function ConfigurePage() {
     setSaveStatus(null);
 
     try {
-      // Try to load existing config from API (async)
-      const configResult = await repositoryLocalStorage.findByBoardId(boardId); //await boardConfigClient.get(boardId);
+      // Try to load existing board config from local storage
+      const configResult = await repositoryLocalStorage.findByBoardId(boardId);
 
       if (configResult.success && configResult.data) {
         const config = configResult.data;
@@ -96,8 +97,18 @@ export default function ConfigurePage() {
         setStages(config.workflow.stages);
         setSaveStatus({ type: 'success', message: 'Loaded existing configuration' });
       } else {
-        // No existing config - fetch from Jira API
-        const response = await fetch(`/api/jira/board?boardId=${encodeURIComponent(boardId)}`);
+        // No existing board config - fetch from Jira API
+        const jiraConfig = getJiraConfigFromLocalStorage();
+        const response = await fetch('/api/jira/board', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            boardId: boardId,
+            config: jiraConfig
+          })
+        });
         const data: FetchBoardResult = await response.json();
 
         if (!data.success || !data.data) {

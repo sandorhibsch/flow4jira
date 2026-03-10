@@ -18,6 +18,8 @@ import { MonteCarloWhenChart } from '@/ui/montecarlo-when';
 import FlowIssueTable from '@/ui/flow-issue-table';
 import { ConfirmDialog } from '@/components/ui/dialog';
 import { ChartErrorBoundary } from '@/components/ui/error-boundary';
+import ThroughputHistogram from '@/ui/throughput-histogram';
+import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
 
 interface IssueListResult {
   success: boolean;
@@ -73,13 +75,18 @@ export default function BoardMetricsPage() {
     setFetchError(null);
 
     try {
-      const url = `/api/flow/board?boardId=${encodeURIComponent(boardId)}&periodDays=${encodeURIComponent(periodDays)}&additionalJql=${encodeURIComponent(additionalJql)}`;
-
-      const response = await fetch(url, {
-        method: 'GET',
+      const jiraConfig = getJiraConfigFromLocalStorage();
+      const response = await fetch('/api/flow/board', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
+        body: JSON.stringify({
+          boardId: boardId,
+          periodDays: periodDays,
+          additionalJql: additionalJql,
+          config: jiraConfig
+        })
       });
 
       const issueListResult: IssueListResult = await response.json();
@@ -284,6 +291,9 @@ export default function BoardMetricsPage() {
                   periodDays={displayPeriodDays}
                 />
               </ChartErrorBoundary>
+            </CollapsibleSection>
+            <CollapsibleSection title="Throughput histogram">
+              <ThroughputHistogram issues={processedIssues} periodDays={displayPeriodDays}></ThroughputHistogram>
             </CollapsibleSection>
 
             {/* Single-item forecast */}
