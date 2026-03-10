@@ -1,17 +1,39 @@
 import { BoardConfigMetadata } from "@/lib/repositories/board-config.types";
 import Link from "next/link";
+import { useState, useEffect, useRef } from "react";
 
 export interface BoardCardProps {
   config: BoardConfigMetadata;
   onDelete: () => void;
+  onExport: () => void;
 }
-export function BoardCard({ config, onDelete }: BoardCardProps) {
+export function BoardCard({ config, onDelete, onExport }: BoardCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const toggleMenu = () => setMenuOpen((o) => !o);
+
+  // close the menu when clicking outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuOpen && containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {config.boardName ?? `Board ${config.boardId}`}
+            <Link
+              href={`/boards/${config.boardId}`}
+              className="hover:underline"
+            >
+              {config.boardName ?? `Board ${config.boardId}`}
+            </Link>
           </h2>
           <p className="text-sm text-gray-600 mb-1">
             Period: <span className="font-medium">{config.periodDays} days</span>
@@ -22,29 +44,52 @@ export function BoardCard({ config, onDelete }: BoardCardProps) {
           </p>
         </div>
 
-        <div className="flex flex-col space-y-2 ml-4">
-          <Link
-            href={`/boards/${config.boardId}`}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded text-center text-sm"
-          >
-            View Metrics
-          </Link>
-          <Link
-            href={`/boards/${config.boardId}/configure`}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded text-center text-sm"
-          >
-            Edit Config
-          </Link>
+        <div ref={containerRef} className="relative ml-4">
           <button
-            onClick={onDelete}
-            className="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded text-sm"
+            onClick={toggleMenu}
+            className="p-2 rounded-full hover:bg-gray-200 focus:outline-none"
+            aria-label="Actions"
           >
-            Delete
+            {/* ellipsis icon */}
+            <svg
+              className="h-5 w-5 text-gray-600"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
           </button>
+          {menuOpen && (
+            <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
+              <Link
+                href={`/boards/${config.boardId}/configure`}
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                Edit Config
+              </Link>
+              <button
+                onClick={() => {
+                  onDelete();
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-100"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => {
+                  onExport();
+                  setMenuOpen(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Export
+              </button>
+            </div>
+          )}
         </div>
       </div>
-
-
     </div>
   );
 }

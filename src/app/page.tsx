@@ -18,6 +18,10 @@ export default function HomePage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ boardId: string; boardName?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const fileInputRef = useCallback((element: HTMLInputElement | null) => {
+    // We'll use this to trigger the file input
+  }, []);
 
   const localStorageRepository = new BoardConfigLocalRepository();
   const loadConfigs = useCallback(async () => {
@@ -65,6 +69,57 @@ export default function HomePage() {
     router.push(`/boards/${boardId}/configure`);
   };
 
+  const handleExport = async (boardId: string, boardName: string) => {
+    const result = await localStorageRepository.exportConfig(boardId);
+    if (result.success) {
+      const dataStr = JSON.stringify(result.data, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${boardName}-config.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      alert('Failed to export configuration: ' + result.error);
+    }
+  };
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const fileContent = await file.text();
+      const importData = JSON.parse(fileContent);
+
+      const result = await localStorageRepository.importConfig(importData);
+      if (result.success) {
+        setImportSuccess(
+          `Successfully imported board: ${result.data.metadata.boardName || result.data.metadata.boardId}`
+        );
+        loadConfigs(); // Refresh the list
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setImportSuccess(null), 3000);
+      } else {
+        setError(`Import failed: ${result.error}`);
+      }
+    } catch (err) {
+      setError(
+        `Failed to import configuration: ${err instanceof Error ? err.message : 'Invalid JSON file'}`
+      );
+    }
+
+    // Reset file input
+    event.target.value = '';
+  };
+
+  const triggerFileInput = () => {
+    const input = document.getElementById('import-file-input') as HTMLInputElement;
+    input?.click();
+  };
+
   if (loading) {
     return (
       <ClientConfigWrapper>
@@ -104,13 +159,36 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Flow4Jira™ - Your Boards</h1>
-            <button
-              onClick={handleCreateNew}
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-            >
-              + Configure New Board
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={triggerFileInput}
+                className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded"
+              >
+                Import Config
+              </button>
+              <input
+                id="import-file-input"
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+                ref={fileInputRef}
+              />
+              <button
+                onClick={handleCreateNew}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+              >
+                + Configure New Board
+              </button>
+            </div>
           </div>
+
+          {importSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <h3 className="text-green-800 font-medium">Success</h3>
+              <p className="text-green-700 text-sm">{importSuccess}</p>
+            </div>
+          )}
 
           {configs.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -131,14 +209,22 @@ export default function HomePage() {
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No boards configured yet</h3>
               <p className="text-gray-500 mb-6">
-                Configure your first board to start tracking flow metrics
+                Configure your first board to start tracking flow metrics or import an existing configuration
               </p>
-              <button
-                onClick={handleCreateNew}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-              >
-                Configure Your First Board
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={handleCreateNew}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                >
+                  Configure Your First Board
+                </button>
+                <button
+                  onClick={triggerFileInput}
+                  className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded"
+                >
+                  Import Config
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -147,6 +233,7 @@ export default function HomePage() {
                   key={config.boardId}
                   config={config}
                   onDelete={() => handleDelete(config.boardId, config.boardName)}
+                  onExport={() => handleExport(config.boardId, config.boardName ? config.boardName : config.boardId)}
                 />
               ))}
             </div>
