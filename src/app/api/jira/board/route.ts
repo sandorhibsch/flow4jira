@@ -3,14 +3,8 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
-import type { JiraColumn } from '@/lib/jira/jira-types';
+import type { JiraColumn, JiraConfig } from '@/lib/jira/jira-types';
 
-/**
- * GET /api/jira/board?boardId={id}
- * Fetch board configuration from Jira
- * Note: Returns column structure but NOT status names (to avoid rate limiting)
- * Users will manually enter status names in the UI
- */
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -71,3 +65,93 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+// Type for POST body
+export interface JiraBoardConfigRequest {
+  boardId: string;
+  config: JiraConfig;
+}
+
+/**
+ * POST /api/jira/board
+ * Fetch board configuration from Jira
+ * Expects: { boardId: string, config: JiraConfig } in JSON body
+ * Note: Returns column structure but NOT status names (to avoid rate limiting)
+ * Users will manually enter status names in the UI
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const boardId = body.boardId;
+
+    if (!boardId) {
+      return NextResponse.json(
+        { success: false, error: 'boardId is required' },
+        { status: 400 }
+      );
+    }
+
+    if (body.config === undefined || body.config === null) {
+      return NextResponse.json(
+        { success: false, error: 'Jira config is required in request body' },
+        { status: 400 }
+      );
+    }
+
+    let config: JiraConfig;
+    try {
+      config = typeof body.config === 'string' ? JSON.parse(body.config) : body.config;
+    } catch (parseErr) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid Jira config provided' },
+        { status: 400 }
+      );
+    }
+
+    const jiraClient = JiraClientFactory.create(config);
+
+    const boardConfig = await jiraClient.getBoardConfiguration(boardId);
+
+    const columns: Array<{ name: string; statusCount: number }> = [];
+
+    if (boardConfig.columnConfig?.columns) {
+      boardConfig.columnConfig.columns.forEach((column: JiraColumn) => {
+        columns.push({
+          name: column.name,
+          statusCount: column.statuses?.length || 0,
+        });
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        board: {
+          id: boardConfig.id?.toString() || boardId,
+          name: boardConfig.name,
+          type: boardConfig.type || 'unknown',
+        },
+        columns: columns,
+        message: 'Board configuration loaded. You can now manually add status names to your workflow stages.',
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching board info:', error);
+
+    if (error && typeof error === 'object' && 'status' in error && 'name' in error && error.name === 'JiraApiError') {
+      const jiraError = error as unknown as { message: string; status: number };
+      return NextResponse.json(
+        { success: false, error: `Jira API Error: ${jiraError.message}` },
+        { status: jiraError.status }
+      );
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json(
+      { success: false, error: `Failed to fetch board info: ${errorMessage}` },
+      { status: 500 }
+    );
+  }
+}
+
+
