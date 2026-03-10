@@ -2,6 +2,7 @@ import type { JiraConfig, JiraInstanceType } from './jira-types';
 import type { JiraClientBase } from './jira-client-base';
 import { JiraServerClient } from './jira-server-client';
 import { JiraCloudClient } from './jira-cloud-client';
+import { getJiraConfigFromLocalStorage } from '../repositories/jira-config.local.repository';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -68,11 +69,6 @@ export class JiraClientFactory {
     return null;
   }
 
-  /**
-   * Helper to create config from environment variables
-   * @returns JiraConfig based on JIRA_INSTANCE_TYPE env var
-   * @throws Error if required environment variables are missing
-   */
   static createConfigFromEnv(): JiraConfig {
     const fileConfig = this.loadConfigFromFile();
 
@@ -116,5 +112,27 @@ export class JiraClientFactory {
         `Invalid JIRA_INSTANCE_TYPE: ${instanceType}. Must be 'server' or 'cloud'.`
       );
     }
+  }
+
+  static createConfigFromLocalStorage(): JiraConfig {
+    // Dynamically import to avoid SSR issues
+    let config: JiraConfig | null = null;
+    try {
+      // Only run in browser
+      config = getJiraConfigFromLocalStorage();
+    } catch { }
+    if (!config) {
+      throw new Error('Jira config not found in browser localStorage');
+    }
+    if (!config.baseUrl) {
+      throw new Error('Jira URL is required');
+    }
+    if (config.instanceType === 'server' && !config.bearerToken) {
+      throw new Error('Personal Access Token is required for Jira Server');
+    }
+    if (config.instanceType === 'cloud' && (!config.basicAuth?.email || !config.basicAuth?.apiToken)) {
+      throw new Error('Email and API Token are required for Jira Cloud');
+    }
+    return config;
   }
 }
