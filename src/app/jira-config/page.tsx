@@ -64,49 +64,55 @@ export default function JiraConfigPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow p-8">
-        <h2 className="text-2xl font-bold mb-4">Configure Jira Connection</h2>
-        <h3 className="text-md text-gray-500 font-bold mb-2">🔒 How we handle your credentials</h3>
-        <ul className="text-sm text-gray-500 mb-4">
-          <li className="list-disc ml-4">Everything is stored locally in your browser only</li>
-          <li className="list-disc ml-4">Nothing is sent to the server or database</li>
-          <li className="list-disc ml-4">Only used to call Jira API directly from your browser</li>
-          <li className="list-disc ml-4">You can revoke the token anytime in Jira settings</li>
-        </ul>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Jira URL</label>
-            <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://your-domain.atlassian.net" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium">Instance Type</label>
-            <select className="mt-1 w-full border rounded px-3 py-2" value={instanceType} onChange={e => setInstanceType(e.target.value as JiraInstanceType)}>
-              <option value="server">Server</option>
-              <option value="cloud">Cloud</option>
-            </select>
-          </div>
-          {instanceType === 'server' ? (
-            <div>
-              <label className="block text-sm font-medium">Personal Access Token</label>
-              <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={bearerToken} onChange={e => setBearerToken(e.target.value)} placeholder="Enter your token" />
-            </div>
-          ) : (
-            <>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto">
+
+        <h1 className="text-3xl font-bold text-gray-900">Flow4Jira™ - Configure Jira Connection</h1>
+        <p className="text-md text-gray-500">Configure your Jira credentials to connect to Jira</p>
+        <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+          <div className="max-w-md w-full bg-white rounded-lg shadow p-8">
+            <h3 className="text-md text-gray-500 font-bold mb-2">🔒 How we handle your credentials</h3>
+            <ul className="text-sm text-gray-500 mb-4">
+              <li className="list-disc ml-4">Everything is stored locally in your browser only</li>
+              <li className="list-disc ml-4">Nothing is sent to the server or database</li>
+              <li className="list-disc ml-4">Only used to call Jira API directly from your browser</li>
+              <li className="list-disc ml-4">You can revoke the token anytime in Jira settings</li>
+            </ul>
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium">Email</label>
-                <input type="email" className="mt-1 w-full border rounded px-3 py-2" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+                <label className="block text-sm font-medium">Jira URL</label>
+                <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={baseUrl} onChange={e => setBaseUrl(e.target.value)} placeholder="https://your-domain.atlassian.net" />
               </div>
               <div>
-                <label className="block text-sm font-medium">API Token</label>
-                <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={apiToken} onChange={e => setApiToken(e.target.value)} placeholder="Enter your API token" />
+                <label className="block text-sm font-medium">Instance Type</label>
+                <select className="mt-1 w-full border rounded px-3 py-2" value={instanceType} onChange={e => setInstanceType(e.target.value as JiraInstanceType)}>
+                  <option value="server">Server</option>
+                  <option value="cloud">Cloud</option>
+                </select>
               </div>
-            </>
-          )}
-          {error && <div className="text-red-600 text-sm">{error}</div>}
-          {success && <div className="text-green-600 text-sm">Saved! Redirecting...</div>}
-          <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2 rounded">Save</button>
-        </form>
+              {instanceType === 'server' ? (
+                <div>
+                  <label className="block text-sm font-medium">Personal Access Token</label>
+                  <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={bearerToken} onChange={e => setBearerToken(e.target.value)} placeholder="Enter your token" />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium">Email</label>
+                    <input type="email" className="mt-1 w-full border rounded px-3 py-2" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">API Token</label>
+                    <input type="text" className="mt-1 w-full border rounded px-3 py-2" value={apiToken} onChange={e => setApiToken(e.target.value)} placeholder="Enter your API token" />
+                  </div>
+                </>
+              )}
+              {error && <div className="text-red-600 text-sm">{error}</div>}
+              {success && <div className="text-green-600 text-sm">Saved! Redirecting...</div>}
+              <button type="submit" className="w-full bg-blue-600 text-white font-bold py-2 rounded">Save</button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );

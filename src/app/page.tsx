@@ -19,6 +19,7 @@ export default function HomePage() {
   const [deleteTarget, setDeleteTarget] = useState<{ boardId: string; boardName?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const fileInputRef = useCallback((element: HTMLInputElement | null) => {
     // We'll use this to trigger the file input
   }, []);
@@ -41,6 +42,18 @@ export default function HomePage() {
   useEffect(() => {
     loadConfigs();
   }, [loadConfigs]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuOpen && !(event.target as Element).closest('.menu-container')) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   const handleDelete = (boardId: string, boardName?: string) => {
     setDeleteTarget({ boardId, boardName });
@@ -159,27 +172,35 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Flow4Jira™ - Your Boards</h1>
-            <div className="flex gap-3">
+            <div className="relative menu-container">
               <button
-                onClick={triggerFileInput}
-                className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
-                Import Config
+                +
               </button>
-              <input
-                id="import-file-input"
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="hidden"
-                ref={fileInputRef}
-              />
-              <button
-                onClick={handleCreateNew}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
-              >
-                + Configure New Board
-              </button>
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <button
+                    onClick={() => { handleCreateNew(); setMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Configure New Board
+                  </button>
+                  <button
+                    onClick={() => { triggerFileInput(); setMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Import Board Config
+                  </button>
+                  <button
+                    onClick={() => { router.push('/jira-config'); setMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Edit Jira Config
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -211,19 +232,35 @@ export default function HomePage() {
               <p className="text-gray-500 mb-6">
                 Configure your first board to start tracking flow metrics or import an existing configuration
               </p>
-              <div className="flex gap-3 justify-center">
+              <div className="relative flex justify-center menu-container">
                 <button
-                  onClick={handleCreateNew}
-                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 >
-                  Configure Your First Board
+                  +
                 </button>
-                <button
-                  onClick={triggerFileInput}
-                  className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded"
-                >
-                  Import Config
-                </button>
+                {menuOpen && (
+                  <div className="absolute mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    <button
+                      onClick={() => { handleCreateNew(); setMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Configure New Board
+                    </button>
+                    <button
+                      onClick={() => { triggerFileInput(); setMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Import Board Config
+                    </button>
+                    <button
+                      onClick={() => { router.push('/jira-config'); setMenuOpen(false); }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Edit Jira Config
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -258,6 +295,14 @@ export default function HomePage() {
             setConfirmOpen(false);
             setDeleteTarget(null);
           }}
+        />
+        <input
+          id="import-file-input"
+          type="file"
+          accept=".json"
+          onChange={handleImport}
+          className="hidden"
+          ref={fileInputRef}
         />
       </div>
     </ClientConfigWrapper>
