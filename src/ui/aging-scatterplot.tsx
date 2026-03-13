@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProcessedFlowIssue } from "@/lib/flow/flow-types";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ScatterChart,
   Scatter,
@@ -91,27 +91,48 @@ function IssueTypeLegend({ issueTypes, colorMap }: { issueTypes: string[], color
 export default function AgingScatterplot({ issues, workflow }: { issues: ProcessedFlowIssue[], workflow: WorkflowDefinition }) {
   const workflowStages: WorkflowStage[] = workflow.stages;
 
+  // Switch: show total age (default) or only in-process (cycle) age
+  const [showCycleAge, setShowCycleAge] = useState(false);
+
   const orderMap = useMemo(() => {
     const map: Record<string, number> = {};
     workflowStages.forEach((w, idx) => (map[w.key] = idx));
     return map;
   }, [workflowStages]);
 
+  function getFirstCycleStartDate(issue: ProcessedFlowIssue): Date | undefined {
+    const entry = issue.flowHistory.find(e => e.isActualCycleStart);
+    return entry && entry.enteredAt ? new Date(entry.enteredAt) : undefined;
+  }
+
   const data = useMemo(() => {
     return issues
-      .filter(i => i.currentStage.stageType != 'done')
-      .map((i) => ({
-        key: i.key,
-        x: i.currentStage.name,
-        y: i.ageDays ?? NaN,
-        xKey: i.currentStage.key,
-        summary: i.summary,
-        url: i.url,
-        issueType: i.issueType,
-      }))
+      .filter(i => i.currentStage.stageType !== 'done')
+      .filter(i => {
+        if (showCycleAge) return i.currentStage.stageType === 'in-progress';
+        return true;
+      })
+      .map((i) => {
+        let y: number;
+        if (showCycleAge) {
+          const start = getFirstCycleStartDate(i);
+          y = start ? Math.ceil((Date.now() - new Date(start).getTime()) / (24 * 60 * 60 * 1000)) : NaN;
+        } else {
+          y = i.ageDays ?? NaN;
+        }
+        return {
+          key: i.key,
+          x: i.currentStage.name,
+          y,
+          xKey: i.currentStage.key,
+          summary: i.summary,
+          url: i.url,
+          issueType: i.issueType,
+        };
+      })
       .filter((d) => orderMap[d.xKey] !== undefined)
       .sort((a, b) => (orderMap[a.xKey] ?? 0) - (orderMap[b.xKey] ?? 0));
-  }, [issues, orderMap]);
+  }, [issues, orderMap, showCycleAge]);
 
   // Build color map for issue types
   const { colorMap, issueTypes } = useMemo(() => {
@@ -133,6 +154,22 @@ export default function AgingScatterplot({ issues, workflow }: { issues: Process
 
   return (
     <div style={{ width: "100%" }}>
+      {/* Switch for age mode */}
+      <div className="flex items-center gap-3 mb-2">
+        <label className="text-xs font-medium text-gray-700">Show:</label>
+        <button
+          className={`px-2 py-1 rounded text-xs border ${!showCycleAge ? 'bg-blue-100 border-blue-400 text-blue-800' : 'bg-white border-gray-300 text-gray-700'}`}
+          onClick={() => setShowCycleAge(false)}
+        >
+          Total Age (created → now)
+        </button>
+        <button
+          className={`px-2 py-1 rounded text-xs border ${showCycleAge ? 'bg-green-100 border-green-400 text-green-800' : 'bg-white border-gray-300 text-gray-700'}`}
+          onClick={() => setShowCycleAge(true)}
+        >
+          In-Process Age (cycle start → now)
+        </button>
+      </div>
       <div style={{ height: 420 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
@@ -150,7 +187,7 @@ export default function AgingScatterplot({ issues, workflow }: { issues: Process
             />
             <YAxis
               dataKey="y"
-              name="Age (days)"
+              name={showCycleAge ? "In-Process Age (days)" : "Age (days)"}
               domain={[0, "dataMax + 1"]}
               tick={{ fontSize: 12 }}
             />
