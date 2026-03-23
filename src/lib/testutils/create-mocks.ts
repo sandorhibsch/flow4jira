@@ -55,7 +55,7 @@ export const TEST_WORKFLOW: WorkflowDefinition = {
   name: 'Full Development Workflow',
   stages: [
     { key: 'backlog', name: 'Backlog', jiraStatuses: ['New', 'Backlog'], stageType: 'new' },
-    { key: 'ready', name: 'Ready', jiraStatuses: ['To Do'], isAddedToSprint: true, stageType: 'ready' },
+    { key: 'ready', name: 'Ready', jiraStatuses: [], isAddedToSprint: true, stageType: 'ready' },
     { key: 'dev', name: 'Development', jiraStatuses: ['In Progress'], stageType: 'in-progress', isCycleStart: true },
     { key: 'deploy', name: 'Deployment', jiraStatuses: ['Deployed'], stageType: 'in-progress' },
     { key: 'test', name: 'Testing', jiraStatuses: ['Test'], stageType: 'in-progress' },
@@ -201,6 +201,7 @@ export function createMockJiraIssue(overrides: Partial<JiraIssue> = {}): JiraIss
 export function createMockChangelog(transitions: Array<{
   timestamp: Date;
   status: string;
+  isSprint?: boolean
 }>): JiraChangelogResponse {
   return {
     self: 'https://jira.example.com/rest/api/2/issue/10000',
@@ -208,7 +209,7 @@ export function createMockChangelog(transitions: Array<{
     startAt: 0,
     total: transitions.length,
     isLast: true,
-    histories: transitions.map(({ timestamp, status }) => ({
+    histories: transitions.map(({ timestamp, status, isSprint }) => ({
       id: Math.random().toString(),
       created: timestamp.toISOString(),
       author: {
@@ -216,12 +217,12 @@ export function createMockChangelog(transitions: Array<{
         emailAddress: 'test@example.com'
       },
       items: [{
-        field: 'status',
+        field: isSprint ? 'Sprint' : 'status',
         fieldtype: 'jira',
         fieldId: 'status',
         from: null,
         fromString: null,
-        to: status,
+        to: isSprint ? 'Sprint 1' : status,
         toString: status
       }]
     }))

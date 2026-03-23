@@ -16,10 +16,10 @@ describe('Sequential flow test', () => {
     expect(result[0]?.stage).toBe(TEST_WORKFLOW.stages[0]);
   });
 
-  it('should return all stage changes including backlog', () => {
+  it('should return all stage changes including added to sprint', () => {
     const createdDate = new Date('2025-01-01T00:00:00');
     const statusChanges: StatusChange[] = [
-      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') },
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00'), isAddedToSprint: true },
       { to: 'In Progress', enteredAt: new Date('2025-01-12T09:43:00') },
       { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') }
     ];
@@ -35,23 +35,23 @@ describe('Sequential flow test', () => {
 
   it('should only count first occurrence of stage changes', () => {
     const createdDate = new Date('2025-01-01T00:00:00');
-    const firstToDoDate = new Date('2025-01-10T10:00:00');
-    const firstDevDate = new Date('2025-01-12T09:43:00');
+    const firstDevDate = new Date('2025-01-10T10:00:00');
+    const firstTestingDate = new Date('2025-01-12T09:43:00');
+    const doneDate = new Date('2025-01-18T11:12:00')
     const statusChanges: StatusChange[] = [
-      { to: 'In Progress', enteredAt: new Date(firstDevDate.getTime() + (2 * 1000 * 60 * 60 * 24)) },
-      { to: 'To Do', enteredAt: firstToDoDate },
       { to: 'In Progress', enteredAt: firstDevDate },
-      { to: 'To Do', enteredAt: new Date(firstToDoDate.getTime() + (2 * 1000 * 60 * 60 * 24)) },
-      { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') }
+      { to: 'Test', enteredAt: firstTestingDate },
+      { to: 'In Progress', enteredAt: new Date(firstDevDate.getTime() + (2 * 1000 * 60 * 60 * 24)) },
+      { to: 'Done', enteredAt: doneDate }
     ];
 
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
 
     expect(result.length).toBe(4);
     expect(result[0]?.enteredAt).toStrictEqual(createdDate);
-    expect(result[1]?.enteredAt).toStrictEqual(firstToDoDate);
-    expect(result[2]?.enteredAt).toStrictEqual(firstDevDate);
-    expect(result[3]?.enteredAt).toStrictEqual(new Date('2025-01-18T11:12:00'));
+    expect(result[1]?.enteredAt).toStrictEqual(firstDevDate);
+    expect(result[2]?.enteredAt).toStrictEqual(firstTestingDate);
+    expect(result[3]?.enteredAt).toStrictEqual(doneDate);
   });
 
   it('should count addition to sprint as stage change to ready', () => {
@@ -73,7 +73,7 @@ describe('Sequential flow test', () => {
     const statusChanges: StatusChange[] = [
       { to: 'In Progress', enteredAt: new Date('2025-01-12T09:43:00') },
       { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
-      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') }
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00'), isAddedToSprint: true }
     ];
 
     const result: SequentialStageEntry[] = buildSequentialFlow(TEST_WORKFLOW, createdDate, statusChanges);
@@ -88,7 +88,7 @@ describe('Sequential flow test', () => {
   it('should find actual cycle start when default', () => {
     const createdDate = new Date('2025-01-01T00:00:00');
     const statusChanges: StatusChange[] = [
-      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') },
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00'), isAddedToSprint: true },
       { to: 'In Progress', enteredAt: new Date('2025-01-12T09:43:00') },
       { to: 'Test', enteredAt: new Date('2025-01-14T09:43:00') },
       { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
@@ -104,7 +104,7 @@ describe('Sequential flow test', () => {
   it('should find actual cycle start when went from to do to testing', () => {
     const createdDate = new Date('2025-01-01T00:00:00');
     const statusChanges: StatusChange[] = [
-      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00') },
+      { to: 'To Do', enteredAt: new Date('2025-01-10T10:00:00'), isAddedToSprint: true },
       { to: 'Test', enteredAt: new Date('2025-01-14T09:43:00') },
       { to: 'Done', enteredAt: new Date('2025-01-18T11:12:00') },
     ];

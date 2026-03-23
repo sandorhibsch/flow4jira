@@ -21,12 +21,14 @@ export function processJiraIssue(
   const issueUrl = `${url.origin}/browse/${issue.key}`;
 
   const created = new Date(issue.fields.created);
-  const currentStatus = issue.fields.status.name;
-  const currentStage = findStageByStatus(workflow, currentStatus);
 
   // Build status history from changelog
   const statusChanges = filterStatusChanges(issue, changelog);
   const flowHistory = buildSequentialFlow(workflow, created, statusChanges);
+
+  //set current stage from flow history
+  const currentStatus = issue.fields.status.name;
+  const currentStage = flowHistory.length > 1 ? flowHistory.at(-1)!.stage : findStageByStatus(workflow, currentStatus);
 
   // set done date from flow history
   const doneTransitionIndex = flowHistory.findIndex(e => e.stage.isCycleEnd);

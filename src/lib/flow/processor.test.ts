@@ -242,6 +242,53 @@ describe('Flow Processor', () => {
       expect(result.done).toStrictEqual(completedDate);
     });
 
+    it('should set last stage in history as current stage', () => {
+      const issue = createMockJiraIssue({
+        fields: {
+          ...createMockJiraIssue().fields,
+          status: {
+            name: 'To Do',
+            id: '1',
+            statusCategory: {
+              id: 1,
+              key: 'todo',
+              name: 'To Do',
+              colorName: 'grey'
+            }
+          }
+        }
+      });
+
+      const changelog = createMockChangelog([
+        { timestamp: new Date('2024-01-01T10:00:00'), status: 'Backlog' },
+        { timestamp: new Date('2024-01-02T10:00:00'), status: 'To Do', isSprint: true },
+      ]);
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+      expect(result.currentStage.isAddedToSprint).toBe(true);
+    });
+
+    it('should fallback currentStage from issue status when flow history is empty', () => {
+      const issue = createMockJiraIssue({
+        fields: {
+          ...createMockJiraIssue().fields,
+          status: {
+            id: '10002',
+            name: 'In Progress',
+            statusCategory: {
+              id: 2,
+              key: 'development',
+              colorName: 'blue',
+              name: 'In Progress'
+            }
+          }
+        }
+      });
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue);
+      expect(result.currentStage.key).toBe('dev');
+    });
+
   });
 
 
