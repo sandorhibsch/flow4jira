@@ -242,7 +242,36 @@ describe('Flow Processor', () => {
       expect(result.done).toStrictEqual(completedDate);
     });
 
-    it('should set last stage in history as current stage', () => {
+    it('should set current stage based on current status', () => {
+      const issue = createMockJiraIssue({
+        fields: {
+          ...createMockJiraIssue().fields,
+          status: {
+            name: 'In Progress',
+            id: '1',
+            statusCategory: {
+              id: 1,
+              key: 'dev',
+              name: 'In Progress',
+              colorName: 'grey'
+            }
+          }
+        }
+      });
+
+      const changelog = createMockChangelog([
+        { timestamp: new Date('2024-01-01T10:00:00'), status: 'Backlog' },
+        { timestamp: new Date('2024-01-02T10:00:00'), status: 'To Do', isSprint: true },
+        { timestamp: new Date('2024-01-05T10:00:00'), status: "In Progress" },
+        { timestamp: new Date('2024-01-05T10:00:00'), status: "To Do" },
+
+      ]);
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+      expect(result.currentStage.key).toBe('dev');
+    });
+
+    it('should set added to sprint as current stage if that is the last stage in history', () => {
       const issue = createMockJiraIssue({
         fields: {
           ...createMockJiraIssue().fields,

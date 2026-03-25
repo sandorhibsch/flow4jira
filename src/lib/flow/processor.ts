@@ -28,7 +28,7 @@ export function processJiraIssue(
 
   //set current stage from flow history
   const currentStatus = issue.fields.status.name;
-  const currentStage = flowHistory.length > 1 ? flowHistory.at(-1)!.stage : findStageByStatus(workflow, currentStatus);
+  const currentStage = flowHistory.at(-1)!.stage.isAddedToSprint ? workflow.stages.find(s => s.isAddedToSprint)! : findStageByStatus(workflow, currentStatus);
 
   // set done date from flow history
   const doneTransitionIndex = flowHistory.findIndex(e => e.stage.isCycleEnd);
