@@ -117,6 +117,7 @@ export default function CumulativeFlowDiagram(
                   key={stage.key}
                   type="monotone"
                   dataKey={stage.key}
+                  name={stage.name}
                   stackId="1"
                   fill={stage.color}
                   stroke={stage.color}
