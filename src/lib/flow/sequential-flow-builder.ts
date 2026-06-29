@@ -1,5 +1,6 @@
 // buildSequentialFlow.ts
-import type { WorkflowDefinition, WorkflowStage} from '../jira/workflow-config';
+import { se } from 'date-fns/locale';
+import type { WorkflowDefinition, WorkflowStage } from '../jira/workflow-config';
 import { findStageByStatus, getBacklogStage } from '../jira/workflow-config';
 import type { StatusChange } from './history-builder';
 
@@ -15,29 +16,15 @@ export function buildSequentialFlow(
   issueCreatedDate: Date,
   issueStatusChanges: StatusChange[]
 ): SequentialStageEntry[] {
-  issueStatusChanges.sort((a, b) => a.enteredAt.getTime() - b.enteredAt.getTime());
-
   const allTransitions: SequentialStageEntry[] = [];
 
-  const backlogStage = getBacklogStage(workflow);
-  const firstStage = workflow.stages[0];
-  const initialStage = backlogStage ?? firstStage;
-  
-  if (!initialStage) {
-    throw new Error('Workflow must have at least one stage');
-  }
-
-  const initialStatus = initialStage.jiraStatuses[0] ?? 'Unknown';
-
-  allTransitions.push({
-    stage: initialStage,
-    jiraStatus: initialStatus,
-    enteredAt: issueCreatedDate,
-  });
+  const firstStageEntry = createFirstStageEntry(workflow, issueCreatedDate);
+  allTransitions.push(firstStageEntry);
 
   const seenStages = new Set<WorkflowStage>();
-  seenStages.add(initialStage);
+  seenStages.add(firstStageEntry.stage);
 
+  issueStatusChanges.sort((a, b) => a.enteredAt.getTime() - b.enteredAt.getTime());
   for (const event of issueStatusChanges) {
     const toStage = calculateStageFromStatusChangeEvent(event, workflow);
 
@@ -53,60 +40,32 @@ export function buildSequentialFlow(
     }
   }
 
-  // Now normalize to workflow order: remove duplicates, keep first time entered
-  const seenStageKeys = new Set<string>();
-  const orderedStages = workflow.stages.map(s => s.key);
+  const sequentialFlow = orderTransitions(allTransitions, workflow);
 
-  const sequentialFlow = allTransitions
-    .filter(transition => {
-      if (seenStageKeys.has(transition.stage.key)) return false;
-      seenStageKeys.add(transition.stage.key);
-      return true;
-    })
-    .sort((a, b) => {
-      // sort by defined workflow order, not timestamp
-      const aIdx = orderedStages.indexOf(a.stage.key);
-      const bIdx = orderedStages.indexOf(b.stage.key);
-      return aIdx - bIdx;
-    });
-
-  //find stageentry where item entered the cycle
-  // --- NEW LOGIC: detect and mark the actual cycle start ---
-  const definedStartIdx = workflow.stages.findIndex(s => s.isCycleStart);
-  if (definedStartIdx >= 0) {
-    // Find the actual stage to start from
-    let actualStart: SequentialStageEntry | undefined = sequentialFlow.find(
-      e => e.stage.isCycleStart
-    );
-
-    // If missing, look backward in the workflow
-    if (!actualStart) {
-      for (let i = definedStartIdx - 1; i >= 0; i--) {
-        const prevStage = workflow.stages[i];
-        if (!prevStage) continue;
-        const prevKey = prevStage.key;
-        const candidate = sequentialFlow.find(e => e.stage.key === prevKey);
-        if (candidate) {
-          actualStart = candidate;
-          break;
-        }
-      }
-    }
-
-    // If still missing, fall back to the first recorded stage
-    if (!actualStart && sequentialFlow.length > 0) {
-      const first = sequentialFlow[0];
-      if (first) {
-        actualStart = first;
-      }
-    }
-
-    if (actualStart) {
-      actualStart.isActualCycleStart = true;
+  if (sequentialFlow.find(s => s.stage.stageType == 'in-progress') && !sequentialFlow.find(t => t.isActualCycleStart)) {
+    const actualStartStage = findActualCycleStart(sequentialFlow, workflow);
+    if (actualStartStage) {
+      actualStartStage.isActualCycleStart = true;
     }
   }
 
   return sequentialFlow;
+}
+
+function createFirstStageEntry(workflow: WorkflowDefinition, created: Date): SequentialStageEntry {
+  const initialStage = getBacklogStage(workflow);
+  if (!initialStage) {
+    throw new Error('Workflow must have at least a backlog stage');
+  }
+
+  const initialStatus = initialStage.jiraStatuses[0] ?? 'Unknown';
+
+  return {
+    stage: initialStage,
+    jiraStatus: initialStatus,
+    enteredAt: created
+  }
+
 }
 
 function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: WorkflowDefinition): WorkflowStage {
@@ -114,11 +73,30 @@ function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: Work
     workflow.stages.find(s => s.isAddedToSprint) :
     findStageByStatus(workflow, event.to);
 
-  const firstStage = workflow.stages[0];
-  if (!firstStage) {
-    throw new Error('Workflow must have at least one stage');
+  return calculatedStage!;
+}
+
+function orderTransitions(transitions: SequentialStageEntry[], workflow: WorkflowDefinition) {
+  const orderedStages = workflow.stages.map(s => s.key);
+
+  return transitions
+    .sort((a, b) => {
+      // sort by defined workflow order, not timestamp
+      const aIdx = orderedStages.indexOf(a.stage.key);
+      const bIdx = orderedStages.indexOf(b.stage.key);
+      return aIdx - bIdx;
+    });
+}
+
+function findActualCycleStart(sequentialFlow: SequentialStageEntry[], workflow: WorkflowDefinition): SequentialStageEntry | undefined {
+  let actualStart: SequentialStageEntry | undefined;
+  let startIdx = workflow.stages.findIndex(s => s.isCycleStart);
+  while (startIdx >= 0) {
+    actualStart = sequentialFlow.find(s => s.stage.key == workflow.stages[startIdx]?.key);
+    if (actualStart) break;
+    startIdx--;
   }
-  
-  return calculatedStage ?? firstStage;
+
+  return actualStart;
 }
 

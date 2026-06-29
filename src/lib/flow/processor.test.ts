@@ -166,7 +166,7 @@ describe('Flow Processor', () => {
       expect(result.leadTimeDays).toBeCloseTo(14, 0);
     });
 
-    it('should calculate cycle time (development to done)', () => {
+    it('should calculate cycle time correctly (development to done)', () => {
       const createdDate = new Date('2024-01-01');
       const inProgressDate = new Date('2024-01-03');
       const completedDate = new Date('2024-01-10');
@@ -199,7 +199,7 @@ describe('Flow Processor', () => {
       expect(result.cycleTimeDays).toBeCloseTo(7, 0);
     });
 
-    it('should return lead time for cycle time if issue never went development', () => {
+    it('should return 0 for cycle time if issue never went in development', () => {
       const issue = createMockJiraIssue();
 
       const changelog = createMockChangelog([
@@ -207,8 +207,19 @@ describe('Flow Processor', () => {
       ]);
 
       const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
-      expect(result.cycleTimeDays).toBe(1);
+      expect(result.cycleTimeDays).toBe(0);
     });
+
+    it('should still return lead time properly when issue was closed but never went in dev', () => {
+      const issue = createMockJiraIssue();
+
+      const changelog = createMockChangelog([
+        { timestamp: new Date('2024-01-05T10:00:00'), status: 'Done' }
+      ]);
+
+      const result = processJiraIssue(TEST_WORKFLOW, issue, changelog);
+      expect(result.leadTimeDays).toBe(5);
+    })
 
     it('should set done date if issue is closed', () => {
       const createdDate = new Date('2024-01-01');
