@@ -2,6 +2,7 @@
   "name": "flow4jira",
   "version": "1.4.0",
   "private": true,
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

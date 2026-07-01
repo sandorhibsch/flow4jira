@@ -27,37 +27,20 @@ unzip flow4jira.zip
 cd flow4jira
 ```
 
-### 2. Set up environment
-
-```bash
-# Create environment file
-cp .env.example .env
-
-# .Edit the environment and enter your Jira credentials.
-```
-
-**For Jira Server:**
-```env
-JIRA_INSTANCE_TYPE=server
-JIRA_BASE_URL=https://jira.your-company.com
-JIRA_PERSONAL_ACCESS_TOKEN=your-token-here
-DATABASE_URL="file:./data/flow4jira.db"
-```
-
-**For Jira Cloud:**
-```env
-JIRA_INSTANCE_TYPE=cloud
-JIRA_BASE_URL=https://your-domain.atlassian.net
-JIRA_EMAIL=your-email@example.com
-JIRA_API_TOKEN=your-api-token
-DATABASE_URL="file:./data/flow4jira.db"
-```
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 ```bash
 pnpm install
 ```
 
+### 3. Run locally
+
+```bash
+pnpm dev
+```
+
+## License
+
+Flow4Jira is licensed under the [Apache License 2.0](LICENSE).
 
 
