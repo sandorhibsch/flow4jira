@@ -18,7 +18,9 @@ export function buildSequentialFlow(
 ): SequentialStageEntry[] {
   const allTransitions: SequentialStageEntry[] = [];
 
-  const firstStageEntry = createFirstStageEntry(workflow, issueCreatedDate);
+  const initialStage = getInitialStage(workflow);
+  const firstStageEntry = createFirstStageEntry(initialStage, issueCreatedDate);
+
   allTransitions.push(firstStageEntry);
 
   const seenStages = new Set<WorkflowStage>();
@@ -34,7 +36,7 @@ export function buildSequentialFlow(
         stage: toStage,
         jiraStatus: event.to,
         enteredAt: event.enteredAt,
-        isActualCycleStart: toStage.isCycleStart
+        isActualCycleStart: toStage?.isCycleStart
       });
       seenStages.add(toStage);
     }
@@ -52,11 +54,17 @@ export function buildSequentialFlow(
   return sequentialFlow;
 }
 
-function createFirstStageEntry(workflow: WorkflowDefinition, created: Date): SequentialStageEntry {
+function getInitialStage(workflow: WorkflowDefinition): WorkflowStage {
   const initialStage = getBacklogStage(workflow);
   if (!initialStage) {
     throw new Error('Workflow must have at least a backlog stage');
   }
+
+  return initialStage;
+}
+
+function createFirstStageEntry(initialStage: WorkflowStage, created: Date): SequentialStageEntry {
+
 
   const initialStatus = initialStage.jiraStatuses[0] ?? 'Unknown';
 
@@ -72,6 +80,10 @@ function calculateStageFromStatusChangeEvent(event: StatusChange, workflow: Work
   const calculatedStage = event.isAddedToSprint ?
     workflow.stages.find(s => s.isAddedToSprint) :
     findStageByStatus(workflow, event.to);
+
+  if (!calculatedStage) {
+    return getInitialStage(workflow);
+  }
 
   return calculatedStage!;
 }

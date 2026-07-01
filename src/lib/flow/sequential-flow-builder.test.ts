@@ -184,6 +184,31 @@ describe('Sequential flow test', () => {
     expect(result[2]?.isActualCycleStart).toBe(true);
   });
 
+  it('should create history even if events are not defined in workflow', () => {
+    const createdDate = new Date('2026-02-04');
+    const statusChanges: StatusChange[] = [
+      { to: 'Sprint 1', enteredAt: new Date('2026-02-10T08:36:37'), isAddedToSprint: true },
+      { to: 'Analysis', enteredAt: new Date('2026-02-08T12:32:23') },
+      { to: 'Done', enteredAt: new Date('2024-03-01T07:39:31') }
+    ]
+    const noSprintWorkflow: WorkflowDefinition = {
+      name: 'Workflow with no added to sprint',
+      key: 'nosprint-workflow',
+      stages: [
+        { key: 'backlog', name: 'Backlog', stageType: 'new', jiraStatuses: ['Backlog'] },
+        { key: 'ready', name: 'Ready', stageType: 'ready', jiraStatuses: ['To Do'] },
+        { key: 'dev', name: 'Dev', stageType: 'in-progress', jiraStatuses: ['Development'] },
+        { key: 'done', name: 'Done', stageType: 'done', jiraStatuses: ['Done', 'Development Closed', 'Abandoned'], isCycleEnd: true }
+      ]
+    }
+
+    const result: SequentialStageEntry[] = buildSequentialFlow(noSprintWorkflow, createdDate, statusChanges);
+
+    expect(result.length).toBe(2);
+    expect(result[0]?.stage.key).toBe('backlog')
+    expect(result[1]?.stage.key).toBe('done')
+  });
+
   it('should throw error if backlog missing', () => {
     const createdDate = new Date('2025-01-01T00:00:00');
     const badWorkflow: WorkflowDefinition = {
