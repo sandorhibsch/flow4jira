@@ -67,7 +67,7 @@ export default function JiraConfigPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
 
-        <h1 className="text-3xl font-bold text-gray-900">Flow4Jira™ - Configure Jira Connection</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Configure Jira Connection</h1>
         <p className="text-md text-gray-500">Configure your Jira credentials to connect to Jira</p>
         <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
           <div className="max-w-md w-full bg-white rounded-lg shadow p-8">

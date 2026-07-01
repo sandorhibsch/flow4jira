@@ -171,13 +171,13 @@ export default function HomePage() {
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Flow4Jira™ - Your Boards</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Flow4Jira - Your Boards</h1>
             <div className="relative menu-container">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
               >
-                +
+                ...
               </button>
               {menuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
@@ -199,6 +199,13 @@ export default function HomePage() {
                   >
                     Edit Jira Config
                   </button>
+                  <button
+                    onClick={() => { router.push('/info'); setMenuOpen(false); }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    About
+                  </button>
+
                 </div>
               )}
             </div>
