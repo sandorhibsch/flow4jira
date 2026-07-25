@@ -108,7 +108,7 @@ export default function CumulativeFlowDiagram(
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip
                 labelFormatter={(d) => format(new Date(d), "PP")}
-                formatter={(v, k) => [v, stages.map(s => s.key).find((w) => w === k)]}
+                formatter={(v, k) => [v, stages.map(s => s.name).find((w) => w === k)]}
               />
               <Legend />
 
