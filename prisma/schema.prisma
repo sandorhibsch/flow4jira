@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Board {
+  boardId         String   @id
+  boardName       String?
+  boardType       String   @default("scrum")
+  periodDays      Int      @default(30)
+  workflow        Json?
+  processedIssues Json?
+  updatedAt       DateTime @updatedAt
+
+  snapshots Snapshot[]
+
+  @@map("boards")
+}
+
+model Snapshot {
+  snapshotId      String   @id @default(uuid())
+  boardId         String
+  board           Board    @relation(fields: [boardId], references: [boardId], onDelete: Cascade)
+  processedIssues Json
+  createdAt       DateTime @default(now())
+  source          String   @default("manual")
+
+  @@index([boardId, createdAt])
+  @@map("snapshots")
+}
