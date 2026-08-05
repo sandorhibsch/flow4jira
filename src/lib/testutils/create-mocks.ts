@@ -2,6 +2,8 @@ import { NextRequest } from "next/server";
 import type { ProcessedFlowIssue } from "../flow/flow-types";
 import type { WorkflowDefinition } from "../jira/workflow-config";
 import { JiraChangelogResponse, JiraIssue, JiraSearchResponse } from "../jira/jira-types";
+import { BoardConfig, BoardConfigInput } from "../repositories/board-config.types";
+import { mock } from "node:test";
 
 export function createMockRequest(
   baseUrl: string,
@@ -226,5 +228,46 @@ export function createMockChangelog(transitions: Array<{
         toString: status
       }]
     }))
+  };
+}
+
+export const mockBoardConfig: BoardConfig = {
+  metadata: { boardId: '123', boardName: 'Test Board', boardType: 'scrum', periodDays: 30, updatedAt: new Date() },
+  workflow: TEST_WORKFLOW,
+};
+
+export function createBoardConfig(overrides: Partial<BoardConfig> = {}): BoardConfig {
+  return {
+    metadata: {
+      boardId: mockBoardConfig.metadata.boardId,
+      boardName: mockBoardConfig.metadata.boardName,
+      boardType: mockBoardConfig.metadata.boardType,
+      periodDays: mockBoardConfig.metadata.periodDays,
+      updatedAt: mockBoardConfig.metadata.updatedAt
+    },
+    workflow: TEST_WORKFLOW,
+    processedIssues: createProcessedIssues(),
+    ...overrides,
+  };
+}
+
+export const mockBoardConfigInput: BoardConfigInput = {
+  boardId: mockBoardConfig.metadata.boardId,
+  boardName: mockBoardConfig.metadata.boardName,
+  boardType: mockBoardConfig.metadata.boardType,
+  periodDays: mockBoardConfig.metadata.periodDays,
+  workflow: TEST_WORKFLOW,
+  processedIssues: createProcessedIssues()
+}
+
+export function createBoardConfigInput(overrides: Partial<BoardConfigInput> = {}): BoardConfigInput {
+  return {
+    boardId: mockBoardConfig.metadata.boardId,
+    boardName: mockBoardConfig.metadata.boardName,
+    boardType: mockBoardConfig.metadata.boardType,
+    periodDays: mockBoardConfig.metadata.periodDays,
+    workflow: TEST_WORKFLOW,
+    processedIssues: createProcessedIssues(),
+    ...overrides,
   };
 }
