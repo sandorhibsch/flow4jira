@@ -290,9 +290,8 @@ describe('Board Info API Route', () => {
       const request = createPostRequest({ boardId: '123' });
       const response = await POST(request);
       const data = await response.json();
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Jira config is required');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
     });
 
     it('should fetch board config and return column info without status names', async () => {

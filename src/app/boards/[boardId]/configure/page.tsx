@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
 import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
-import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
+import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 
 interface BoardInfo {
   id: string;
@@ -97,7 +97,7 @@ export default function ConfigurePage() {
         setSaveStatus({ type: 'success', message: 'Loaded existing configuration' });
       } else {
         // No existing board config - fetch from Jira API
-        const jiraConfig = getJiraConfigFromLocalStorage();
+        const jiraConfig = isServerPersistenceMode() ? undefined : getJiraConfigFromLocalStorage();
         const response = await fetch('/api/jira/board', {
           method: 'POST',
           headers: {

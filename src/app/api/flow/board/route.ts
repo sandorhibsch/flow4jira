@@ -71,16 +71,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (body.config === undefined || body.config === null) {
-      return NextResponse.json(
-        { success: false, error: 'Jira config is required in request body' },
-        { status: 400 }
-      );
-    }
-
-    let config: JiraConfig;
+    let config: JiraConfig | undefined;
     try {
-      config = typeof body.config === 'string' ? JSON.parse(body.config) : body.config;
+      config = body.config === undefined || body.config === null
+        ? undefined
+        : typeof body.config === 'string' ? JSON.parse(body.config) : body.config;
     } catch (parseErr) {
       return NextResponse.json(
         { success: false, error: 'Invalid Jira config provided' },

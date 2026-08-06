@@ -7,7 +7,7 @@ import { BoardConfigMetadata } from '@/lib/repositories/board-config.types';
 import { BoardCard } from '@/components/ui/board-card';
 import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
 
-import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
+import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 import { BoardConfigImportExportService } from '@/lib/services/boardconfig-importexport-service';
 
 export default function HomePage() {
@@ -197,6 +197,7 @@ export default function HomePage() {
                     Import Board Config
                   </button>
                   <button
+                    hidden={isServerPersistenceMode() ? true : false}
                     onClick={() => { router.push('/jira-config'); setMenuOpen(false); }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >

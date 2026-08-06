@@ -3,8 +3,11 @@ import { BoardConfigClientLocal } from './boardconfig-client-local';
 import { BoardConfigClientServer } from '@/lib/repositories/client/boardconfig-client-server';
 
 export function getBoardConfigClient(): IBoardConfigRepository {
-  return process.env.NEXT_PUBLIC_PERSISTENCE_MODE &&
-    process.env.NEXT_PUBLIC_PERSISTENCE_MODE === 'server' ?
+  return isServerPersistenceMode() ?
     new BoardConfigClientServer() :
     new BoardConfigClientLocal();
+}
+
+export function isServerPersistenceMode(): boolean {
+  return process.env.NEXT_PUBLIC_PERSISTENCE_MODE === 'server';
 }
