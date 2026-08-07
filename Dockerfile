@@ -23,6 +23,9 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+
+RUN pnpm exec prisma generate
 
 EXPOSE 3000
 ENV NODE_ENV=production

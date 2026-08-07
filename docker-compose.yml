@@ -5,32 +5,27 @@ services:
       dockerfile: Dockerfile
     image: flow4jira-app
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     env_file:
       - .env
     environment:
-      NODE_ENV: development
       # Inside Compose, Postgres is reached through the service hostname, not localhost.
       # A DATABASE_URL in .env overrides this default.
-      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/flow4jira_dev}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/flow4jira}
       CI: true
-    volumes:
-      - ./:/app:cached
-      - /app/node_modules
-      - /root/.pnpm-store
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "pnpm install && pnpm prisma migrate deploy && pnpm prisma generate && pnpm dev --hostname 0.0.0.0 --port 3000"
+    command: sh -c "pnpm prisma generate && pnpm prisma migrate deploy && pnpm start --hostname 0.0.0.0 --port 3000"
 
   postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: flow4jira_dev
+      POSTGRES_DB: flow4jira
     ports:
-      - '5432:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
