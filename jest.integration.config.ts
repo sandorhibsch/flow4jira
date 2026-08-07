@@ -4,9 +4,7 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.(test|spec).(ts|tsx)'],
-  testPathIgnorePatterns: ['<rootDir>/src/lib/server/__integration__/'],
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  testMatch: ['<rootDir>/src/lib/server/__integration__/**/*.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
@@ -15,9 +13,7 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/**/index.ts',
   ],
-  coveragePathIgnorePatterns: [
-    'src/data/*'
-  ]
+  coveragePathIgnorePatterns: ['src/data/*'],
 };
 
 export default config;

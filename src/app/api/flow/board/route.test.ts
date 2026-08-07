@@ -167,10 +167,9 @@ describe('Board Flow API Route', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
-      expect(data.error).toBe('Jira config is required in request body');
-      expect(mockHandleFlowRequest).not.toHaveBeenCalled();
+      expect(mockHandleFlowRequest).toHaveBeenCalled();
     });
 
     it('should return error if config is invalid JSON', async () => {

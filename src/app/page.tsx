@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientConfigWrapper } from './ClientConfigWrapper';
-import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
 import { BoardConfigMetadata } from '@/lib/repositories/board-config.types';
 import { BoardCard } from '@/components/ui/board-card';
 import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
+
+import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
+import { BoardConfigImportExportService } from '@/lib/services/boardconfig-importexport-service';
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,12 +26,13 @@ export default function HomePage() {
     // We'll use this to trigger the file input
   }, []);
 
-  const localStorageRepository = new BoardConfigLocalRepository();
+  const boardConfigClient = getBoardConfigClient();
+  const importExportService = new BoardConfigImportExportService();
   const loadConfigs = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const result = await localStorageRepository.listAll();
+    const result = await boardConfigClient.listAll();
     if (result.success) {
       setConfigs(result.data);
     } else {
@@ -62,7 +65,7 @@ export default function HomePage() {
 
   const confirmDelete = async () => {
     if (deleteTarget) {
-      const result = await localStorageRepository.delete(deleteTarget.boardId);
+      const result = await boardConfigClient.delete(deleteTarget.boardId);
       if (result.success) {
         loadConfigs(); // Refresh list
       } else {
@@ -83,7 +86,7 @@ export default function HomePage() {
   };
 
   const handleExport = async (boardId: string, boardName: string) => {
-    const result = await localStorageRepository.exportConfig(boardId);
+    const result = await importExportService.exportConfig(boardId);
     if (result.success) {
       const dataStr = JSON.stringify(result.data, null, 2);
       const blob = new Blob([dataStr], { type: 'application/json' });
@@ -106,7 +109,7 @@ export default function HomePage() {
       const fileContent = await file.text();
       const importData = JSON.parse(fileContent);
 
-      const result = await localStorageRepository.importConfig(importData);
+      const result = await importExportService.importConfig(importData);
       if (result.success) {
         setImportSuccess(
           `Successfully imported board: ${result.data.metadata.boardName || result.data.metadata.boardId}`
@@ -194,6 +197,7 @@ export default function HomePage() {
                     Import Board Config
                   </button>
                   <button
+                    hidden={isServerPersistenceMode() ? true : false}
                     onClick={() => { router.push('/jira-config'); setMenuOpen(false); }}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >

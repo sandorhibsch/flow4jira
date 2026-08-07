@@ -5,6 +5,7 @@ import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 import type { BoardConfig, BoardConfigMetadata } from '@/lib/repositories/board-config.types';
 import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
+import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
 
 export interface UseBoardConfigState {
   /** Whether initial load is in progress */
@@ -50,7 +51,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<BoardConfig | null>(null);
 
-  const repositoryLocalStorage = new BoardConfigLocalRepository();
+  const boardConfigClient = getBoardConfigClient();
 
   // Load configuration on mount or when boardId changes
   const loadConfig = useCallback(async () => {
@@ -62,7 +63,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
     setIsLoading(true);
     setError(null);
 
-    const result = await repositoryLocalStorage.findByBoardId(boardId);//await boardConfigClient.get(boardId);
+    const result = await boardConfigClient.findByBoardId(boardId);//await boardConfigClient.get(boardId);
 
     if (result.success) {
       setConfig(result.data);
@@ -99,7 +100,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
       setIsSaving(true);
       setError(null);
 
-      const result = await repositoryLocalStorage.save({
+      const result = await boardConfigClient.save({
         boardId,
         boardName,
         boardType,

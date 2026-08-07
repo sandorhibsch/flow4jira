@@ -4,9 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
-
-import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
 import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
+import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 
 interface BoardInfo {
   id: string;
@@ -46,7 +45,7 @@ export default function ConfigurePage() {
   const router = useRouter();
   const boardIdFromUrl = params?.boardId as string | undefined;
 
-  const repositoryLocalStorage = new BoardConfigLocalRepository();
+  const boardConfigClient = getBoardConfigClient();
 
   const [boardId, setBoardId] = useState(boardIdFromUrl ?? '');
   const [loading, setLoading] = useState(false);
@@ -79,7 +78,7 @@ export default function ConfigurePage() {
 
     try {
       // Try to load existing board config from local storage
-      const configResult = await repositoryLocalStorage.findByBoardId(boardId);
+      const configResult = await boardConfigClient.findByBoardId(boardId);
 
       if (configResult.success && configResult.data) {
         const config = configResult.data;
@@ -98,7 +97,7 @@ export default function ConfigurePage() {
         setSaveStatus({ type: 'success', message: 'Loaded existing configuration' });
       } else {
         // No existing board config - fetch from Jira API
-        const jiraConfig = getJiraConfigFromLocalStorage();
+        const jiraConfig = isServerPersistenceMode() ? undefined : getJiraConfigFromLocalStorage();
         const response = await fetch('/api/jira/board', {
           method: 'POST',
           headers: {
@@ -234,7 +233,7 @@ export default function ConfigurePage() {
     };
 
     // Save via API (async)
-    const result = await repositoryLocalStorage.save({
+    const result = await boardConfigClient.save({
       boardId,
       boardName: boardInfo?.name,
       boardType: boardInfo?.type,

@@ -20,6 +20,7 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import { ChartErrorBoundary } from '@/components/ui/error-boundary';
 import ThroughputHistogram from '@/ui/throughput-histogram';
 import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
+import { isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 
 interface IssueListResult {
   success: boolean;
@@ -75,7 +76,7 @@ export default function BoardMetricsPage() {
     setFetchError(null);
 
     try {
-      const jiraConfig = getJiraConfigFromLocalStorage();
+      const jiraConfig = isServerPersistenceMode() ? undefined : getJiraConfigFromLocalStorage();
       const response = await fetch('/api/flow/board', {
         method: 'POST',
         headers: {
