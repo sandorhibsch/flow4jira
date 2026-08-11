@@ -110,6 +110,13 @@ pnpm db:migrate
 
 Do not commit `.env.local`; it contains Jira credentials.
 
+## Testing
+
+Run unit tests with `pnpm test` and unit coverage with
+`pnpm test:coverage --runInBand`. Postgres integration tests require Docker and
+run separately. See [Testing and coverage](docs/testing.md) for suite boundaries,
+coverage scope, and the baseline ratchet policy.
+
 ## License
 
 Flow4Jira is licensed under the [Apache License 2.0](LICENSE).
