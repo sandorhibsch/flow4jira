@@ -21,7 +21,8 @@
     "db:studio": "prisma studio",
     "test:db:up": "docker-compose -f docker-compose.test.yml up -d",
     "test:db:down": "docker-compose -f docker-compose.test.yml down",
-    "test:integration": "docker-compose -f docker-compose.test.yml up -d && pnpm exec wait-on tcp:localhost:5433 && cross-env DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test pnpm prisma migrate deploy && cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test jest --config=jest.integration.config.ts --runInBand && docker-compose -f docker-compose.test.yml down"
+    "test:integration": "docker-compose -f docker-compose.test.yml up -d && pnpm exec wait-on tcp:localhost:5433 && cross-env DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test pnpm prisma migrate deploy && cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test jest --config=jest.integration.config.ts --runInBand && docker-compose -f docker-compose.test.yml down",
+    "test:integration:coverage": "docker-compose -f docker-compose.test.yml up -d && pnpm exec wait-on tcp:localhost:5433 && cross-env DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test pnpm prisma migrate deploy && cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home DATABASE_URL=postgresql://postgres:postgres@localhost:5433/flow4jira_test jest --config=jest.integration.config.ts --coverage --runInBand && docker-compose -f docker-compose.test.yml down"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

@@ -9,11 +9,12 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
+    'src/lib/repositories/board-config.pg.repository.ts',
+    'src/lib/serializers/processed-issue.serializer.ts',
+    'src/lib/server/db/prisma-client.ts',
   ],
-  coveragePathIgnorePatterns: ['src/data/*'],
+  coverageDirectory: '<rootDir>/coverage/integration',
+  coverageReporters: ['text', 'text-summary', 'json-summary', 'lcov'],
 };
 
 export default config;
