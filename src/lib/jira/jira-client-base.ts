@@ -41,7 +41,7 @@ export abstract class JiraClientBase {
   protected abstract buildStatusUrl(statusId: string): string;
 
   abstract searchIssues(jql: string, maxResults: number, fields: string, expand: string): Promise<JiraSearchResponse>;
-  abstract getIssuesForBoard(boardId: string, periodDays: string, maxResults: number, fields: string, expand: string, additionalJql?: string): Promise<JiraSearchResponse>;
+  abstract getIssuesForBoard(boardId: string, periodDays: string, maxResults: number, fields: string, expand: string): Promise<JiraSearchResponse>;
   abstract getIssueWithChangelog(issueKey: string): Promise<JiraIssue>;
   abstract getBoardConfiguration(boardId: string): Promise<JiraBoardConfigResponse>;
   abstract getStatus(statusId: string): Promise<JiraStatusResponse>;

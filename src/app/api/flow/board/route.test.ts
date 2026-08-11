@@ -199,7 +199,6 @@ describe('Board Flow API Route', () => {
       const request = createPostRequest({
         boardId: '123',
         periodDays: '30',
-        additionalJql: 'project=TEST',
         config: MOCK_CONFIG
       });
 

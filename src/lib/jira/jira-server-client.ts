@@ -53,11 +53,9 @@ export class JiraServerClient extends JiraClientBase {
     return this.getAllPagesForQuery(url, params, maxResults);
   }
 
-  async getIssuesForBoard(boardId: string, periodDays: string, maxResults: number = 50, fields: string, expand: string, additionalJql?: string):
-Promise<JiraSearchResponse> {
-    const jql = additionalJql ?
-      `type in standardIssueTypes() and type not in (Epic) and ${additionalJql} and updated>=-${periodDays}d` :
-      `type in standardIssueTypes() and type not in (Epic) and updated>=-${periodDays}d`;
+  async getIssuesForBoard(boardId: string, periodDays: string, maxResults: number = 50, fields: string, expand: string):
+    Promise<JiraSearchResponse> {
+    const jql = `type in standardIssueTypes() and type not in (Epic) and updated>=-${periodDays}d`;
 
     const params = {
       jql,

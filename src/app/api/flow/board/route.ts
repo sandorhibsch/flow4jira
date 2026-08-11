@@ -21,13 +21,12 @@ export async function GET(request: NextRequest) {
   }
 
   const periodDays = searchParams.get('periodDays') || '1';
-  const additionalJql = searchParams.get('additionalJql') || '';
 
   const result = await handleFlowRequest(
     async (client) => {
       const fields = 'summary,issuetype,status,created,resolutiondate';
       const expand = 'changelog';
-      return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand, additionalJql);
+      return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand);
     },
     `Board ${boardId}, last ${periodDays} days`
   );
@@ -48,21 +47,19 @@ export async function GET(request: NextRequest) {
 export interface FlowBoardRequest {
   boardId: string;
   periodDays?: string;
-  additionalJql?: string;
   config: JiraConfig;
 }
 
 /**
  * POST /api/flow/board
  * Fetch flow issues for a board using provided Jira config
- * Expects: { boardId: string, periodDays?: string, additionalJql?: string, config: JiraConfig } in JSON body
+ * Expects: { boardId: string, periodDays?: string, config: JiraConfig } in JSON body
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const boardId = body.boardId;
     const periodDays = body.periodDays || '1';
-    const additionalJql = body.additionalJql || '';
 
     if (!boardId) {
       return NextResponse.json(
@@ -87,7 +84,7 @@ export async function POST(request: NextRequest) {
       async (client) => {
         const fields = 'summary,issuetype,status,created,resolutiondate';
         const expand = 'changelog';
-        return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand, additionalJql);
+        return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand);
       },
       `Board ${boardId}, last ${periodDays} days`,
       config
