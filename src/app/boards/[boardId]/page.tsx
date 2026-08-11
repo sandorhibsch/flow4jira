@@ -47,7 +47,6 @@ export default function BoardMetricsPage() {
   } = useBoardConfig(boardId);
 
   const [periodDays, setPeriodDays] = useState<number | null>(null);
-  const [additionalJql, setAdditionalJql] = useState('');
   const [fetchLoading, setFetchLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -85,7 +84,6 @@ export default function BoardMetricsPage() {
         body: JSON.stringify({
           boardId: boardId,
           periodDays: periodDays,
-          additionalJql: additionalJql,
           config: jiraConfig
         })
       });
@@ -122,7 +120,7 @@ export default function BoardMetricsPage() {
     } finally {
       setFetchLoading(false);
     }
-  }, [boardId, workflow, metadata, periodDays, additionalJql, saveConfig]);
+  }, [boardId, workflow, metadata, periodDays, saveConfig]);
 
   // Handle redirect if no config found
   const handleConfigureRedirect = () => {
@@ -242,16 +240,6 @@ export default function BoardMetricsPage() {
                 onChange={(e) => setPeriodDays(e.target.value ? parseInt(e.target.value, 10) : null)}
                 min="1"
                 max="365"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Enter additional filter (valid JQL expression)"
-                value={additionalJql}
-                onChange={(e) => setAdditionalJql(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
