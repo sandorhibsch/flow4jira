@@ -13,7 +13,7 @@ jest.mock('@/lib/api/flow-handler');
 const mockHandleFlowRequest = handleFlowRequest as jest.MockedFunction<typeof handleFlowRequest>;
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  mockHandleFlowRequest.mockReset();
 });
 
 const baseUrl = 'http://localhost/api/flow/issues';
