@@ -14,6 +14,15 @@ Generate its coverage report with:
 pnpm test:coverage --runInBand
 ```
 
+Run tests in randomized order while checking for leaked handles with:
+
+```bash
+pnpm test:stability
+```
+
+Jest prints the random seed. Replay a failure with
+`pnpm test --runInBand --randomize --seed=<seed>`.
+
 Unit coverage is written to `coverage/unit`. The terminal report groups results by
 source directory; `coverage/unit/lcov-report/index.html` provides file-level and
 line-level detail.

@@ -15,6 +15,7 @@
     "test:watch": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --watch",
     "test:coverage": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --coverage",
     "test:ci": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --silent",
+    "test:stability": "cross-env HOME=/tmp/flow4jira-test-home APPDATA=/tmp/flow4jira-test-home JIRA_BASE_URL='' JIRA_PERSONAL_ACCESS_TOKEN='' JIRA_API_TOKEN='' JIRA_EMAIL='' jest --runInBand --randomize --detectOpenHandles",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
