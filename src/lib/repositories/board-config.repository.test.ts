@@ -19,8 +19,12 @@ describe('BoardConfigRepository', () => {
   let repository: BoardConfigMockRepository;
 
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
     repository = new BoardConfigMockRepository();
   });
+
+  afterEach(() => jest.useRealTimers());
 
   describe('save', () => {
     it('should save a new board configuration', async () => {
@@ -43,7 +47,7 @@ describe('BoardConfigRepository', () => {
       await repository.save(input);
 
       // Wait a bit to ensure different timestamp
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
 
       const updatedInput = createInput({ boardName: 'Updated Board' });
       const result = await repository.save(updatedInput);
@@ -138,9 +142,9 @@ describe('BoardConfigRepository', () => {
 
     it('should return all board metadata sorted by updatedAt desc', async () => {
       await repository.save(createInput({ boardId: '1', boardName: 'Board 1' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '2', boardName: 'Board 2' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '3', boardName: 'Board 3' }));
 
       const result = await repository.listAll();

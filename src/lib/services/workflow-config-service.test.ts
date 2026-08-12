@@ -36,6 +36,8 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
   localStorageMock.clear();
   // suppress console.error in tests
   jest.spyOn(console, 'error').mockImplementation();
@@ -43,6 +45,7 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  jest.useRealTimers();
 });
 
 describe('WorkflowConfigService', () => {
@@ -92,7 +95,7 @@ describe('WorkflowConfigService', () => {
 
       const result = WorkflowConfigService.loadWithMetadata('123');
 
-      expect(result?.processedIssues).toBeDefined;
+      expect(result?.processedIssues).toBeDefined();
       expect(result?.processedIssues?.length).toBe(5);
     });
 

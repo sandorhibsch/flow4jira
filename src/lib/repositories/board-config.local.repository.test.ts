@@ -43,8 +43,15 @@ describe('BoardConfigRepositoryLocalStorage', () => {
   });
 
   beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
     localStorage.clear();
     repository = new BoardConfigLocalRepository();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   describe('save', () => {
@@ -64,7 +71,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     it('should update an existing board configuration', async () => {
       const input = createInput();
       await repository.save(input);
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       const updatedInput = createInput({ boardName: 'Updated Board' });
       const result = await repository.save(updatedInput);
       expect(result.success).toBe(true);
@@ -202,9 +209,9 @@ describe('BoardConfigRepositoryLocalStorage', () => {
 
     it('should return all board metadata sorted by updatedAt desc', async () => {
       await repository.save(createInput({ boardId: '1', boardName: 'Board 1' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '2', boardName: 'Board 2' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '3', boardName: 'Board 3' }));
       const result = await repository.listAll();
       expect(result.success).toBe(true);
@@ -230,9 +237,9 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     it('should log error if one of the items from storage is invalid, return others', async () => {
       // Save three valid configs
       await repository.save(createInput({ boardId: '1', boardName: 'Board 1' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '2', boardName: 'Board 2' }));
-      await new Promise((r) => setTimeout(r, 10));
+      jest.advanceTimersByTime(1_000);
       await repository.save(createInput({ boardId: '3', boardName: 'Board 3' }));
 
       // Patch localStorageMock so one key returns invalid data
