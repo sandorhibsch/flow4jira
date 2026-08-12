@@ -20,7 +20,17 @@ describe('BoardConfigClientLocal', () => {
     exists: jest.fn().mockResolvedValue({ success: true, data: true }),
   };
 
-  const boardConfigClient = new BoardConfigClientLocal(mockLocalRepository);
+  let boardConfigClient: BoardConfigClientLocal;
+
+  beforeEach(() => {
+    mockLocalRepository.save.mockReset().mockResolvedValue(mockRepositoryResponse);
+    mockLocalRepository.findByBoardId.mockReset().mockResolvedValue(mockRepositoryResponse);
+    mockLocalRepository.findWorkflowByBoardId.mockReset().mockResolvedValue({ success: true, data: TEST_WORKFLOW });
+    mockLocalRepository.listAll.mockReset().mockResolvedValue({ success: true, data: [mockBoardConfigMetadata] });
+    mockLocalRepository.delete.mockReset().mockResolvedValue({ success: true, data: true });
+    mockLocalRepository.exists.mockReset().mockResolvedValue({ success: true, data: true });
+    boardConfigClient = new BoardConfigClientLocal(mockLocalRepository);
+  });
 
   describe('save', () => {
 

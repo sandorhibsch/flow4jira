@@ -28,6 +28,8 @@ const localStorageMock = (() => {
   };
 })();
 
+const originalLocalStorage = Object.getOwnPropertyDescriptor(global, 'localStorage');
+
 beforeAll(() => {
   Object.defineProperty(global, 'localStorage', {
     value: localStorageMock,
@@ -46,6 +48,14 @@ beforeEach(() => {
 afterEach(() => {
   jest.restoreAllMocks();
   jest.useRealTimers();
+});
+
+afterAll(() => {
+  if (originalLocalStorage) {
+    Object.defineProperty(global, 'localStorage', originalLocalStorage);
+  } else {
+    delete (global as { localStorage?: Storage }).localStorage;
+  }
 });
 
 describe('WorkflowConfigService', () => {

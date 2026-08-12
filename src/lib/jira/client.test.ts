@@ -4,6 +4,7 @@ import { JiraClient } from './client';
 import type { JiraBoardConfigResponse, JiraConfig, JiraSearchResponse, JiraStatusResponse } from './jira-types';
 
 // Mock fetch globally
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
@@ -17,6 +18,10 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+});
+
+afterAll(() => {
+  global.fetch = originalFetch;
 });
 
 const TEST_CONFIG: JiraConfig = {
@@ -68,19 +73,7 @@ describe('JiraClient', () => {
 
       expect(mockFetch).toHaveBeenCalledTimes(1);
 
-      // Debug: log what we're actually getting
-      const fetchCall = mockFetch.mock.calls[0];
-      if (fetchCall) {
-        console.log('Fetch called with:', fetchCall);
-        console.log('First arg:', fetchCall[0]);
-        console.log('First arg type:', typeof fetchCall[0]);
-      }
-
-      // fetch is called with a string URL as first argument
       const callUrl = mockFetch.mock.calls[0]?.[0] as string;
-      console.log('Call URL:', callUrl);
-
-      // fetch is called with a string URL as first argument
 
       expect(callUrl).toContain('/rest/api/latest/search');
       expect(callUrl).toContain('jql=project%3DTEST');

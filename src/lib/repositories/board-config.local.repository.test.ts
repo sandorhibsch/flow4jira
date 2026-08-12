@@ -5,6 +5,7 @@ import type { BoardConfigInput } from './board-config.types';
 import { TEST_WORKFLOW, createProcessedIssues } from '../testutils/create-mocks';
 
 describe('BoardConfigRepositoryLocalStorage', () => {
+  const originalLocalStorage = Object.getOwnPropertyDescriptor(global, 'localStorage');
   let repository: BoardConfigLocalRepository;
   let localStorageMock: Record<string, string>;
 
@@ -47,6 +48,14 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
     localStorage.clear();
     repository = new BoardConfigLocalRepository();
+  });
+
+  afterAll(() => {
+    if (originalLocalStorage) {
+      Object.defineProperty(global, 'localStorage', originalLocalStorage);
+    } else {
+      delete (global as { localStorage?: Storage }).localStorage;
+    }
   });
 
   afterEach(() => {
