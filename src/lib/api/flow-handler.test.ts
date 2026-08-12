@@ -4,13 +4,14 @@ import { handleFlowRequest } from './flow-handler';
 import { JiraClient } from '@/lib/jira/client';
 import type { JiraSearchResponse } from '@/lib/jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
+import * as fs from 'fs';
 
-//jest.mock('@/lib/jira/client');
+jest.mock('fs');
 
 const originalEnv = process.env;
 
 beforeEach(() => {
-  jest.resetModules();
+  jest.mocked(fs.existsSync).mockReturnValue(false);
   process.env = {
     ...originalEnv,
     JIRA_INSTANCE_TYPE: 'server',
@@ -21,7 +22,7 @@ beforeEach(() => {
 
 afterEach(() => {
   process.env = originalEnv;
-  jest.clearAllMocks();
+  jest.restoreAllMocks();
 });
 
 describe('Flow Handler', () => {
