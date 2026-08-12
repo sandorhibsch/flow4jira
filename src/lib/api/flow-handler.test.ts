@@ -5,6 +5,7 @@ import { JiraClient } from '@/lib/jira/client';
 import type { JiraSearchResponse } from '@/lib/jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
 import * as fs from 'fs';
+import { JiraApiError } from '@/lib/jira/jira-client-base';
 
 jest.mock('fs');
 
@@ -162,13 +163,7 @@ describe('Flow Handler', () => {
     });
 
     it('should handle actual JiraApiError instance', async () => {
-      // Test with actual class instance to ensure it works in production
-      const jiraError = {
-        name: 'JiraApiError',
-        message: 'Unauthorized',
-        status: 401,
-        response: { error: 'Invalid credentials' }
-      };
+      const jiraError = new JiraApiError('Unauthorized', 401, { error: 'Invalid credentials' });
       const mockFetch = jest.fn().mockRejectedValue(jiraError);
 
       const result = await handleFlowRequest(mockFetch);

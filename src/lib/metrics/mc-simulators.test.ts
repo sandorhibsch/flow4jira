@@ -23,6 +23,8 @@ function createMockIssues(count: number): ProcessedFlowIssue[] {
 }
 
 describe('Monte Carlo Simulator Edge Cases', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   describe('Throughput validation', () => {
     it('should handle empty throughput array without infinite loop', () => {
       const throughput: number[] = [];
@@ -60,6 +62,7 @@ describe('Monte Carlo Simulator Edge Cases', () => {
     });
 
     it('should simulate completion within safety limit for low throughput', () => {
+      jest.spyOn(Math, 'random').mockReturnValue(0.99);
       // Simulate what happens with very low throughput
       const throughput = [0, 0, 0, 0, 1]; // Only 1 item every 5 days average
       const targetItems = 100;

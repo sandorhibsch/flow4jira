@@ -5,6 +5,13 @@ import { createMockChangelog, createMockJiraIssue, createMockWorkflow, TEST_WORK
 import { WorkflowDefinition } from '../jira/workflow-config';
 
 describe('Flow Processor', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2025-01-15T12:00:00.000Z'));
+  });
+
+  afterEach(() => jest.useRealTimers());
+
   describe('processJiraIssue - without changelog', () => {
     it('should handle issue with no changelog', () => {
       const issue = createMockJiraIssue({
@@ -67,7 +74,7 @@ describe('Flow Processor', () => {
     it('should return 0 for daysOld when issue is done', () => {
       const today = new Date();
       const createdDate = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
-      const doneDate = new Date(today.getDate() - 3 * 24 * 60 * 60 * 1000);
+      const doneDate = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
 
       const issue = createMockJiraIssue({
         fields: {
@@ -114,7 +121,7 @@ describe('Flow Processor', () => {
 
       const today = new Date();
       const createdDate = new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000);
-      const releasedDate = new Date(today.getDate() - 3 * 24 * 60 * 60 * 1000);
+      const releasedDate = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
 
       const issue = createMockJiraIssue({
         fields: {
