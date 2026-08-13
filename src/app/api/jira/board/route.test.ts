@@ -19,7 +19,11 @@ beforeEach(() => {
     JIRA_BASE_URL: 'https://jira.example.com',
     JIRA_PERSONAL_ACCESS_TOKEN: 'test-token-123'
   };
-  jest.clearAllMocks();
+  const mockGetBoardConfiguration = jest.fn().mockResolvedValue(MOCK_BOARD_CONFIG);
+  (JiraClient as jest.MockedClass<typeof JiraClient>).mockReset();
+  (JiraClient as jest.MockedClass<typeof JiraClient>).mockImplementation(() => ({
+    getBoardConfiguration: mockGetBoardConfiguration,
+  }) as any);
 
   //suppress console.error during tests
   jest.spyOn(console, 'error').mockImplementation();
@@ -286,7 +290,7 @@ describe('Board Info API Route', () => {
       expect(data.error).toContain('boardId is required');
     });
 
-    it('should return error if config is missing', async () => {
+    it('should use environment config when request config is missing', async () => {
       const request = createPostRequest({ boardId: '123' });
       const response = await POST(request);
       const data = await response.json();

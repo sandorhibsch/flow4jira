@@ -3,6 +3,7 @@ import { JiraClientFactory } from "./jira-client-factory";
 import { JiraCloudClient } from "./jira-cloud-client";
 import { JiraServerClient } from "./jira-server-client";
 import type { JiraConfig } from "./jira-types";
+import * as fs from 'fs';
 
 
 const JIRA_SERVER_CONFIG: JiraConfig = {
@@ -21,7 +22,26 @@ const JIRA_CLOUD_CONFIG: JiraConfig = {
 }
 
 jest.mock("../repositories/jira-config.local.repository");
+jest.mock('fs');
 const mockGetJiraConfigFromLocalStorage = getJiraConfigFromLocalStorage as jest.MockedFunction<typeof getJiraConfigFromLocalStorage>;
+const mockExistsSync = jest.mocked(fs.existsSync);
+
+const originalEnv = process.env;
+
+beforeEach(() => {
+  process.env = { ...originalEnv };
+  delete process.env.JIRA_BASE_URL;
+  delete process.env.JIRA_INSTANCE_TYPE;
+  delete process.env.JIRA_PERSONAL_ACCESS_TOKEN;
+  delete process.env.JIRA_EMAIL;
+  delete process.env.JIRA_API_TOKEN;
+  mockExistsSync.mockReturnValue(false);
+});
+
+afterEach(() => {
+  process.env = originalEnv;
+  jest.clearAllMocks();
+});
 
 describe('JiraClientFactory - Create client from config', () => {
   it('should create client instance from server config', () => {
@@ -39,7 +59,7 @@ describe('JiraClientFactory - Create client from config', () => {
 
 describe('JiraClientFactory - Create server or cloud config from env variables', () => {
 
-  beforeAll(() => {
+  beforeEach(() => {
     process.env.JIRA_BASE_URL = 'https://jira.example.com';
   });
 
@@ -77,10 +97,6 @@ describe('JiraClientFactory - Create server or cloud config from env variables',
 
 
 describe('JiraClientFactory - createConfigFromLocalStorage', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('should return config from localStorage if present and valid (server)', () => {
     const config: JiraConfig = {
       instanceType: 'server',
@@ -164,14 +180,5 @@ describe('JiraClientFactory - Error handling', () => {
 
     expect(() => JiraClientFactory.createConfigFromEnv()).toThrow('JIRA_EMAIL and JIRA_API_TOKEN environment variables are required for Jira Cloud');
   });
-
-  afterAll(() => {
-    delete (process.env.JIRA_BASE_URL);
-    delete (process.env.JIRA_INSTANCE_TYPE);
-    delete (process.env.JIRA_PERSONAL_ACCESS_TOKEN);
-    delete (process.env.JIRA_EMAIL);
-    delete (process.env.JIRA_API_TOKEN);
-  });
-
 
 });

@@ -5,6 +5,7 @@ import { createMockSearchResponse } from "../testutils/create-mocks";
 import { JiraApiError, JiraClientBase } from "./jira-client-base";
 
 //Mock fetch globally
+const originalFetch = global.fetch;
 global.fetch = jest.fn();
 
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
@@ -48,6 +49,12 @@ beforeEach(() => {
 
   jest.spyOn(console, 'log').mockImplementation();
   jest.spyOn(console, 'error').mockImplementation();
+});
+
+afterEach(() => jest.restoreAllMocks());
+
+afterAll(() => {
+  global.fetch = originalFetch;
 });
 
 describe('Jira base client - issue pagination', () => {
@@ -174,4 +181,3 @@ describe('Jira base client - makeRequest success and params', () => {
     expect(calledUrl).toContain('b=2');
   });
 });
-

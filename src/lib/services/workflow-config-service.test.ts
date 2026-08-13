@@ -28,6 +28,8 @@ const localStorageMock = (() => {
   };
 })();
 
+const originalLocalStorage = Object.getOwnPropertyDescriptor(global, 'localStorage');
+
 beforeAll(() => {
   Object.defineProperty(global, 'localStorage', {
     value: localStorageMock,
@@ -36,6 +38,8 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
   localStorageMock.clear();
   // suppress console.error in tests
   jest.spyOn(console, 'error').mockImplementation();
@@ -43,6 +47,15 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.restoreAllMocks();
+  jest.useRealTimers();
+});
+
+afterAll(() => {
+  if (originalLocalStorage) {
+    Object.defineProperty(global, 'localStorage', originalLocalStorage);
+  } else {
+    delete (global as { localStorage?: Storage }).localStorage;
+  }
 });
 
 describe('WorkflowConfigService', () => {
@@ -92,7 +105,7 @@ describe('WorkflowConfigService', () => {
 
       const result = WorkflowConfigService.loadWithMetadata('123');
 
-      expect(result?.processedIssues).toBeDefined;
+      expect(result?.processedIssues).toBeDefined();
       expect(result?.processedIssues?.length).toBe(5);
     });
 

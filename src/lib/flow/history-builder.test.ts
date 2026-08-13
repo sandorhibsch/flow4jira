@@ -46,8 +46,8 @@ function createMockChangelog(transitions: Array<{
     startAt: 0,
     total: transitions.length,
     isLast: true,
-    histories: transitions.map(({ timestamp, field: field, to: to }) => ({
-      id: Math.random().toString(),
+    histories: transitions.map(({ timestamp, field: field, to: to }, index) => ({
+      id: `history-${index + 1}`,
       created: timestamp.toISOString(),
       author: {
         displayName: 'Test User',

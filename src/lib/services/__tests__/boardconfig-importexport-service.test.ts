@@ -1,135 +1,111 @@
-import { BoardConfigLocalRepository } from "@/lib/repositories/board-config.local.repository";
-import { BoardConfig, BoardConfigInput, RepositoryResult } from "@/lib/repositories/board-config.types";
+import type { IBoardConfigRepository } from '@/lib/repositories/board-config.repository';
+import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
+import { TEST_WORKFLOW, mockBoardConfig } from '@/lib/testutils/create-mocks';
+import { BoardConfigImportExportService } from '../boardconfig-importexport-service';
 
-import { TEST_WORKFLOW, mockBoardConfig } from "@/lib/testutils/create-mocks";
-import { BoardConfigImportExportService } from "../boardconfig-importexport-service";
-import { BoardConfigClientLocal } from "@/lib/repositories/client/boardconfig-client-local";
+jest.mock('@/lib/repositories/client/board-config-client-factory', () => ({
+  getBoardConfigClient: jest.fn(),
+}));
+
+const mockGetBoardConfigClient = jest.mocked(getBoardConfigClient);
+
+function createRepositoryDouble(): jest.Mocked<IBoardConfigRepository> {
+  return {
+    save: jest.fn(),
+    findByBoardId: jest.fn(),
+    findWorkflowByBoardId: jest.fn(),
+    listAll: jest.fn(),
+    delete: jest.fn(),
+    exists: jest.fn(),
+  };
+}
 
 describe('BoardConfigImportExportService', () => {
+  let repository: jest.Mocked<IBoardConfigRepository>;
+  let service: BoardConfigImportExportService;
 
-  const service = new BoardConfigImportExportService();
+  beforeEach(() => {
+    repository = createRepositoryDouble();
+    mockGetBoardConfigClient.mockReturnValue(repository);
+    service = new BoardConfigImportExportService();
+  });
 
-  describe('exportConfig', () => {
+  afterEach(() => jest.restoreAllMocks());
 
-    const findBoardByIdSpy = jest
-      .spyOn(BoardConfigClientLocal.prototype, 'findByBoardId')
-      .mockResolvedValue({ success: true, data: mockBoardConfig } as RepositoryResult<BoardConfig>);
+  it('exports metadata and workflow without processed issues', async () => {
+    repository.findByBoardId.mockResolvedValue({ success: true, data: mockBoardConfig });
 
-    it('should export board metadata and workflow, exclude processed issues and serialize date', async () => {
-      //await repository.save(input);
-      const result = await service.exportConfig('123');
+    const result = await service.exportConfig('123');
 
-      expect(findBoardByIdSpy).toHaveBeenCalled();
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toEqual({
-          metadata: {
-            boardId: mockBoardConfig.metadata.boardId,
-            boardName: mockBoardConfig.metadata.boardName,
-            boardType: mockBoardConfig.metadata.boardType,
-            periodDays: mockBoardConfig.metadata.periodDays,
-            updatedAt: expect.any(String),
-          },
-          workflow: TEST_WORKFLOW,
-        });
-      }
-    });
-
-    it('should return error if config not found', async () => {
-      findBoardByIdSpy.mockRejectedValue({ success: false, error: 'Board not found' });
-      const result = await service.exportConfig('nonexistent');
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toBe('Export failed: Board not found for board nonexistent');
-      }
+    expect(repository.findByBoardId).toHaveBeenCalledWith('123');
+    expect(result).toEqual({
+      success: true,
+      data: {
+        metadata: {
+          ...mockBoardConfig.metadata,
+          updatedAt: mockBoardConfig.metadata.updatedAt.toISOString(),
+        },
+        workflow: TEST_WORKFLOW,
+      },
     });
   });
 
-  describe('importConfig', () => {
-    const saveSpy = jest.spyOn(BoardConfigClientLocal.prototype, 'save')
-      .mockResolvedValue({ success: true, data: mockBoardConfig } as RepositoryResult<BoardConfig>);
+  it('returns failure when the board does not exist', async () => {
+    repository.findByBoardId.mockResolvedValue({ success: true, data: null });
 
-    it('should import a valid config with metadata and workflow', async () => {
-
-      const result = await service.importConfig(mockBoardConfig);
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.data).toEqual({
-          metadata: {
-            boardId: mockBoardConfig.metadata.boardId,
-            boardName: mockBoardConfig.metadata.boardName,
-            boardType: mockBoardConfig.metadata.boardType,
-            periodDays: mockBoardConfig.metadata.periodDays,
-            updatedAt: mockBoardConfig.metadata.updatedAt
-          },
-          workflow: TEST_WORKFLOW,
-        });
-      }
-
-      // Verify it was actually saved
-      expect(saveSpy).toHaveBeenCalled();
+    await expect(service.exportConfig('missing')).resolves.toEqual({
+      success: false,
+      error: 'Board config not found for boardId: missing',
     });
+  });
 
-    it('should return error if metadata is missing', async () => {
-      const invalidData = {
-        workflow: { states: ['To Do', 'Done'] },
-      };
+  it('returns an Error rejection message while exporting', async () => {
+    repository.findByBoardId.mockRejectedValue(new Error('storage unavailable'));
 
-      const result = await service.importConfig(invalidData as any);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('metadata');
-      }
+    await expect(service.exportConfig('123')).resolves.toEqual({
+      success: false,
+      error: 'storage unavailable',
     });
+  });
 
-    it('should return error if workflow is missing', async () => {
-      const invalidData = {
-        metadata: {
-          boardId: '999',
-          boardName: 'Bad Config',
-          boardType: 'scrum',
-          periodDays: 30,
-          updatedAt: new Date().toISOString(),
-        },
-      };
+  it('imports a valid config through the repository', async () => {
+    repository.save.mockResolvedValue({ success: true, data: mockBoardConfig });
 
-      const result = await service.importConfig(invalidData as any);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('workflow');
-      }
+    const result = await service.importConfig(mockBoardConfig);
+
+    expect(repository.save).toHaveBeenCalledWith({
+      boardId: mockBoardConfig.metadata.boardId,
+      boardName: mockBoardConfig.metadata.boardName,
+      boardType: mockBoardConfig.metadata.boardType,
+      periodDays: mockBoardConfig.metadata.periodDays,
+      workflow: TEST_WORKFLOW,
     });
+    expect(result).toEqual({ success: true, data: mockBoardConfig });
+  });
 
-    it('should return error if boardId is missing from metadata', async () => {
-      const invalidData = {
-        metadata: {
-          boardName: 'No ID Board',
-          boardType: 'scrum',
-          periodDays: 30,
-          updatedAt: new Date().toISOString(),
-        },
-        workflow: { states: ['To Do', 'Done'] },
-      };
+  it.each([
+    [null, 'Import data must be a valid object'],
+    [{ workflow: TEST_WORKFLOW }, 'Import data must contain metadata'],
+    [{ metadata: { boardId: '123' } }, 'Import data must contain workflow'],
+    [{ metadata: {}, workflow: TEST_WORKFLOW }, 'Metadata must contain boardId'],
+  ])('rejects invalid import data %#', async (input, error) => {
+    await expect(service.importConfig(input)).resolves.toEqual({ success: false, error });
+    expect(repository.save).not.toHaveBeenCalled();
+  });
 
-      const result = await service.importConfig(invalidData as any);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('boardId');
-      }
-    });
+  it('passes a repository save failure through unchanged', async () => {
+    const failure = { success: false, error: 'storage unavailable' } as const;
+    repository.save.mockResolvedValue(failure);
 
-    it('should return error if save fails during import', async () => {
+    await expect(service.importConfig(mockBoardConfig)).resolves.toEqual(failure);
+  });
 
-      saveSpy.mockRejectedValueOnce({ success: false, error: 'Error during save' })
+  it('returns an Error rejection message while importing', async () => {
+    repository.save.mockRejectedValue(new Error('storage unavailable'));
 
-      const result = await service.importConfig(mockBoardConfig);
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error).toContain('Unknown error occurred during config import')
-      }
-
+    await expect(service.importConfig(mockBoardConfig)).resolves.toEqual({
+      success: false,
+      error: 'storage unavailable',
     });
   });
 });
