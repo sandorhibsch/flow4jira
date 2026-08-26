@@ -14,6 +14,7 @@ import {
   Cell,
 } from "recharts";
 import { IssueTypeColors, DefaultColors } from "@/components/ui/color-palettes";
+import { calculatePercentiles } from '@/lib/metrics/percentiles';
 
 type ScatterPlotPoint = {
   key: string;
@@ -68,30 +69,6 @@ function prepareData(issues: ProcessedFlowIssue[], dateMax: number, period: numb
       };
     })
     .sort((a, b) => a.x - b.x);
-}
-
-function computePercentiles(data: ScatterPlotPoint[], percentiles = [50, 85, 95]) {
-  if (!data.length) return {};
-
-  const sorted = [...data].sort((a, b) => a.y - b.y);
-  const get = (p: number) => {
-    const pos = (p / 100) * (sorted.length - 1);
-    const base = Math.floor(pos);
-
-    const rest = pos - base;
-    const baseItem = sorted[base];
-    const nextItem = sorted[base + 1];
-
-    if (!baseItem) return 0;
-
-    if (sorted[rest + 1] !== undefined && nextItem) {
-      return baseItem.y + rest * (nextItem.y - baseItem.y);
-    } else {
-      return baseItem.y;
-    }
-  };
-
-  return Object.fromEntries(percentiles.map((p) => [p, get(p)]));
 }
 
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
@@ -149,7 +126,7 @@ export default function CycleTimeScatterplot({
 
   const dateMax = new Date().setHours(23, 59, 59, 999);
   const data = useMemo(() => prepareData(issues, dateMax, period), [issues, dateMax, period]);
-  const percentiles = useMemo(() => computePercentiles(data), [data]);
+  const percentiles = useMemo(() => calculatePercentiles(data.map((point) => point.y)), [data]);
 
   // Build color map for issue types
   const { colorMap, issueTypes } = useMemo(() => {
@@ -186,17 +163,17 @@ export default function CycleTimeScatterplot({
         <div className="gap-4 mb-6 mt-6">
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">50% certainty</div>
-            <div className="text-2xl font-bold text-orange-500">{percentiles[50]}d</div>
+            <div className="text-2xl font-bold text-orange-500">{Math.ceil(percentiles[50]!)}d</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">85% certainty</div>
-            <div className="text-2xl font-bold text-green-500">{percentiles[85]}d</div>
+            <div className="text-2xl font-bold text-green-500">{Math.ceil(percentiles[85]!)}d</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">95% certainty</div>
-            <div className="text-2xl font-bold text-blue-500">{percentiles[95]}d</div>
+            <div className="text-2xl font-bold text-blue-500">{Math.ceil(percentiles[95]!)}d</div>
           </div>
 
         </div>

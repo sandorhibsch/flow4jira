@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid, ResponsiveContainer } from 'recharts';
 import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
-import { useMonteCarloWhen } from '@/lib/metrics/mc-when-simulator';
+import { forecastWhen } from '@/lib/metrics/mc-when-simulator';
 
 export function MonteCarloWhenChart({
   issues,
@@ -18,8 +18,10 @@ export function MonteCarloWhenChart({
     setTargetItems(issues.length);
   }, [issues.length]);
 
-  const { distribution, p50, p85, p95 } =
-    useMonteCarloWhen(issues, periodDays, targetItems);
+  const { distribution, p50, p85, p95 } = useMemo(() => {
+    return forecastWhen(issues, periodDays, targetItems);
+  }, [issues, periodDays, targetItems]);
+
 
   const counts: Record<number, number> = {};
   distribution.forEach(v => counts[v] = (counts[v] ?? 0) + 1);

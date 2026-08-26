@@ -54,7 +54,7 @@ export function getReadyStage(workflow: WorkflowDefinition): WorkflowStage | und
 }
 
 export function getWIPStages(workflow: WorkflowDefinition): WorkflowStage[] | undefined {
-  return workflow.stages.filter(s => s.stageType === 'in-progress') ?? undefined;
+  return workflow.stages.filter(s => s.stageType === 'in-progress');
 }
 
 export function getDoneStage(workflow: WorkflowDefinition): WorkflowStage | undefined {
