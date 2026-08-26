@@ -1,43 +1,59 @@
 import type { IBoardConfigRepository } from '@/lib/repositories/board-config.repository';
-import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
+import type { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } from '@/lib/repositories/board-config.types';
+import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 import { TEST_WORKFLOW, mockBoardConfig } from '@/lib/testutils/create-mocks';
 import { BoardConfigImportExportService } from '../boardconfig-importexport-service';
 
-jest.mock('@/lib/repositories/client/board-config-client-factory', () => ({
-  getBoardConfigClient: jest.fn(),
-}));
+class RecordingBoardConfigRepository implements IBoardConfigRepository {
+  savedInputs: BoardConfigInput[] = [];
+  requestedBoardIds: string[] = [];
+  saveResult: RepositoryResult<BoardConfig> = { success: true, data: mockBoardConfig };
+  findResult: RepositoryResult<BoardConfig | null> = { success: true, data: mockBoardConfig };
+  saveError?: unknown;
+  findError?: unknown;
 
-const mockGetBoardConfigClient = jest.mocked(getBoardConfigClient);
+  async save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
+    this.savedInputs.push(input);
+    if (this.saveError) throw this.saveError;
+    return this.saveResult;
+  }
 
-function createRepositoryDouble(): jest.Mocked<IBoardConfigRepository> {
-  return {
-    save: jest.fn(),
-    findByBoardId: jest.fn(),
-    findWorkflowByBoardId: jest.fn(),
-    listAll: jest.fn(),
-    delete: jest.fn(),
-    exists: jest.fn(),
-  };
+  async findByBoardId(boardId: string): Promise<RepositoryResult<BoardConfig | null>> {
+    this.requestedBoardIds.push(boardId);
+    if (this.findError) throw this.findError;
+    return this.findResult;
+  }
+
+  async findWorkflowByBoardId(): Promise<RepositoryResult<WorkflowDefinition | null>> {
+    throw new Error('Unexpected collaborator call: findWorkflowByBoardId');
+  }
+
+  async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
+    throw new Error('Unexpected collaborator call: listAll');
+  }
+
+  async delete(): Promise<RepositoryResult<boolean>> {
+    throw new Error('Unexpected collaborator call: delete');
+  }
+
+  async exists(): Promise<RepositoryResult<boolean>> {
+    throw new Error('Unexpected collaborator call: exists');
+  }
 }
 
 describe('BoardConfigImportExportService', () => {
-  let repository: jest.Mocked<IBoardConfigRepository>;
+  let repository: RecordingBoardConfigRepository;
   let service: BoardConfigImportExportService;
 
   beforeEach(() => {
-    repository = createRepositoryDouble();
-    mockGetBoardConfigClient.mockReturnValue(repository);
-    service = new BoardConfigImportExportService();
+    repository = new RecordingBoardConfigRepository();
+    service = new BoardConfigImportExportService(repository);
   });
 
-  afterEach(() => jest.restoreAllMocks());
-
   it('exports metadata and workflow without processed issues', async () => {
-    repository.findByBoardId.mockResolvedValue({ success: true, data: mockBoardConfig });
-
     const result = await service.exportConfig('123');
 
-    expect(repository.findByBoardId).toHaveBeenCalledWith('123');
+    expect(repository.requestedBoardIds).toEqual(['123']);
     expect(result).toEqual({
       success: true,
       data: {
@@ -51,7 +67,7 @@ describe('BoardConfigImportExportService', () => {
   });
 
   it('returns failure when the board does not exist', async () => {
-    repository.findByBoardId.mockResolvedValue({ success: true, data: null });
+    repository.findResult = { success: true, data: null };
 
     await expect(service.exportConfig('missing')).resolves.toEqual({
       success: false,
@@ -60,7 +76,7 @@ describe('BoardConfigImportExportService', () => {
   });
 
   it('returns an Error rejection message while exporting', async () => {
-    repository.findByBoardId.mockRejectedValue(new Error('storage unavailable'));
+    repository.findError = new Error('storage unavailable');
 
     await expect(service.exportConfig('123')).resolves.toEqual({
       success: false,
@@ -69,17 +85,15 @@ describe('BoardConfigImportExportService', () => {
   });
 
   it('imports a valid config through the repository', async () => {
-    repository.save.mockResolvedValue({ success: true, data: mockBoardConfig });
-
     const result = await service.importConfig(mockBoardConfig);
 
-    expect(repository.save).toHaveBeenCalledWith({
+    expect(repository.savedInputs).toEqual([{
       boardId: mockBoardConfig.metadata.boardId,
       boardName: mockBoardConfig.metadata.boardName,
       boardType: mockBoardConfig.metadata.boardType,
       periodDays: mockBoardConfig.metadata.periodDays,
       workflow: TEST_WORKFLOW,
-    });
+    }]);
     expect(result).toEqual({ success: true, data: mockBoardConfig });
   });
 
@@ -90,18 +104,18 @@ describe('BoardConfigImportExportService', () => {
     [{ metadata: {}, workflow: TEST_WORKFLOW }, 'Metadata must contain boardId'],
   ])('rejects invalid import data %#', async (input, error) => {
     await expect(service.importConfig(input)).resolves.toEqual({ success: false, error });
-    expect(repository.save).not.toHaveBeenCalled();
+    expect(repository.savedInputs).toEqual([]);
   });
 
   it('passes a repository save failure through unchanged', async () => {
     const failure = { success: false, error: 'storage unavailable' } as const;
-    repository.save.mockResolvedValue(failure);
+    repository.saveResult = failure;
 
     await expect(service.importConfig(mockBoardConfig)).resolves.toEqual(failure);
   });
 
   it('returns an Error rejection message while importing', async () => {
-    repository.save.mockRejectedValue(new Error('storage unavailable'));
+    repository.saveError = new Error('storage unavailable');
 
     await expect(service.importConfig(mockBoardConfig)).resolves.toEqual({
       success: false,

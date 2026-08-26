@@ -1,12 +1,12 @@
-import { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } from "../repositories/board-config.types";
-import { getBoardConfigClient } from "../repositories/client/board-config-client-factory";
+import type { IBoardConfigRepository } from '../repositories/board-config.repository';
+import type { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } from '../repositories/board-config.types';
 
 export class BoardConfigImportExportService {
-  boardConfigClient = getBoardConfigClient();
+  constructor(private readonly repository: IBoardConfigRepository) {}
 
   async exportConfig(boardId: string): Promise<RepositoryResult<{ metadata: Omit<BoardConfigMetadata, 'updatedAt'> & { updatedAt: string }; workflow: BoardConfig['workflow'] }>> {
     try {
-      const findResult = await this.boardConfigClient.findByBoardId(boardId);
+      const findResult = await this.repository.findByBoardId(boardId);
 
       if (!findResult.success || !findResult.data) {
         return {
@@ -85,7 +85,7 @@ export class BoardConfigImportExportService {
       };
 
       // Save the imported config
-      return await this.boardConfigClient.save(input);
+      return await this.repository.save(input);
     } catch (error) {
       return {
         success: false,
@@ -93,4 +93,4 @@ export class BoardConfigImportExportService {
       };
     }
   }
-};
+}
