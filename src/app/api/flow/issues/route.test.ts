@@ -38,6 +38,7 @@ describe('Issues Flow API Route', () => {
       // Verify the handler was called with a function that uses periodDays='1'
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'JQL: updated>=-1d'
       );
     });
@@ -58,6 +59,7 @@ describe('Issues Flow API Route', () => {
 
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'JQL: updated>=-1d'
       );
     });

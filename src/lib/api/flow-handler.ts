@@ -1,8 +1,8 @@
 // src/lib/api/flow-handler.ts
 
 import type { JiraClientBase } from '@/lib/jira/jira-client-base';
-import { JiraClientFactory } from '@/lib/jira/jira-client-factory';
 import type { JiraIssue, JiraSearchResponse, JiraConfig } from '@/lib/jira/jira-types';
+import type { JiraClientProvider } from './ports/jira-client-provider';
 
 export interface FlowHandlerResult {
   success: boolean;
@@ -23,12 +23,12 @@ export interface FlowHandlerResult {
 
 export async function handleFlowRequest(
   fetchIssues: (client: JiraClientBase) => Promise<JiraSearchResponse>,
+  clientProvider: JiraClientProvider,
   queryDescription?: string,
   config?: JiraConfig
 ): Promise<FlowHandlerResult> {
   try {
-    const jiraConfig = config || JiraClientFactory.createConfigFromEnv();
-    const jiraClient = JiraClientFactory.create(jiraConfig);
+    const jiraClient = clientProvider.create(config);
 
     // Fetch issues using the provided function
     const jiraResponse = await fetchIssues(jiraClient);

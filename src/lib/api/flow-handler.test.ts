@@ -1,199 +1,116 @@
-// src/lib/api/flow-handler.test.ts
-
+import type { JiraClientProvider } from './ports/jira-client-provider';
 import { handleFlowRequest } from './flow-handler';
-import { JiraClient } from '@/lib/jira/client';
-import type { JiraSearchResponse } from '@/lib/jira/jira-types';
+import { JiraApiError, JiraClientBase } from '../jira/jira-client-base';
+import type { JiraBoardConfigResponse, JiraConfig, JiraIssue, JiraSearchResponse, JiraStatusResponse } from '../jira/jira-types';
 import { mockJiraIssue } from '../testutils/create-mocks';
-import * as fs from 'fs';
-import { JiraApiError } from '@/lib/jira/jira-client-base';
 
-jest.mock('fs');
+const TEST_CONFIG: JiraConfig = {
+  instanceType: 'server', baseUrl: 'https://jira.example.com', bearerToken: 'token',
+};
 
-const originalEnv = process.env;
+class StrictJiraClientFake extends JiraClientBase {
+  protected getAuthHeaders(): Record<string, string> { return {}; }
+  protected buildSearchUrl(): string { throw new Error('Unexpected client call: buildSearchUrl'); }
+  protected buildBoardUrl(): string { throw new Error('Unexpected client call: buildBoardUrl'); }
+  protected buildIssueUrl(): string { throw new Error('Unexpected client call: buildIssueUrl'); }
+  protected buildBoardConfigUrl(): string { throw new Error('Unexpected client call: buildBoardConfigUrl'); }
+  protected buildStatusUrl(): string { throw new Error('Unexpected client call: buildStatusUrl'); }
+  searchIssues(): Promise<JiraSearchResponse> { throw new Error('Unexpected client call: searchIssues'); }
+  getIssuesForBoard(): Promise<JiraSearchResponse> { throw new Error('Unexpected client call: getIssuesForBoard'); }
+  getIssueWithChangelog(): Promise<JiraIssue> { throw new Error('Unexpected client call: getIssueWithChangelog'); }
+  getBoardConfiguration(): Promise<JiraBoardConfigResponse> { throw new Error('Unexpected client call: getBoardConfiguration'); }
+  getStatus(): Promise<JiraStatusResponse> { throw new Error('Unexpected client call: getStatus'); }
+  testConnection(): Promise<boolean> { throw new Error('Unexpected client call: testConnection'); }
+}
 
-beforeEach(() => {
-  jest.mocked(fs.existsSync).mockReturnValue(false);
-  process.env = {
-    ...originalEnv,
-    JIRA_INSTANCE_TYPE: 'server',
-    JIRA_BASE_URL: 'https://jira.example.com',
-    JIRA_PERSONAL_ACCESS_TOKEN: 'test-token-123'
-  };
-});
+class RecordingJiraClientProvider implements JiraClientProvider {
+  readonly client = new StrictJiraClientFake(TEST_CONFIG);
+  configs: Array<JiraConfig | undefined> = [];
+  error?: unknown;
 
-afterEach(() => {
-  process.env = originalEnv;
-  jest.restoreAllMocks();
-});
+  create(config?: JiraConfig): JiraClientBase {
+    this.configs.push(config);
+    if (this.error) throw this.error;
+    return this.client;
+  }
+}
 
-describe('Flow Handler', () => {
-  describe('Environment Validation', () => {
-    it('should return error if JIRA_BASE_URL is missing', async () => {
-      delete process.env.JIRA_BASE_URL;
+function searchResponse(issues: JiraIssue[] = []): JiraSearchResponse {
+  return { expand: '', startAt: 0, maxResults: issues.length, total: issues.length, issues };
+}
 
-      const mockFetch = jest.fn();
-      const result = await handleFlowRequest(mockFetch);
+describe('handleFlowRequest', () => {
+  let provider: RecordingJiraClientProvider;
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to fetch flow issues: JIRA_BASE_URL environment variable is required');
-      expect(result.status).toBe(500);
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2025-02-03T04:05:06.000Z'));
+    provider = new RecordingJiraClientProvider();
+  });
 
-    it('should return error if JIRA_PERSONAL_ACCESS_TOKEN is missing', async () => {
-      delete process.env.JIRA_PERSONAL_ACCESS_TOKEN;
+  afterEach(() => jest.useRealTimers());
 
-      const mockFetch = jest.fn();
-      const result = await handleFlowRequest(mockFetch);
+  it('provides the created client to the use case and maps its issues', async () => {
+    const observedClients: JiraClientBase[] = [];
+    const fetchIssues = async (client: JiraClientBase) => {
+      observedClients.push(client);
+      return searchResponse([mockJiraIssue]);
+    };
 
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Failed to fetch flow issues: JIRA_PERSONAL_ACCESS_TOKEN environment variable is required for Jira Server');
-      expect(result.status).toBe(500);
-      expect(mockFetch).not.toHaveBeenCalled();
+    const result = await handleFlowRequest(fetchIssues, provider, 'JQL: project=TEST', TEST_CONFIG);
+
+    expect(provider.configs).toEqual([TEST_CONFIG]);
+    expect(observedClients).toEqual([provider.client]);
+    expect(result).toEqual({
+      success: true,
+      data: { issues: [mockJiraIssue] },
+      metadata: { timestamp: '2025-02-03T04:05:06.000Z', query: 'JQL: project=TEST' },
+      status: 200,
     });
   });
 
-  describe('Issue Fetching', () => {
-
-    it('should call fetch function with JiraClient', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(mockFetch).toHaveBeenCalledWith(expect.any(JiraClient));
-      expect(result.success).toBe(true);
-      expect(result.status).toBe(200);
-    });
-
-    it('should return fetched issues as received from Jira', async () => {
-
-      const mockIssues = [mockJiraIssue];
-
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 1,
-        total: 1,
-        issues: mockIssues as any
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.success).toBe(true);
-      expect(result.data?.issues).toHaveLength(1);
-      expect(result.data?.issues?.[0]?.key).toBe('PROJ-1');
-      expect(result.data?.issues?.[0]?.fields.summary).toBe('Test issue');
-    });
-
-    it('should always include timestamp in metadata', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.metadata?.timestamp).toBeDefined();
-      expect(new Date(result.metadata!.timestamp)).toBeInstanceOf(Date);
-    });
-
-    it('should include query description in metadata when provided', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch, 'JQL: project=TEST');
-
-      expect(result.metadata?.query).toBe('JQL: project=TEST');
-    });
-
-    it('should not include query in metadata when not provided', async () => {
-      const mockResponse: JiraSearchResponse = {
-        expand: '',
-        startAt: 0,
-        maxResults: 0,
-        total: 0,
-        issues: []
-      };
-
-      const mockFetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.metadata?.query).toBeUndefined();
-    });
-
+  it('asks the provider to resolve configuration when none is supplied', async () => {
+    await handleFlowRequest(async () => searchResponse(), provider);
+    expect(provider.configs).toEqual([undefined]);
   });
 
-  describe('Error Handling', () => {
-    it('should handle JiraApiError correctly', async () => {
-      // Create a mock that looks like JiraApiError without using the actual class
-      const jiraError = {
-        name: 'JiraApiError',
-        message: 'Board not found',
-        status: 404,
-        response: { error: 'Not found' }
-      };
+  it('maps Jira API failures without calling the provider twice', async () => {
+    const error = new JiraApiError('Board not found', 404, { error: 'not found' });
+    const result = await handleFlowRequest(async () => { throw error; }, provider);
 
-      const mockFetch = jest.fn().mockRejectedValue(jiraError);
-
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Board not found');
-      expect(result.status).toBe(404);
-      expect(result.details).toBeDefined();
-      expect(result.details?.status).toBe(404);
+    expect(result).toEqual({
+      success: false,
+      error: 'Jira API Error: Board not found',
+      details: { status: 404, response: { error: 'not found' } },
+      status: 404,
     });
-
-    it('should handle actual JiraApiError instance', async () => {
-      const jiraError = new JiraApiError('Unauthorized', 401, { error: 'Invalid credentials' });
-      const mockFetch = jest.fn().mockRejectedValue(jiraError);
-
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Unauthorized');
-      expect(result.status).toBe(401);
-      expect(result.details).toBeDefined();
-    });
-
-    it('should handle generic errors', async () => {
-      const genericError = new Error('Network timeout');
-      const mockFetch = jest.fn().mockRejectedValue(genericError);
-
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Network timeout');
-      expect(result.status).toBe(500);
-    });
-
-    it('should handle unknown errors', async () => {
-      const mockFetch = jest.fn().mockRejectedValue('Some string error');
-
-      const result = await handleFlowRequest(mockFetch);
-
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Unknown error occurred');
-      expect(result.status).toBe(500);
-    });
+    expect(provider.configs).toHaveLength(1);
   });
 
+  it('maps provider failures without invoking the use case', async () => {
+    provider.error = new Error('Jira configuration unavailable');
+    let useCaseCalled = false;
+
+    const result = await handleFlowRequest(async () => {
+      useCaseCalled = true;
+      return searchResponse();
+    }, provider);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to fetch flow issues: Jira configuration unavailable',
+      status: 500,
+    });
+    expect(useCaseCalled).toBe(false);
+  });
+
+  it('maps unknown rejections without leaking their representation', async () => {
+    const result = await handleFlowRequest(async () => { throw 'failure'; }, provider);
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to fetch flow issues: Unknown error occurred',
+      status: 500,
+    });
+  });
 });

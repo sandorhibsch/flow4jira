@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { handleFlowRequest } from '@/lib/api/flow-handler';
 import type { JiraConfig } from '@/lib/jira/jira-types';
+import { jiraClientProvider } from '@/lib/jira/jira-client-provider';
 
 export async function GET(request: NextRequest) {
   // Extract query parameters
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest) {
       const expand = 'changelog';
       return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand);
     },
+    jiraClientProvider,
     `Board ${boardId}, last ${periodDays} days`
   );
 
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
         const expand = 'changelog';
         return client.getIssuesForBoard(boardId, periodDays, 100, fields, expand);
       },
+      jiraClientProvider,
       `Board ${boardId}, last ${periodDays} days`,
       config
     );
