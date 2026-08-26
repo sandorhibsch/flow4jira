@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BoardService } from '@/lib/services/board-service';
+import { BoardConfigPgRepository } from '@/lib/repositories/board-config.pg.repository';
 
-const boardService = new BoardService();
+const repository = new BoardConfigPgRepository();
+const boardService = new BoardService(repository, repository);
 
 export async function POST(req: NextRequest) {
   try {

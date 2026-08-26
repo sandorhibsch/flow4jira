@@ -1,4 +1,3 @@
-import { BoardConfigPgRepository } from '@/lib/repositories/board-config.pg.repository';
 import type {
   BoardConfig,
   BoardConfigInput,
@@ -7,9 +6,16 @@ import type {
 } from '@/lib/repositories/board-config.types';
 import type { IBoardConfigRepository } from '@/lib/repositories/board-config.repository';
 
-/** Server-side board configuration operations backed by Postgres. */
+export interface BoardConfigImportPort {
+  importConfig(importData: unknown): Promise<RepositoryResult<BoardConfig>>;
+}
+
+/** Application operations over board configuration ports. */
 export class BoardService {
-  constructor(private readonly repository: IBoardConfigRepository = new BoardConfigPgRepository()) {}
+  constructor(
+    private readonly repository: IBoardConfigRepository,
+    private readonly importer?: BoardConfigImportPort
+  ) {}
 
   save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
     return this.repository.save(input);
@@ -32,9 +38,9 @@ export class BoardService {
   }
 
   async importConfig(importData: unknown): Promise<RepositoryResult<BoardConfig>> {
-    if (!(this.repository instanceof BoardConfigPgRepository)) {
+    if (!this.importer) {
       return { success: false, error: 'Import is unavailable for this persistence backend' };
     }
-    return this.repository.importConfig(importData);
+    return this.importer.importConfig(importData);
   }
 }
