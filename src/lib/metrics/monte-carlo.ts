@@ -5,7 +5,9 @@ export type MonteCarloResult = {
   p95: number;
 };
 
-const EMPTY_RESULT: MonteCarloResult = { distribution: [], p50: 0, p85: 0, p95: 0 };
+function emptyResult(): MonteCarloResult {
+  return { distribution: [], p50: 0, p85: 0, p95: 0 };
+}
 
 function valueAtPercentile(sorted: number[], percentile: number): number {
   return sorted[Math.floor(percentile * sorted.length)] ?? 0;
@@ -21,7 +23,7 @@ export function simulateHowMany(
   simulations: number,
   random: () => number = Math.random
 ): MonteCarloResult {
-  if (throughput.length === 0 || forecastDays < 0 || simulations <= 0) return EMPTY_RESULT;
+  if (throughput.length === 0 || forecastDays < 0 || simulations <= 0) return emptyResult();
 
   const distribution = Array.from({ length: simulations }, () => {
     let delivered = 0;
@@ -51,7 +53,7 @@ export function simulateWhen(
     simulations <= 0 ||
     maxDays <= 0
   ) {
-    return EMPTY_RESULT;
+    return emptyResult();
   }
 
   const distribution = Array.from({ length: simulations }, () => {
