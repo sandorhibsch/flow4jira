@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BoardService } from '@/lib/services/board-service';
-const boardService = new BoardService();
+import { BoardConfigPgRepository } from '@/lib/repositories/board-config.pg.repository';
+const boardService = new BoardService(new BoardConfigPgRepository());
 
 export async function GET(_req: NextRequest) {
   const result = await boardService.listAll();

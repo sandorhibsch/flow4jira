@@ -1,12 +1,13 @@
-import { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } from "../repositories/board-config.types";
-import { getBoardConfigClient } from "../repositories/client/board-config-client-factory";
+import type { IBoardConfigRepository } from '../repositories/board-config.repository';
+import type { BoardConfig, BoardConfigMetadata, RepositoryResult } from '../repositories/board-config.types';
+import { parseBoardConfigImportDocument } from './board-config-import-document';
 
 export class BoardConfigImportExportService {
-  boardConfigClient = getBoardConfigClient();
+  constructor(private readonly repository: IBoardConfigRepository) {}
 
   async exportConfig(boardId: string): Promise<RepositoryResult<{ metadata: Omit<BoardConfigMetadata, 'updatedAt'> & { updatedAt: string }; workflow: BoardConfig['workflow'] }>> {
     try {
-      const findResult = await this.boardConfigClient.findByBoardId(boardId);
+      const findResult = await this.repository.findByBoardId(boardId);
 
       if (!findResult.success || !findResult.data) {
         return {
@@ -39,53 +40,10 @@ export class BoardConfigImportExportService {
 
   async importConfig(importData: unknown): Promise<RepositoryResult<BoardConfig>> {
     try {
-      // Validate structure
-      if (!importData || typeof importData !== 'object') {
-        return {
-          success: false,
-          error: 'Import data must be a valid object'
-        };
-      }
+      const parsed = parseBoardConfigImportDocument(importData);
+      if (!parsed.success) return parsed;
 
-      const data = importData as Record<string, unknown>;
-
-      // Validate metadata exists
-      if (!data.metadata) {
-        return {
-          success: false,
-          error: 'Import data must contain metadata'
-        };
-      }
-
-      // Validate workflow exists
-      if (!data.workflow) {
-        return {
-          success: false,
-          error: 'Import data must contain workflow'
-        };
-      }
-
-      const metadata = data.metadata as Record<string, unknown>;
-
-      // Validate boardId exists
-      if (!metadata.boardId) {
-        return {
-          success: false,
-          error: 'Metadata must contain boardId'
-        };
-      }
-
-      // Create input for save
-      const input: BoardConfigInput = {
-        boardId: metadata.boardId as string,
-        boardName: (metadata.boardName as string) || '',
-        boardType: (metadata.boardType as string) || 'scrum',
-        periodDays: (metadata.periodDays as number) || 30,
-        workflow: data.workflow as BoardConfig['workflow'],
-      };
-
-      // Save the imported config
-      return await this.boardConfigClient.save(input);
+      return await this.repository.save(parsed.data);
     } catch (error) {
       return {
         success: false,
@@ -93,4 +51,4 @@ export class BoardConfigImportExportService {
       };
     }
   }
-};
+}

@@ -54,6 +54,7 @@ describe('Board Flow API Route', () => {
       // Verify the handler was called with a function that uses periodDays='1'
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'Board 123, last 1 days'
       );
     });
@@ -74,6 +75,7 @@ describe('Board Flow API Route', () => {
 
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'Board 456, last 60 days'
       );
     });
@@ -216,6 +218,7 @@ describe('Board Flow API Route', () => {
       expect(data.metadata).toBeDefined();
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'Board 123, last 30 days',
         MOCK_CONFIG
       );
@@ -238,6 +241,7 @@ describe('Board Flow API Route', () => {
 
       expect(mockHandleFlowRequest).toHaveBeenCalledWith(
         expect.any(Function),
+        expect.anything(),
         'Board 123, last 1 days',
         MOCK_CONFIG
       );

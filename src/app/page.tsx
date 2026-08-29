@@ -27,7 +27,7 @@ export default function HomePage() {
   }, []);
 
   const boardConfigClient = getBoardConfigClient();
-  const importExportService = new BoardConfigImportExportService();
+  const importExportService = new BoardConfigImportExportService(boardConfigClient);
   const loadConfigs = useCallback(async () => {
     setLoading(true);
     setError(null);

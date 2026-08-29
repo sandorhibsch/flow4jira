@@ -3,6 +3,7 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { handleFlowRequest } from '@/lib/api/flow-handler';
+import { jiraClientProvider } from '@/lib/jira/jira-client-provider';
 
 export async function GET(request: NextRequest) {
   // Extract query parameters
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
       const expand = 'changelog';
       return client.searchIssues(jql, 100, fields, expand);
     },
+    jiraClientProvider,
     `JQL: ${jql}`
   );
 
