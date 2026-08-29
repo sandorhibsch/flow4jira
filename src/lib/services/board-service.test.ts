@@ -2,7 +2,7 @@ import type { WorkflowDefinition } from '../jira/workflow-config';
 import type { IBoardConfigRepository } from '../repositories/board-config.repository';
 import type { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } from '../repositories/board-config.types';
 import { mockBoardConfig, mockBoardConfigInput } from '../testutils/create-mocks';
-import { BoardService, type BoardConfigImportPort } from './board-service';
+import { BoardService } from './board-service';
 
 class BoardRepositoryFake implements IBoardConfigRepository {
   calls: Array<{ operation: string; argument?: unknown }> = [];
@@ -38,15 +38,6 @@ class BoardRepositoryFake implements IBoardConfigRepository {
   }
 }
 
-class BoardImporterFake implements BoardConfigImportPort {
-  imported: unknown[] = [];
-
-  async importConfig(importData: unknown): Promise<RepositoryResult<BoardConfig>> {
-    this.imported.push(importData);
-    return { success: true, data: mockBoardConfig };
-  }
-}
-
 describe('BoardService', () => {
   let repository: BoardRepositoryFake;
   let service: BoardService;
@@ -79,23 +70,5 @@ describe('BoardService', () => {
   it('checks existence through the repository port', async () => {
     await expect(service.exists('42')).resolves.toEqual({ success: true, data: true });
     expect(repository.calls).toEqual([{ operation: 'exists', argument: '42' }]);
-  });
-
-  it('imports through the explicit capability port', async () => {
-    const importer = new BoardImporterFake();
-    service = new BoardService(repository, importer);
-    const document = { metadata: { boardId: '42' }, workflow: mockBoardConfig.workflow };
-
-    await expect(service.importConfig(document)).resolves.toEqual({ success: true, data: mockBoardConfig });
-    expect(importer.imported).toEqual([document]);
-    expect(repository.calls).toEqual([]);
-  });
-
-  it('reports an unavailable import capability without touching the repository', async () => {
-    await expect(service.importConfig({})).resolves.toEqual({
-      success: false,
-      error: 'Import is unavailable for this persistence backend',
-    });
-    expect(repository.calls).toEqual([]);
   });
 });

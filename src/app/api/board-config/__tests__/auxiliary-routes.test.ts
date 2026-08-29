@@ -5,14 +5,18 @@ import { GET as getExists } from '@/app/api/board-config/exists/route';
 import { POST as importConfig } from '@/app/api/board-config/import/route';
 import { GET as list } from '@/app/api/board-config/list/route';
 import { BoardService } from '@/lib/services/board-service';
+import { BoardConfigImportExportService } from '@/lib/services/boardconfig-importexport-service';
 import { mockBoardConfig } from '@/lib/testutils/create-mocks';
 
 jest.mock('@/lib/services/board-service');
+jest.mock('@/lib/services/boardconfig-importexport-service');
 
-const [existsService, importService, listService] = jest.mocked(BoardService).mock.instances as [
+const [existsService, listService] = jest.mocked(BoardService).mock.instances as [
   jest.Mocked<BoardService>,
   jest.Mocked<BoardService>,
-  jest.Mocked<BoardService>,
+];
+const [importService] = jest.mocked(BoardConfigImportExportService).mock.instances as [
+  jest.Mocked<BoardConfigImportExportService>,
 ];
 
 describe('auxiliary board-config API routes', () => {
