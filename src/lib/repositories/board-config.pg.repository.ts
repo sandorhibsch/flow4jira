@@ -5,6 +5,38 @@ import { deserializeProcessedIssues, serializeProcessedIssues } from '@/lib/seri
 import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import type { Prisma } from '@prisma/client';
 
+interface BoardRow {
+  boardId: string;
+  boardName: string | null;
+  boardType: string;
+  periodDays: number;
+  workflow: Prisma.JsonValue;
+  processedIssues: Prisma.JsonValue;
+  updatedAt: Date;
+}
+
+interface SnapshotRow {
+  snapshotId: string;
+  boardId: string;
+  processedIssues: Prisma.JsonValue;
+  createdAt: Date;
+  source: string;
+}
+
+export interface BoardConfigPrismaGateway {
+  board: {
+    upsert(args: { where: { boardId: string }; update: Prisma.BoardUpdateInput; create: Prisma.BoardCreateInput }): Promise<BoardRow>;
+    findUnique(args: { where: { boardId: string } }): Promise<BoardRow | null>;
+    findMany(args: { orderBy: { updatedAt: 'desc' } }): Promise<BoardRow[]>;
+    delete(args: { where: { boardId: string } }): Promise<BoardRow>;
+  };
+  snapshot: {
+    create(args: { data: Prisma.SnapshotUncheckedCreateInput }): Promise<SnapshotRow>;
+    findMany(args: { where: { boardId: string }; orderBy: { createdAt: 'desc' } }): Promise<SnapshotRow[]>;
+    findUnique(args: { where: { snapshotId: string } }): Promise<SnapshotRow | null>;
+  };
+}
+
 function toJsonValue<T>(value: T): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }
@@ -24,12 +56,14 @@ export interface SnapshotRecord {
 }
 
 export class BoardConfigPgRepository implements IBoardConfigRepository {
+  constructor(private readonly gateway: BoardConfigPrismaGateway = prisma) {}
+
   async save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
     try {
       const serialized = input.processedIssues ? serializeProcessedIssues(input.processedIssues) : undefined;
 
       const workflowJson = toJsonValue(input.workflow);
-      const board = await prisma.board.upsert({
+      const board = await this.gateway.board.upsert({
         where: { boardId: input.boardId },
         update: {
           boardName: input.boardName,
@@ -74,7 +108,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async findByBoardId(boardId: string): Promise<RepositoryResult<BoardConfig | null>> {
     try {
-      const board = await prisma.board.findUnique({ where: { boardId } });
+      const board = await this.gateway.board.findUnique({ where: { boardId } });
       if (!board) {
         return { success: true, data: null };
       }
@@ -105,7 +139,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async findWorkflowByBoardId(boardId: string): Promise<RepositoryResult<BoardConfig['workflow'] | null>> {
     try {
-      const board = await prisma.board.findUnique({ where: { boardId } });
+      const board = await this.gateway.board.findUnique({ where: { boardId } });
       return {
         success: true,
         data: board ? (board.workflow as any) : null
@@ -120,7 +154,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
     try {
-      const boards = await prisma.board.findMany({
+      const boards = await this.gateway.board.findMany({
         orderBy: { updatedAt: 'desc' }
       });
 
@@ -144,7 +178,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async delete(boardId: string): Promise<RepositoryResult<boolean>> {
     try {
-      const result = await prisma.board.delete({ where: { boardId } });
+      const result = await this.gateway.board.delete({ where: { boardId } });
       return { success: true, data: !!result };
     } catch (error) {
       return {
@@ -156,7 +190,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async exists(boardId: string): Promise<RepositoryResult<boolean>> {
     try {
-      const board = await prisma.board.findUnique({ where: { boardId } });
+      const board = await this.gateway.board.findUnique({ where: { boardId } });
       return { success: true, data: !!board };
     } catch (error) {
       return {
@@ -170,7 +204,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
   async saveSnapshot(boardId: string, processedIssues: ProcessedFlowIssue[], source?: string): Promise<RepositoryResult<SnapshotRecord>> {
     try {
       const serialized = serializeProcessedIssues(processedIssues);
-      const snapshot = await prisma.snapshot.create({
+      const snapshot = await this.gateway.snapshot.create({
         data: {
           boardId,
           processedIssues: serialized,
@@ -198,7 +232,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async listSnapshots(boardId: string): Promise<RepositoryResult<SnapshotMetadata[]>> {
     try {
-      const snapshots = await prisma.snapshot.findMany({
+      const snapshots = await this.gateway.snapshot.findMany({
         where: { boardId },
         orderBy: { createdAt: 'desc' }
       });
@@ -221,7 +255,7 @@ export class BoardConfigPgRepository implements IBoardConfigRepository {
 
   async getSnapshot(snapshotId: string): Promise<RepositoryResult<SnapshotRecord | null>> {
     try {
-      const snapshot = await prisma.snapshot.findUnique({ where: { snapshotId } });
+      const snapshot = await this.gateway.snapshot.findUnique({ where: { snapshotId } });
       if (!snapshot) {
         return { success: true, data: null };
       }
