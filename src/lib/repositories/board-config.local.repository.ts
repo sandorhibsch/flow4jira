@@ -4,6 +4,11 @@ import { BoardConfig, BoardConfigInput, BoardConfigMetadata, RepositoryResult } 
 const STORAGE_PREFIX = 'workflow:board:';
 
 export class BoardConfigLocalRepository implements IBoardConfigRepository {
+  private readonly storage: Storage;
+
+  constructor(storage?: Storage) {
+    this.storage = storage ?? globalThis.localStorage;
+  }
 
   async save(input: BoardConfigInput): Promise<RepositoryResult<BoardConfig>> {
     try {
@@ -21,7 +26,7 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
         processedIssues: input.processedIssues
       }
 
-      localStorage.setItem(key, JSON.stringify(config));
+      this.storage.setItem(key, JSON.stringify(config));
       return {
         success: true,
         data: config
@@ -37,7 +42,7 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   async findByBoardId(boardId: string): Promise<RepositoryResult<BoardConfig | null>> {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
-      const data = localStorage.getItem(key);
+      const data = this.storage.getItem(key);
 
       return {
         success: true,
@@ -54,7 +59,7 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   async findWorkflowByBoardId(boardId: string): Promise<RepositoryResult<BoardConfig["workflow"] | null>> {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
-      const data = localStorage.getItem(key);
+      const data = this.storage.getItem(key);
 
       return {
         success: true,
@@ -72,11 +77,11 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
     const configs: BoardConfigMetadata[] = [];
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (let i = 0; i < this.storage.length; i++) {
+      const key = this.storage.key(i);
       if (key && key.startsWith(STORAGE_PREFIX)) {
         try {
-          const data = localStorage.getItem(key);
+          const data = this.storage.getItem(key);
           if (data) {
             const boardConfig: BoardConfig = JSON.parse(data);
             configs.push(boardConfig.metadata);
@@ -100,9 +105,9 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   async delete(boardId: string): Promise<RepositoryResult<boolean>> {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
-      const existing = localStorage.getItem(key);
+      const existing = this.storage.getItem(key);
 
-      localStorage.removeItem(key);
+      this.storage.removeItem(key);
       return {
         success: true,
         data: existing ? true : false
@@ -119,7 +124,7 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   async exists(boardId: string): Promise<RepositoryResult<boolean>> {
     try {
       const key = `${STORAGE_PREFIX}${boardId}`;
-      const exists = localStorage.getItem(key);
+      const exists = this.storage.getItem(key);
 
       return {
         success: true,
@@ -135,4 +140,3 @@ export class BoardConfigLocalRepository implements IBoardConfigRepository {
   }
 
 }
-
