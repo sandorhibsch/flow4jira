@@ -5,9 +5,9 @@ import type { BoardConfigInput } from './board-config.types';
 import { TEST_WORKFLOW, createProcessedIssues } from '../testutils/create-mocks';
 
 describe('BoardConfigRepositoryLocalStorage', () => {
-  const originalLocalStorage = Object.getOwnPropertyDescriptor(global, 'localStorage');
   let repository: BoardConfigLocalRepository;
   let localStorageMock: Record<string, string>;
+  let storage: Storage;
 
   function createInput(overrides: Partial<BoardConfigInput> = {}): BoardConfigInput {
     return {
@@ -20,10 +20,9 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     };
   }
 
-  beforeAll(() => {
+  beforeEach(() => {
     localStorageMock = {};
-    Object.defineProperty(global, 'localStorage', {
-      value: {
+    storage = {
         getItem: (key: string) => localStorageMock[key] || null,
         setItem: (key: string, value: string) => {
           localStorageMock[key] = value;
@@ -38,24 +37,10 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         get length() {
           return Object.keys(localStorageMock).length;
         },
-      },
-      writable: true,
-    });
-  });
-
-  beforeEach(() => {
+    };
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2025-01-01T00:00:00.000Z'));
-    localStorage.clear();
-    repository = new BoardConfigLocalRepository();
-  });
-
-  afterAll(() => {
-    if (originalLocalStorage) {
-      Object.defineProperty(global, 'localStorage', originalLocalStorage);
-    } else {
-      delete (global as { localStorage?: Storage }).localStorage;
-    }
+    repository = new BoardConfigLocalRepository(storage);
   });
 
   afterEach(() => {
@@ -103,8 +88,8 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     it('should throw error if save failed', async () => {
       const input = createInput();
 
-      const originalSetItem = localStorage.setItem;
-      localStorage.setItem = () => { throw new Error('Storage error') };
+      const originalSetItem = storage.setItem;
+      storage.setItem = () => { throw new Error('Storage error') };
 
       const result = await repository.save(input);
 
@@ -112,7 +97,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
       if (!result.success) {
         expect(result.error).toMatch(/Storage error/);
       }
-      localStorage.setItem = originalSetItem;
+      storage.setItem = originalSetItem;
     });
   });
 
@@ -136,8 +121,8 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     });
 
     it('should throw error if board is invalid', async () => {
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = () => { return 'Invalid data' };
+      const originalGetItem = storage.getItem;
+      storage.getItem = () => { return 'Invalid data' };
 
       const result = await repository.findByBoardId('999');
       expect(result.success).toBe(false);
@@ -145,12 +130,12 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toBe("Unexpected token 'I', \"Invalid data\" is not valid JSON");
       }
 
-      localStorage.getItem = originalGetItem;
+      storage.getItem = originalGetItem;
     });
 
     it('should throw error if getting board from storage fails', async () => {
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = () => { throw new Error('Storage error') };
+      const originalGetItem = storage.getItem;
+      storage.getItem = () => { throw new Error('Storage error') };
 
       const result = await repository.findByBoardId('999');
       expect(result.success).toBe(false);
@@ -158,7 +143,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toMatch(/Storage error/);
       }
 
-      localStorage.getItem = originalGetItem;
+      storage.getItem = originalGetItem;
     })
   });
 
@@ -181,8 +166,8 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     });
 
     it('should throw error if workflow is invalid', async () => {
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = () => { return 'Invalid data' };
+      const originalGetItem = storage.getItem;
+      storage.getItem = () => { return 'Invalid data' };
 
       const result = await repository.findWorkflowByBoardId('999');
       expect(result.success).toBe(false);
@@ -190,12 +175,12 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toBe("Unexpected token 'I', \"Invalid data\" is not valid JSON");
       }
 
-      localStorage.getItem = originalGetItem;
+      storage.getItem = originalGetItem;
     });
 
     it('should throw error if getting workflow from storage fails', async () => {
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = () => { throw new Error('Storage error') };
+      const originalGetItem = storage.getItem;
+      storage.getItem = () => { throw new Error('Storage error') };
 
       const result = await repository.findWorkflowByBoardId('999');
       expect(result.success).toBe(false);
@@ -203,7 +188,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toMatch(/Storage error/);
       }
 
-      localStorage.getItem = originalGetItem;
+      storage.getItem = originalGetItem;
     })
   });
 
@@ -296,8 +281,8 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     });
 
     it('should throw error if deleting fails', async () => {
-      const originalRemoveItem = localStorage.removeItem;
-      localStorage.removeItem = () => { throw new Error('Delete error') };
+      const originalRemoveItem = storage.removeItem;
+      storage.removeItem = () => { throw new Error('Delete error') };
 
       const result = await repository.delete('999');
       expect(result.success).toBe(false);
@@ -305,7 +290,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toMatch(/Delete error/);
       }
 
-      localStorage.removeItem = originalRemoveItem;
+      storage.removeItem = originalRemoveItem;
     });
   });
 
@@ -328,8 +313,8 @@ describe('BoardConfigRepositoryLocalStorage', () => {
     });
 
     it('should throw error if checking for existing board fails', async () => {
-      const originalGetItem = localStorage.getItem;
-      localStorage.getItem = () => { throw new Error('Storage error') };
+      const originalGetItem = storage.getItem;
+      storage.getItem = () => { throw new Error('Storage error') };
 
       const result = await repository.exists('999');
       expect(result.success).toBe(false);
@@ -337,7 +322,7 @@ describe('BoardConfigRepositoryLocalStorage', () => {
         expect(result.error).toMatch(/Storage error/);
       }
 
-      localStorage.getItem = originalGetItem;
+      storage.getItem = originalGetItem;
     });
   });
 

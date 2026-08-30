@@ -1,10 +1,13 @@
 import { IBoardConfigRepository } from '../board-config.repository';
 import type { BoardConfig, BoardConfigInput, RepositoryResult } from '../board-config.types';
+import type { BoardConfigMetadata } from '../board-config.types';
 import { serializeProcessedIssues, deserializeProcessedIssues } from '@/lib/serializers/processed-issue.serializer';
 
 export class BoardConfigClientServer implements IBoardConfigRepository {
+  constructor(private readonly fetcher: typeof fetch = fetch) {}
+
   private async callApi(path: string, init?: RequestInit) {
-    const res = init ? await fetch(path, init) : await fetch(path);
+    const res = init ? await this.fetcher(path, init) : await this.fetcher(path);
     if (!res.ok) throw new Error(`API returned ${res.status}`);
     return res.json();
   }
@@ -55,7 +58,7 @@ export class BoardConfigClientServer implements IBoardConfigRepository {
     return r.success ? { success: true, data: r.data ? r.data.workflow : null } : r;
   }
 
-  async listAll(): Promise<RepositoryResult<any[]>> {
+  async listAll(): Promise<RepositoryResult<BoardConfigMetadata[]>> {
     try {
       const json = await this.callApi('/api/board-config/list');
       return json;

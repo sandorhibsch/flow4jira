@@ -1,118 +1,89 @@
-import { BoardConfigClientServer } from '../client/boardconfig-client-server';
-import {
-  serializeProcessedIssues,
-  deserializeProcessedIssues,
-} from '@/lib/serializers/processed-issue.serializer';
 import { mockBoardConfig, mockBoardConfigInput } from '@/lib/testutils/create-mocks';
+import { BoardConfigClientServer } from '../client/boardconfig-client-server';
 
-jest.mock('@/lib/serializers/processed-issue.serializer', () => ({
-  serializeProcessedIssues: jest.fn((issues: any[]) => issues),
-  deserializeProcessedIssues: jest.fn((raw: any[]) => raw),
-}));
+function httpResponse(body: unknown, status = 200): Response {
+  return { ok: status >= 200 && status < 300, status, json: async () => body } as Response;
+}
 
-const mockFetch = jest.fn();
-
-describe('BoardConfigClientServer', () => {
-
-  const apiResponse = {
-    success: true,
-    data: {
-      ...mockBoardConfig,
-      processedIssues: [
-        {
-          key: 'P-1',
-          createdAt: '2025-01-01T00:00:00.000Z',
-          updatedAt: '2025-01-02T00:00:00.000Z',
-          flowHistory: [],
-        },
-      ],
-    },
-  };
+describe('BoardConfigClientServer REST adapter', () => {
+  let fetcher: jest.MockedFunction<typeof fetch>;
+  let client: BoardConfigClientServer;
 
   beforeEach(() => {
-    (global as any).fetch = mockFetch;
-    jest.clearAllMocks();
+    fetcher = jest.fn();
+    client = new BoardConfigClientServer(fetcher);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-    delete (global as any).fetch;
+  it('serializes processed issues and posts a board config', async () => {
+    fetcher.mockResolvedValueOnce(httpResponse({ success: true, data: mockBoardConfig }));
+
+    await client.save(mockBoardConfigInput);
+
+    const [, request] = fetcher.mock.calls[0]!;
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/board-config');
+    expect(request).toMatchObject({ method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const body = JSON.parse(request?.body as string);
+    expect(body.processedIssues[0].created).toBe(mockBoardConfigInput.processedIssues?.[0]?.created.toISOString());
   });
 
-  it('save() posts to /api/board-config and deserializes returned processedIssues', async () => {
+  it('deserializes issue dates returned by the API', async () => {
+    const apiBoard = {
+      ...mockBoardConfig,
+      processedIssues: [{
+        ...mockBoardConfig.processedIssues?.[0],
+        created: '2026-08-01T00:00:00.000Z',
+        flowHistory: [{
+          stage: mockBoardConfig.workflow.stages[0],
+          jiraStatus: 'Backlog',
+          enteredAt: '2026-08-01T00:00:00.000Z',
+        }],
+      }],
+    };
+    fetcher.mockResolvedValueOnce(httpResponse({ success: true, data: apiBoard }));
 
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => apiResponse,
+    const result = await client.findByBoardId('a board/id');
+
+    expect(fetcher).toHaveBeenCalledWith('/api/board-config?boardId=a%20board%2Fid');
+    expect(result.success && result.data?.processedIssues?.[0]?.flowHistory[0]?.enteredAt).toEqual(
+      new Date('2026-08-01T00:00:00.000Z')
+    );
+  });
+
+  it('derives a workflow result from the board endpoint', async () => {
+    fetcher.mockResolvedValueOnce(httpResponse({ success: true, data: mockBoardConfig }));
+
+    await expect(client.findWorkflowByBoardId('42')).resolves.toEqual({
+      success: true,
+      data: mockBoardConfig.workflow,
     });
-
-    const repo = new BoardConfigClientServer();
-    const result = await repo.save(mockBoardConfigInput);
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      '/api/board-config',
-      expect.objectContaining({
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: expect.any(String),
-      }),
-    );
-    expect(serializeProcessedIssues).toHaveBeenCalledWith(
-      mockBoardConfigInput.processedIssues,
-    );
-    expect(deserializeProcessedIssues).toHaveBeenCalledWith(
-      apiResponse.data.processedIssues,
-    );
-    expect(result).toEqual(apiResponse);
-  });
-
-  it('findByBoardId() requests the board config from the API and deserializes processedIssues', async () => {
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: async () => apiResponse,
-    });
-
-    const repo = new BoardConfigClientServer();
-    const result = await repo.findByBoardId('123');
-
-    expect(mockFetch).toHaveBeenCalledWith(
-      '/api/board-config?boardId=123'
-    );
-    expect(deserializeProcessedIssues).toHaveBeenCalledWith(
-      apiResponse.data.processedIssues,
-    );
-    expect(result).toEqual(apiResponse);
-  });
-
-  it('returns the API failure when saving fails instead of persisting locally', async () => {
-    mockFetch.mockRejectedValue(new Error('network error'));
-
-    const repo = new BoardConfigClientServer();
-    const result = await repo.save(mockBoardConfigInput);
-
-    expect(result).toEqual({ success: false, error: 'network error' });
   });
 
   it.each([
-    ['listAll', [], '/api/board-config/list'],
-    ['delete', ['a board/id'], '/api/board-config?boardId=a%20board%2Fid'],
-    ['exists', ['a board/id'], '/api/board-config/exists?boardId=a%20board%2Fid'],
-  ] as const)('%s() returns an API error when the request fails', async (method, args, path) => {
-    mockFetch.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
+    ['listAll', [], '/api/board-config/list', undefined],
+    ['delete', ['a board/id'], '/api/board-config?boardId=a%20board%2Fid', { method: 'DELETE' }],
+    ['exists', ['a board/id'], '/api/board-config/exists?boardId=a%20board%2Fid', undefined],
+  ] as const)('maps %s to its REST resource', async (method, args, path, request) => {
+    fetcher.mockResolvedValueOnce(httpResponse({ success: true, data: [] }));
 
-    const repo = new BoardConfigClientServer();
-    const result = await (repo[method] as (...methodArgs: typeof args) => Promise<unknown>)(...args);
+    await (client[method] as (...methodArgs: typeof args) => Promise<unknown>)(...args);
 
-    expect(mockFetch.mock.calls[0][0]).toBe(path);
-    expect(result).toEqual({ success: false, error: 'API returned 503' });
+    if (request) expect(fetcher).toHaveBeenCalledWith(path, request);
+    else expect(fetcher).toHaveBeenCalledWith(path);
   });
 
-  it('findWorkflowByBoardId() returns only the workflow from the API result', async () => {
-    mockFetch.mockResolvedValue({ ok: true, json: async () => apiResponse });
+  it('returns application errors from a successful HTTP response', async () => {
+    fetcher.mockResolvedValueOnce(httpResponse({ success: false, error: 'invalid board' }));
 
-    const repo = new BoardConfigClientServer();
-    const result = await repo.findWorkflowByBoardId('123');
+    await expect(client.findByBoardId('42')).resolves.toEqual({ success: false, error: 'invalid board' });
+  });
 
-    expect(result).toEqual({ success: true, data: apiResponse.data.workflow });
+  it.each([
+    [httpResponse({}, 503), 'API returned 503'],
+    [new Error('network unavailable'), 'network unavailable'],
+  ])('translates transport failure %#', async (failure, error) => {
+    if (failure instanceof Error) fetcher.mockRejectedValueOnce(failure);
+    else fetcher.mockResolvedValueOnce(failure);
+
+    await expect(client.listAll()).resolves.toEqual({ success: false, error });
   });
 });
