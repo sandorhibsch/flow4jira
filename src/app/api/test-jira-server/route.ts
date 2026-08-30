@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     const { url, auth } = await request.json();
 
-    if (!url || !auth) {
+    if (typeof url !== 'string' || !url.trim() || typeof auth !== 'string' || !auth.trim()) {
       return NextResponse.json(
         { success: false, error: 'URL and auth are required' },
         { status: 400 }
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `Jira Server returned ${response.status}: ${response.statusText}`,
         details: errorText
-      });
+      }, { status: 502 });
     }
 
     const data = await response.json();

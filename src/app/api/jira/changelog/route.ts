@@ -6,9 +6,9 @@ export async function POST(request: NextRequest) {
   try {
     const { issueKeys } = await request.json();
 
-    if (!Array.isArray(issueKeys)) {
+    if (!Array.isArray(issueKeys) || issueKeys.some(key => typeof key !== 'string' || !key.trim())) {
       return NextResponse.json(
-        { error: 'issueKeys must be an array' },
+        { error: 'issueKeys must be an array of non-empty strings' },
         { status: 400 }
       );
     }
