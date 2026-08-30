@@ -4,7 +4,11 @@ import type { BoardConfigMetadata } from '../board-config.types';
 import { serializeProcessedIssues, deserializeProcessedIssues } from '@/lib/serializers/processed-issue.serializer';
 
 export class BoardConfigClientServer implements IBoardConfigRepository {
-  constructor(private readonly fetcher: typeof fetch = fetch) {}
+  private readonly fetcher: typeof fetch;
+
+  constructor(fetcher?: typeof fetch) {
+    this.fetcher = fetcher ?? globalThis.fetch.bind(globalThis);
+  }
 
   private async callApi(path: string, init?: RequestInit) {
     const res = init ? await this.fetcher(path, init) : await this.fetcher(path);
