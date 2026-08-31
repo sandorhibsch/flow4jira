@@ -1,11 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { WorkflowDefinition, WorkflowStage, StageType } from '@/lib/jira/workflow-config';
 import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
 import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
+import {
+  WORKFLOW_STAGE_COLORS,
+  appendWorkflowStage,
+  assignStatusToStage,
+  buildWorkflowDefinition,
+  createInitialWorkflowStage,
+  removeStatusFromStage as removeStatusFromWorkflowStage,
+  removeWorkflowStage,
+  updateWorkflowStage,
+  validateWorkflowDraft,
+} from '@/lib/jira/workflow-editor';
 
 interface BoardInfo {
   id: string;
@@ -29,23 +40,12 @@ interface FetchBoardResult {
   error?: string;
 }
 
-const STAGE_COLORS = [
-  '#bab0ac', // gray
-  '#4e79a7', // blue
-  '#9c755f', // brown
-  '#f28e2b', // orange
-  '#edc948', // yellow
-  '#76b7b2', // teal
-  '#e15759', // red
-  '#59a14f', // green
-];
-
 export default function ConfigurePage() {
   const params = useParams();
   const router = useRouter();
   const boardIdFromUrl = params?.boardId as string | undefined;
 
-  const boardConfigClient = getBoardConfigClient();
+  const boardConfigClient = useMemo(() => getBoardConfigClient(), []);
 
   const [boardId, setBoardId] = useState(boardIdFromUrl ?? '');
   const [loading, setLoading] = useState(false);
@@ -54,15 +54,7 @@ export default function ConfigurePage() {
   // Workflow state
   const [workflowName, setWorkflowName] = useState('');
   const [periodDays, setPeriodDays] = useState<number>(60);
-  const [stages, setStages] = useState<WorkflowStage[]>([
-    {
-      key: 'backlog',
-      name: 'Backlog',
-      jiraStatuses: [],
-      stageType: 'new',
-      color: STAGE_COLORS[0],
-    },
-  ]);
+  const [stages, setStages] = useState<WorkflowStage[]>(() => [createInitialWorkflowStage()]);
 
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -124,7 +116,7 @@ export default function ConfigurePage() {
     } finally {
       setLoading(false);
     }
-  }, [boardId]);
+  }, [boardConfigClient, boardId]);
 
   // Auto-load board if boardId is in URL
   useEffect(() => {
@@ -135,86 +127,31 @@ export default function ConfigurePage() {
   }, [boardIdFromUrl, hasInitialized, fetchBoardInfo]);
 
   const addStage = () => {
-    const stageNumber = stages.length + 1;
-    const newStage: WorkflowStage = {
-      key: `stage${stageNumber}`,
-      name: `Stage ${stageNumber}`,
-      jiraStatuses: [],
-      stageType: 'in-progress',
-      color: STAGE_COLORS[stageNumber % STAGE_COLORS.length],
-    };
-    setStages([...stages, newStage]);
+    setStages(currentStages => appendWorkflowStage(currentStages));
   };
 
   const removeStage = (index: number) => {
-    if (stages.length <= 1) {
-      alert('Must have at least one stage');
-      return;
-    }
-    setStages(stages.filter((_, i) => i !== index));
+    const result = removeWorkflowStage(stages, index);
+    if (!result.success) return alert(result.error);
+    setStages(result.stages);
   };
 
   const updateStage = (index: number, updates: Partial<WorkflowStage>) => {
-    const newStages: WorkflowStage[] = [...stages];
-    const currentStage = newStages[index];
-    if (currentStage) {
-      newStages[index] = { ...currentStage, ...updates };
-      setStages(newStages);
-    }
+    setStages(currentStages => updateWorkflowStage(currentStages, index, updates));
   };
 
   const addStatusToStage = (stageIndex: number, statusName: string) => {
-    if (!statusName.trim()) return;
-
-    const stage = stages[stageIndex];
-    if (!stage || stage.jiraStatuses.includes(statusName)) return; // Already exists
-
-    updateStage(stageIndex, {
-      jiraStatuses: [...stage.jiraStatuses, statusName]
-    });
+    setStages(currentStages => assignStatusToStage(currentStages, stageIndex, statusName));
   };
 
   const removeStatusFromStage = (stageIndex: number, statusName: string) => {
-    const stage = stages[stageIndex];
-    if (!stage) return;
-
-    updateStage(stageIndex, {
-      jiraStatuses: stage.jiraStatuses.filter(s => s !== statusName)
-    });
+    setStages(currentStages => removeStatusFromWorkflowStage(currentStages, stageIndex, statusName));
   };
 
   const validateWorkflow = (): string | null => {
-    if (!workflowName.trim()) {
-      return 'Workflow name is required';
-    }
-
-    if (!periodDays || periodDays <= 0) {
-      return 'Default period is required';
-    }
-
-    if (stages.length === 0) {
-      return 'At least one stage is required';
-    }
-
-    // Check that stages have statuses except with Scrum board
-    const stagesWithoutStatuses = stages.filter(s => s.jiraStatuses.length === 0);
-    if (stagesWithoutStatuses.length > 0 && boardInfo?.type !== 'scrum') {
-      return `Some stages have no statuses: ${stagesWithoutStatuses.map(s => s.name).join(', ')}`;
-    }
-
-    // Check for cycle start
-    const hasCycleStart = stages.some(s => s.isCycleStart);
-    if (!hasCycleStart) {
-      return 'At least one stage must be marked as cycle start';
-    }
-
-    // Check for cycle end
-    const hasCycleEnd = stages.some(s => s.isCycleEnd);
-    if (!hasCycleEnd) {
-      return 'At least one stage must be marked as cycle end';
-    }
-
-    return null;
+    return validateWorkflowDraft({
+      name: workflowName, periodDays, stages, boardType: boardInfo?.type,
+    });
   };
 
   const saveWorkflow = async () => {
@@ -226,11 +163,7 @@ export default function ConfigurePage() {
 
     setLoading(true);
 
-    const workflow: WorkflowDefinition = {
-      key: `board-${boardId}`,
-      name: workflowName,
-      stages: stages,
-    };
+    const workflow = buildWorkflowDefinition(boardId, workflowName, stages);
 
     // Save via API (async)
     const result = await boardConfigClient.save({
@@ -427,7 +360,7 @@ export default function ConfigurePage() {
                         </label>
                         <input
                           type="color"
-                          value={stage.color ?? STAGE_COLORS[0]}
+                          value={stage.color ?? WORKFLOW_STAGE_COLORS[0]}
                           onChange={(e) => updateStage(index, { color: e.target.value })}
                           className="w-full h-10 border border-gray-300 rounded-md"
                         />
