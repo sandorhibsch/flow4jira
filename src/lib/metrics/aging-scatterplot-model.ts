@@ -1,6 +1,6 @@
-import { DefaultColors, IssueTypeColors } from '@/components/ui/color-palettes';
 import type { ProcessedFlowIssue } from '../flow/flow-types';
 import type { WorkflowDefinition } from '../jira/workflow-config';
+import { buildIssueTypeColorMap } from './issue-type-color-model';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -58,20 +58,4 @@ export function calculateCycleAge(issue: ProcessedFlowIssue, now: Date): number 
   const cycleStart = issue.flowHistory.find(entry => entry.isActualCycleStart)?.enteredAt;
   if (!cycleStart) return Number.NaN;
   return Math.ceil((now.getTime() - new Date(cycleStart).getTime()) / DAY_MS);
-}
-
-export function buildIssueTypeColorMap(issueTypes: string[]): Map<string, string> {
-  const colorMap = new Map<string, string>();
-  for (const issueType of issueTypes) {
-    const predefinedColor = IssueTypeColors[issueType];
-    if (predefinedColor) {
-      colorMap.set(issueType, predefinedColor);
-      continue;
-    }
-    const usedColors = new Set(colorMap.values());
-    const availableColor = DefaultColors.find(color => !usedColors.has(color))
-      ?? DefaultColors[colorMap.size % DefaultColors.length]!;
-    colorMap.set(issueType, availableColor);
-  }
-  return colorMap;
 }

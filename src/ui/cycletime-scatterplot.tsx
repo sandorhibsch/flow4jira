@@ -13,21 +13,10 @@ import {
   ReferenceLine,
   Cell,
 } from "recharts";
-import { IssueTypeColors, DefaultColors } from "@/components/ui/color-palettes";
-import { calculatePercentiles } from '@/lib/metrics/percentiles';
-
-type ScatterPlotPoint = {
-  key: string;
-  x: number; // timestamp in ms
-  y: number; // cycle time in days
-  summary?: string;
-  doneDate?: Date;
-  url?: string;
-  issueType: string;
-};
+import { buildCycleTimeScatterplotModel, type CycleTimePoint } from '@/lib/metrics/cycle-time-scatterplot-model';
 
 interface TooltipPayload {
-  payload: ScatterPlotPoint;
+  payload: CycleTimePoint;
 }
 
 interface CustomTooltipProps {
@@ -35,47 +24,11 @@ interface CustomTooltipProps {
   payload?: TooltipPayload[];
 }
 
-function getIssueTypeColor(issueType: string, colorMap: Map<string, string>): string {
-  if (colorMap.has(issueType)) {
-    return colorMap.get(issueType)!;
-  }
-  // Fallback to predefined colors or assign new one
-  if (IssueTypeColors[issueType]) {
-    colorMap.set(issueType, IssueTypeColors[issueType]);
-    return IssueTypeColors[issueType];
-  }
-  // Assign next available color
-  const usedColors = new Set(colorMap.values());
-  const availableColor = DefaultColors.find(c => !usedColors.has(c)) || DefaultColors[colorMap.size % DefaultColors.length];
-  colorMap.set(issueType, availableColor!);
-  return availableColor!;
-}
-
-function prepareData(issues: ProcessedFlowIssue[], dateMax: number, period: number): ScatterPlotPoint[] {
-  const dateMin = dateMax - (period * 24 * 60 * 60 * 1000);
-  return issues
-    .filter(i => i.done && new Date(i.done).getTime() >= dateMin)
-    .map((i) => {
-      const doneTimestamp = i.done ? new Date(i.done).getTime() : new Date().getTime();
-      const y = i.cycleTimeDays;
-      return {
-        key: i.key,
-        x: doneTimestamp ?? NaN,
-        y: y ?? NaN,
-        summary: i.summary,
-        doneDate: new Date(doneTimestamp),
-        url: i.url,
-        issueType: i.issueType,
-      };
-    })
-    .sort((a, b) => a.x - b.x);
-}
-
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   const firstPayload = payload[0];
   if (!firstPayload) return null;
-  const p = firstPayload.payload as ScatterPlotPoint;
+  const p = firstPayload.payload;
   return (
     <div className="bg-white p-2 rounded shadow border text-sm">
       <div><strong>{p.key}</strong></div>
@@ -124,23 +77,14 @@ export default function CycleTimeScatterplot({
     setPeriod(periodDays);
   }, [periodDays]);
 
-  const dateMax = new Date().setHours(23, 59, 59, 999);
-  const data = useMemo(() => prepareData(issues, dateMax, period), [issues, dateMax, period]);
-  const percentiles = useMemo(() => calculatePercentiles(data.map((point) => point.y)), [data]);
-
-  // Build color map for issue types
-  const { colorMap, issueTypes } = useMemo(() => {
-    const map = new Map<string, string>();
-    const types = new Set<string>();
-    data.forEach(d => {
-      types.add(d.issueType);
-      getIssueTypeColor(d.issueType, map);
-    });
-    return { colorMap: map, issueTypes: Array.from(types).sort() };
-  }, [data]);
+  const model = useMemo(
+    () => buildCycleTimeScatterplotModel(issues, period, new Date()),
+    [issues, period]
+  );
+  const { points: data, percentiles, certaintyDays, colorMap, issueTypes, dateMin, dateMax } = model;
 
   // Handle click on scatter point
-  const handlePointClick = useCallback((point: ScatterPlotPoint) => {
+  const handlePointClick = useCallback((point: CycleTimePoint) => {
     if (point.url) {
       window.open(point.url, '_blank', 'noopener,noreferrer');
     }
@@ -159,21 +103,26 @@ export default function CycleTimeScatterplot({
         onChange={e => setPeriod(Number(e.target.value))}
         style={{ width: '100%', marginBottom: 16, overflow: "hidden", backgroundColor: "#82ca9d" }}
       />
+      {data.length === 0 && (
+        <div role="status" className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-600">
+          No completed issues are available for the selected period.
+        </div>
+      )}
       <div className="flex flex-row">
         <div className="gap-4 mb-6 mt-6">
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">50% certainty</div>
-            <div className="text-2xl font-bold text-orange-500">{Math.ceil(percentiles[50]!)}d</div>
+            <div className="text-2xl font-bold text-orange-500">{certaintyDays[50] === null ? '—' : `${certaintyDays[50]}d`}</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">85% certainty</div>
-            <div className="text-2xl font-bold text-green-500">{Math.ceil(percentiles[85]!)}d</div>
+            <div className="text-2xl font-bold text-green-500">{certaintyDays[85] === null ? '—' : `${certaintyDays[85]}d`}</div>
           </div>
 
           <div className="bg-white p-4 mb-4 rounded-lg shadow max-h-24 gap-4">
             <div className="text-sm text-grey-800">95% certainty</div>
-            <div className="text-2xl font-bold text-blue-500">{Math.ceil(percentiles[95]!)}d</div>
+            <div className="text-2xl font-bold text-blue-500">{certaintyDays[95] === null ? '—' : `${certaintyDays[95]}d`}</div>
           </div>
 
         </div>
@@ -186,7 +135,7 @@ export default function CycleTimeScatterplot({
                 name="Completed"
                 type="number"
                 domain={[
-                  dateMax - (period * 24 * 60 * 60 * 1000),
+                  dateMin,
                   dateMax]
                 }
                 tickFormatter={(v) => new Date(v).toLocaleDateString()}
@@ -230,7 +179,7 @@ export default function CycleTimeScatterplot({
                 data={data}
                 fill="#3182CE"
                 shape="circle"
-                onClick={(data) => handlePointClick(data as unknown as ScatterPlotPoint)}
+                onClick={(data) => handlePointClick(data as unknown as CycleTimePoint)}
                 cursor="pointer"
               >
                 {data.map((entry, index) => (
