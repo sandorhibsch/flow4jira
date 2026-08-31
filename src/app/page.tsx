@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ClientConfigWrapper } from './ClientConfigWrapper';
 import { BoardConfigMetadata } from '@/lib/repositories/board-config.types';
@@ -9,6 +9,7 @@ import { PromptDialog, ConfirmDialog } from '@/components/ui/dialog';
 
 import { getBoardConfigClient, isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 import { BoardConfigImportExportService } from '@/lib/services/boardconfig-importexport-service';
+import { downloadJson, readJsonFile } from '@/lib/browser/json-file';
 
 export default function HomePage() {
   const router = useRouter();
@@ -22,12 +23,13 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const fileInputRef = useCallback((element: HTMLInputElement | null) => {
-    // We'll use this to trigger the file input
-  }, []);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const boardConfigClient = getBoardConfigClient();
-  const importExportService = new BoardConfigImportExportService(boardConfigClient);
+  const boardConfigClient = useMemo(() => getBoardConfigClient(), []);
+  const importExportService = useMemo(
+    () => new BoardConfigImportExportService(boardConfigClient),
+    [boardConfigClient]
+  );
   const loadConfigs = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -40,7 +42,7 @@ export default function HomePage() {
     }
 
     setLoading(false);
-  }, []);
+  }, [boardConfigClient]);
 
   useEffect(() => {
     loadConfigs();
@@ -88,14 +90,7 @@ export default function HomePage() {
   const handleExport = async (boardId: string, boardName: string) => {
     const result = await importExportService.exportConfig(boardId);
     if (result.success) {
-      const dataStr = JSON.stringify(result.data, null, 2);
-      const blob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${boardName}-config.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      downloadJson(result.data, `${boardName}-config.json`);
     } else {
       alert('Failed to export configuration: ' + result.error);
     }
@@ -106,8 +101,7 @@ export default function HomePage() {
     if (!file) return;
 
     try {
-      const fileContent = await file.text();
-      const importData = JSON.parse(fileContent);
+      const importData = await readJsonFile(file);
 
       const result = await importExportService.importConfig(importData);
       if (result.success) {
@@ -132,8 +126,7 @@ export default function HomePage() {
   };
 
   const triggerFileInput = () => {
-    const input = document.getElementById('import-file-input') as HTMLInputElement;
-    input?.click();
+    fileInputRef.current?.click();
   };
 
   if (loading) {
