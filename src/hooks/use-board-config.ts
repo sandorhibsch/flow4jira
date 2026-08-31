@@ -1,10 +1,9 @@
 // src/hooks/use-board-config.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
 import type { WorkflowDefinition } from '@/lib/jira/workflow-config';
 import type { BoardConfig, BoardConfigMetadata } from '@/lib/repositories/board-config.types';
-import { BoardConfigLocalRepository } from '@/lib/repositories/board-config.local.repository';
 import { getBoardConfigClient } from '@/lib/repositories/client/board-config-client-factory';
 
 export interface UseBoardConfigState {
@@ -51,7 +50,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
   const [error, setError] = useState<string | null>(null);
   const [config, setConfig] = useState<BoardConfig | null>(null);
 
-  const boardConfigClient = getBoardConfigClient();
+  const boardConfigClient = useMemo(() => getBoardConfigClient(), []);
 
   // Load configuration on mount or when boardId changes
   const loadConfig = useCallback(async () => {
@@ -63,7 +62,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
     setIsLoading(true);
     setError(null);
 
-    const result = await boardConfigClient.findByBoardId(boardId);//await boardConfigClient.get(boardId);
+    const result = await boardConfigClient.findByBoardId(boardId);
 
     if (result.success) {
       setConfig(result.data);
@@ -76,7 +75,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
     }
 
     setIsLoading(false);
-  }, [boardId]);
+  }, [boardConfigClient, boardId]);
 
   // Initial load
   useEffect(() => {
@@ -119,7 +118,7 @@ export function useBoardConfig(boardId: string | undefined): UseBoardConfigResul
         return false;
       }
     },
-    [boardId]
+    [boardConfigClient, boardId]
   );
 
   const reload = useCallback(async () => {

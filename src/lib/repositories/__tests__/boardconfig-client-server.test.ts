@@ -14,6 +14,24 @@ describe('BoardConfigClientServer REST adapter', () => {
     client = new BoardConfigClientServer(fetcher);
   });
 
+  it('preserves the browser receiver when using the default fetch adapter', async () => {
+    const originalFetch = globalThis.fetch;
+    const receiverAwareFetch = jest.fn(function (this: unknown) {
+      if (this !== globalThis) throw new TypeError('Illegal invocation');
+      return Promise.resolve(httpResponse({ success: true, data: [] }));
+    });
+    globalThis.fetch = receiverAwareFetch as typeof fetch;
+
+    try {
+      const browserClient = new BoardConfigClientServer();
+
+      await expect(browserClient.listAll()).resolves.toEqual({ success: true, data: [] });
+      expect(receiverAwareFetch).toHaveBeenCalledWith('/api/board-config/list');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('serializes processed issues and posts a board config', async () => {
     fetcher.mockResolvedValueOnce(httpResponse({ success: true, data: mockBoardConfig }));
 
