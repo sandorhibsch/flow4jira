@@ -12,22 +12,11 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { IssueTypeColors, DefaultColors } from "@/components/ui/color-palettes";
-
-import type { WorkflowDefinition, WorkflowStage } from "@/lib/jira/workflow-config";
-
-type Point = {
-  key: string;
-  x: string; // stage name
-  y: number; // age in days
-  xKey: string;
-  summary?: string;
-  url?: string;
-  issueType: string;
-};
+import type { WorkflowDefinition } from "@/lib/jira/workflow-config";
+import { buildAgingScatterplotModel, type AgingPoint } from '@/lib/metrics/aging-scatterplot-model';
 
 interface TooltipPayload {
-  payload: Point;
+  payload: AgingPoint;
 }
 
 interface CustomTooltipProps {
@@ -35,27 +24,11 @@ interface CustomTooltipProps {
   payload?: TooltipPayload[];
 }
 
-function getIssueTypeColor(issueType: string, colorMap: Map<string, string>): string {
-  if (colorMap.has(issueType)) {
-    return colorMap.get(issueType)!;
-  }
-  // Fallback to predefined colors or assign new one
-  if (IssueTypeColors[issueType]) {
-    colorMap.set(issueType, IssueTypeColors[issueType]);
-    return IssueTypeColors[issueType];
-  }
-  // Assign next available color
-  const usedColors = new Set(colorMap.values());
-  const availableColor = DefaultColors.find(c => !usedColors.has(c)) || DefaultColors[colorMap.size % DefaultColors.length];
-  colorMap.set(issueType, availableColor!);
-  return availableColor!;
-}
-
 const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
   const firstPayload = payload[0];
   if (!firstPayload) return null;
-  const p = firstPayload.payload as Point;
+  const p = firstPayload.payload;
   return (
     <div className="bg-white p-2 rounded shadow border text-sm">
       <div><strong>{p.key}</strong></div>
@@ -89,64 +62,18 @@ function IssueTypeLegend({ issueTypes, colorMap }: { issueTypes: string[], color
 }
 
 export default function AgingScatterplot({ issues, workflow }: { issues: ProcessedFlowIssue[], workflow: WorkflowDefinition }) {
-  const workflowStages: WorkflowStage[] = workflow.stages;
+  const workflowStages = workflow.stages;
 
   // Switch: show total age (default) or only in-process (cycle) age
   const [showCycleAge, setShowCycleAge] = useState(false);
 
-  const orderMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    workflowStages.forEach((w, idx) => (map[w.key] = idx));
-    return map;
-  }, [workflowStages]);
-
-  function getFirstCycleStartDate(issue: ProcessedFlowIssue): Date | undefined {
-    const entry = issue.flowHistory.find(e => e.isActualCycleStart);
-    return entry && entry.enteredAt ? new Date(entry.enteredAt) : undefined;
-  }
-
-  const data = useMemo(() => {
-    return issues
-      .filter(i => i.currentStage.stageType !== 'done')
-      .filter(i => {
-        if (showCycleAge) return i.currentStage.stageType === 'in-progress';
-        return true;
-      })
-      .map((i) => {
-        let y: number;
-        if (showCycleAge) {
-          const start = getFirstCycleStartDate(i);
-          y = start ? Math.ceil((Date.now() - new Date(start).getTime()) / (24 * 60 * 60 * 1000)) : NaN;
-        } else {
-          y = i.ageDays ?? NaN;
-        }
-        return {
-          key: i.key,
-          x: i.currentStage.name,
-          y,
-          xKey: i.currentStage.key,
-          summary: i.summary,
-          url: i.url,
-          issueType: i.issueType,
-        };
-      })
-      .filter((d) => orderMap[d.xKey] !== undefined)
-      .sort((a, b) => (orderMap[a.xKey] ?? 0) - (orderMap[b.xKey] ?? 0));
-  }, [issues, orderMap, showCycleAge]);
-
-  // Build color map for issue types
-  const { colorMap, issueTypes } = useMemo(() => {
-    const map = new Map<string, string>();
-    const types = new Set<string>();
-    data.forEach(d => {
-      types.add(d.issueType);
-      getIssueTypeColor(d.issueType, map);
-    });
-    return { colorMap: map, issueTypes: Array.from(types).sort() };
-  }, [data]);
+  const { points: data, colorMap, issueTypes } = useMemo(
+    () => buildAgingScatterplotModel(issues, workflow, showCycleAge ? 'cycle' : 'total', new Date()),
+    [issues, workflow, showCycleAge]
+  );
 
   // Handle click on scatter point
-  const handlePointClick = useCallback((point: Point) => {
+  const handlePointClick = useCallback((point: AgingPoint) => {
     if (point.url) {
       window.open(point.url, '_blank', 'noopener,noreferrer');
     }
@@ -170,6 +97,11 @@ export default function AgingScatterplot({ issues, workflow }: { issues: Process
           In-Process Age (cycle start → now)
         </button>
       </div>
+      {data.length === 0 && (
+        <div role="status" className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-600">
+          No active issues are available for this age view.
+        </div>
+      )}
       <div style={{ height: 420 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
@@ -182,7 +114,7 @@ export default function AgingScatterplot({ issues, workflow }: { issues: Process
               type="category"
               name="Stage"
               allowDuplicatedCategory={false}
-              domain={workflowStages.map(s => s.key)}
+              domain={workflowStages.map(s => s.name)}
               tick={{ fontSize: 12 }}
             />
             <YAxis
@@ -199,7 +131,7 @@ export default function AgingScatterplot({ issues, workflow }: { issues: Process
               data={data}
               fill="#6366F1"
               shape="circle"
-              onClick={(data) => handlePointClick(data as unknown as Point)}
+              onClick={(data) => handlePointClick(data as unknown as AgingPoint)}
               cursor="pointer"
             >
               {data.map((entry, index) => (
