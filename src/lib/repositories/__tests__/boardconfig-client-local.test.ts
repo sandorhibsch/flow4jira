@@ -1,14 +1,11 @@
-import { success } from "zod/v4";
-import { BoardConfigLocalRepository } from "../board-config.local.repository";
-import { BoardConfig, RepositoryResult, BoardConfigInput } from "../board-config.types";
+import type { BoardConfig, RepositoryResult, BoardConfigInput, BoardConfigMetadata } from "../board-config.types";
 import { BoardConfigClientLocal } from "../client/boardconfig-client-local";
-import { createBoardConfig, createBoardConfigInput, mockBoardConfig, mockBoardConfigInput, TEST_WORKFLOW } from "@/lib/testutils/create-mocks";
-import { BoardConfigMetadata } from "@/lib/services/workflow-config-service";
+import { createBoardConfig, createBoardConfigInput, TEST_WORKFLOW } from "@/lib/testutils/create-mocks";
 
 describe('BoardConfigClientLocal', () => {
 
   const boardConfigWithIssues = createBoardConfig();
-  const mockBoardConfigMetadata: BoardConfigMetadata = { boardId: '123', boardName: 'Test Board', boardType: 'scrum', periodDays: '30', lastFetched: new Date().toISOString() };
+  const mockBoardConfigMetadata: BoardConfigMetadata = { boardId: '123', boardName: 'Test Board', boardType: 'scrum', periodDays: 30, updatedAt: new Date() };
   const mockRepositoryResponse: RepositoryResult<BoardConfig> = { success: true, data: boardConfigWithIssues };
 
   const mockLocalRepository = {
@@ -162,9 +159,9 @@ describe('BoardConfigClientLocal', () => {
 
     it('should return all board metadata', async () => {
 
-      const boardConfig1: BoardConfigMetadata = { boardId: '1', boardName: 'Board 1', boardType: 'scrum', periodDays: '30', lastFetched: new Date().toISOString() };
-      const boardConfig2: BoardConfigMetadata = { boardId: '2', boardName: 'Board 1', boardType: 'scrum', periodDays: '30', lastFetched: new Date().toISOString() };
-      const boardConfig3: BoardConfigMetadata = { boardId: '3', boardName: 'Board 1', boardType: 'scrum', periodDays: '30', lastFetched: new Date().toISOString() };
+      const boardConfig1: BoardConfigMetadata = { boardId: '1', boardName: 'Board 1', boardType: 'scrum', periodDays: 30, updatedAt: new Date() };
+      const boardConfig2: BoardConfigMetadata = { boardId: '2', boardName: 'Board 2', boardType: 'scrum', periodDays: 30, updatedAt: new Date() };
+      const boardConfig3: BoardConfigMetadata = { boardId: '3', boardName: 'Board 3', boardType: 'scrum', periodDays: 30, updatedAt: new Date() };
       mockLocalRepository.listAll.mockResolvedValueOnce({ success: true, data: [boardConfig1, boardConfig2, boardConfig3] });
 
       const result = await boardConfigClient.listAll();
