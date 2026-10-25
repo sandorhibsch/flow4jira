@@ -658,6 +658,14 @@ describe('CFD builder - average WIP', () => {
 });
 
 describe('CFG builder - average age', () => {
+  beforeEach(() => {
+    jest.useFakeTimers().setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('should return 0 age for no data', () => {
     const issues: ProcessedFlowIssue[] = [];
 
@@ -715,7 +723,6 @@ describe('CFG builder - average age', () => {
   });
 
   it('should exclude issues done before period in age calculation', () => {
-    jest.useFakeTimers().setSystemTime(new Date('2025-01-10T00:00:00.000Z'));
     const today = Date.now();
     const issueOpen = createMockProcessedIssue({
       done: undefined,
@@ -729,7 +736,6 @@ describe('CFG builder - average age', () => {
     const result = calculateAverageAge([issueOpen, issueDone], 2);
 
     expect(result).toBe(2);
-    jest.useRealTimers();
   });
 
 });
