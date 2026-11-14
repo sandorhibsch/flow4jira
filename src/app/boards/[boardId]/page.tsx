@@ -1,126 +1,39 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-import type { ProcessedFlowIssue } from '@/lib/flow/flow-types';
-import { processJiraIssue } from '@/lib/flow/processor';
-import type { JiraIssue } from '@/lib/jira/jira-types';
-import { useBoardConfig } from '@/hooks/use-board-config';
+import { useBoardMetrics } from '@/hooks/use-board-metrics';
 
 import CollapsibleSection from '@/ui/collapsible-section';
+import { ChartErrorBoundary } from '@/components/ui/error-boundary';
+
 import CycleTimeScatterplot from '@/ui/cycletime-scatterplot';
 import AgingScatterplot from '@/ui/aging-scatterplot';
 import CumulativeFlowDiagram from '@/ui/cumulative-flow-diagram';
+import ThroughputHistogram from '@/ui/throughput-histogram';
 import { MonteCarloHowManyChart } from '@/ui/montecarlo-howmany';
 import { MonteCarloWhenChart } from '@/ui/montecarlo-when';
 import FlowIssueTable from '@/ui/flow-issue-table';
-import { ConfirmDialog } from '@/components/ui/dialog';
-import { ChartErrorBoundary } from '@/components/ui/error-boundary';
-import ThroughputHistogram from '@/ui/throughput-histogram';
-import { getJiraConfigFromLocalStorage } from '@/lib/repositories/jira-config.local.repository';
-import { isServerPersistenceMode } from '@/lib/repositories/client/board-config-client-factory';
 
-interface IssueListResult {
-  success: boolean;
-  data?: {
-    issues: JiraIssue[];
-  };
-  error?: string;
-}
 
 export default function BoardMetricsPage() {
   const params = useParams();
   const router = useRouter();
   const boardId = params?.boardId as string;
 
-  // Use the async hook for board configuration
-  const {
-    isLoading: configLoading,
-    isSaving,
-    error: configError,
-    metadata,
-    workflow,
-    processedIssues,
-    save: saveConfig,
-  } = useBoardConfig(boardId);
+  const { board, pending, error, refresh } = useBoardMetrics(boardId);
+  const metadata = board?.metadata;
+  const workflow = board?.workflow;
+  const processedIssues = board?.processedIssues ?? [];
 
-  const [periodDays, setPeriodDays] = useState<number | null>(null);
-  const [fetchLoading, setFetchLoading] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // Dialog state
-  const [confirmConfigOpen, setConfirmConfigOpen] = useState(false);
-
-  // Sync periodDays when metadata changes (proper useEffect instead of render-time setState)  
-  useEffect(() => {
-    if (metadata?.periodDays && periodDays === null) {
-      setPeriodDays(metadata.periodDays);
-    }
-  }, [metadata?.periodDays, periodDays]);
-
-  const processIssuesWithWorkflow = useCallback(async () => {
-    if (!boardId) {
-      setFetchError('Board ID is required');
-      return;
-    }
-
-    if (!workflow || !metadata || periodDays === null) {
-      setFetchError('Board configuration not loaded');
-      return;
-    }
-
-    setFetchLoading(true);
-    setFetchError(null);
-
-    try {
-      const jiraConfig = isServerPersistenceMode() ? undefined : getJiraConfigFromLocalStorage();
-      const response = await fetch('/api/flow/board', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          boardId: boardId,
-          periodDays: periodDays,
-          config: jiraConfig
-        })
-      });
-
-      const issueListResult: IssueListResult = await response.json();
-
-      if (issueListResult.success && issueListResult.data) {
-        // Process issues with the workflow
-        const newProcessedIssues: ProcessedFlowIssue[] = issueListResult.data.issues.map(
-          (issue) => {
-            const changelog = issue.changelog;
-            return processJiraIssue(workflow, issue, changelog);
-          }
-        );
-
-        // Save via API (async)
-        const saved = await saveConfig(
-          periodDays,
-          workflow,
-          metadata.boardName,
-          metadata.boardType,
-          newProcessedIssues
-        );
-
-        if (!saved) {
-          setFetchError('Failed to save processed issues');
-        }
-      } else {
-        setFetchError(issueListResult.error ?? 'Failed to fetch issues');
-      }
-    } catch (error) {
-      setFetchError('Failed to fetch flow metrics');
-      console.error('Failed to fetch flow metrics:', error);
-    } finally {
-      setFetchLoading(false);
-    }
-  }, [boardId, workflow, metadata, periodDays, saveConfig]);
+  const [draftPeriod, setDraftPeriod] = useState<{ boardId: string; value: number | null } | null>(
+    null
+  );
+  const periodDays =
+    draftPeriod?.boardId === boardId ? draftPeriod.value : (metadata?.periodDays ?? null);
+  const configLoading = pending === 'load';
 
   // Handle redirect if no config found
   const handleConfigureRedirect = () => {
@@ -139,7 +52,7 @@ export default function BoardMetricsPage() {
   }
 
   // No config found - prompt to configure
-  if (!metadata && !configLoading) {
+  if (!metadata && !error) {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-6xl mx-auto">
@@ -189,8 +102,7 @@ export default function BoardMetricsPage() {
     );
   }
 
-  const loading = fetchLoading || isSaving;
-  const error = fetchError ?? configError;
+  const loading = pending !== null;
   const hasIssues = processedIssues.length > 0;
   const displayPeriodDays = periodDays ?? metadata?.periodDays ?? 30;
 
@@ -237,15 +149,17 @@ export default function BoardMetricsPage() {
               <input
                 type="number"
                 value={periodDays ?? ''}
-                onChange={(e) => setPeriodDays(e.target.value ? parseInt(e.target.value, 10) : null)}
+                onChange={(e) =>
+                  setDraftPeriod({ boardId, value: e.target.value ? Number(e.target.value) : null })
+                }
                 min="1"
                 max="365"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <button
-              onClick={processIssuesWithWorkflow}
-              disabled={loading || periodDays === null}
+              onClick={() => periodDays !== null && refresh(periodDays)}
+              disabled={loading || !board || periodDays === null}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded disabled:opacity-50"
             >
               {loading ? 'Loading...' : 'Load issues'}
@@ -282,7 +196,10 @@ export default function BoardMetricsPage() {
               </ChartErrorBoundary>
             </CollapsibleSection>
             <CollapsibleSection title="Throughput histogram">
-              <ThroughputHistogram issues={processedIssues} periodDays={displayPeriodDays}></ThroughputHistogram>
+              <ThroughputHistogram
+                issues={processedIssues}
+                periodDays={displayPeriodDays}
+              ></ThroughputHistogram>
             </CollapsibleSection>
 
             {/* Single-item forecast */}
@@ -314,7 +231,7 @@ export default function BoardMetricsPage() {
         )}
 
         {/* Empty State */}
-        {!hasIssues && (
+        {board && !hasIssues && (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <div className="text-gray-400 mb-4">
               <svg
@@ -338,21 +255,6 @@ export default function BoardMetricsPage() {
           </div>
         )}
       </div>
-
-      {/* Config dialog */}
-      <ConfirmDialog
-        isOpen={confirmConfigOpen}
-        title="No Configuration Found"
-        message={`No workflow configuration found for board ${boardId}. Would you like to configure it now?`}
-        onConfirm={() => {
-          setConfirmConfigOpen(false);
-          router.push(`/boards/${boardId}/configure`);
-        }}
-        onCancel={() => {
-          setConfirmConfigOpen(false);
-          router.push('/');
-        }}
-      />
     </div>
   );
 }
